@@ -1,0 +1,218 @@
+Usage
+=====
+
+This demonstrates how to use the package.
+
+Test setup
+----------
+
+We must first load the package's ZCML plus some dependencies. In your own
+code, only the last <include /> should be necessary.
+
+    >>> configuration = """\
+    ... <configure
+    ...      xmlns="http://namespaces.zope.org/zope"
+    ...      i18n_domain="plone.namedfile.tests">
+    ...      
+    ...     <include package="zope.security" file="meta.zcml" />
+    ...     <include package="zope.component" file="meta.zcml" />
+    ...     <include package="zope.app.component" file="meta.zcml" />
+    ...     <include package="zope.app.publisher" file="meta.zcml" />
+    ...     
+    ...     <permission id="zope2.View" title="View" />
+    ...     
+    ...     <include package="plone.namedfile" />
+    ...     
+    ... </configure>
+    ... """
+
+    >>> from StringIO import StringIO
+    >>> from zope.configuration import xmlconfig
+    >>> xmlconfig.xmlconfig(StringIO(configuration))
+
+Schema fields
+-------------
+
+The following schema fields can be used to describe file data.
+
+    >>> from zope.interface import Interface
+    >>> from plone.namedfile import field
+
+    >>> class IFileContainer(Interface):
+    ...     simple = field.NamedFile(title=u"Named file")
+    ...     image = field.NamedImage(title=u"Named image file")
+    ...     blob = field.NamedBlobFile(title=u"Named blob file")
+    ...     blobimage = field.NamedBlobImage(title=u"Named blob image file")
+
+These store data with the following types:
+
+    >>> from zope.interface import implements
+    >>> from plone import namedfile
+
+    >>> class FileContainer(object):
+    ...     implements(IFileContainer)
+    ...     def __init__(self):
+    ...         self.simple = namedfile.NamedFile()
+    ...         self.image = namedfile.NamedImage()
+    ...         self.blob = namedfile.NamedBlobFile()
+    ...         self.blobimage = namedfile.NamedBlobImage()
+
+File data and content type
+--------------------------
+
+Let's now show how to get and set file data.
+
+The FileContainer class creates empty objects to start with.
+
+    >>> container = FileContainer()
+
+    >>> container.simple.data
+    ''
+    >>> container.simple.contentType
+    ''
+    >>> container.simple.filename is None
+    True
+
+    >>> container.image.data
+    ''
+    >>> container.image.contentType
+    ''
+    >>> container.image.filename is None
+    True
+    
+    >>> container.blob.data
+    ''
+    >>> container.blob.contentType
+    ''
+    >>> container.blob.filename is None
+    True
+    
+    >>> container.blobimage.data
+    ''
+    >>> container.blobimage.contentType
+    ''
+    >>> container.blobimage.filename is None
+    True
+
+Let's now set some actual data in these files. Notice how the constructor
+will attempt to guess the filename from the file extension.
+
+    >>> container.simple = namedfile.NamedFile('dummy test data', filename="test.txt")
+    >>> container.simple.data
+    'dummy test data'
+    >>> container.simple.contentType
+    'text/plain'
+    >>> container.simple.filename
+    'test.txt'
+
+    >>> container.blob = namedfile.NamedBlobFile('dummy test data', filename="test.txt")
+    >>> container.blob.data
+    'dummy test data'
+    >>> container.blob.contentType
+    'text/plain'
+    >>> container.blob.filename
+    'test.txt'
+    
+Let's also try to read a GIF, courtesy of the zope.app.file tests:
+
+    >>> zptlogo = (
+    ...     'GIF89a\x10\x00\x10\x00\xd5\x00\x00\xff\xff\xff\xff\xff\xfe\xfc\xfd\xfd'
+    ...     '\xfa\xfb\xfc\xf7\xf9\xfa\xf5\xf8\xf9\xf3\xf6\xf8\xf2\xf5\xf7\xf0\xf4\xf6'
+    ...     '\xeb\xf1\xf3\xe5\xed\xef\xde\xe8\xeb\xdc\xe6\xea\xd9\xe4\xe8\xd7\xe2\xe6'
+    ...     '\xd2\xdf\xe3\xd0\xdd\xe3\xcd\xdc\xe1\xcb\xda\xdf\xc9\xd9\xdf\xc8\xd8\xdd'
+    ...     '\xc6\xd7\xdc\xc4\xd6\xdc\xc3\xd4\xda\xc2\xd3\xd9\xc1\xd3\xd9\xc0\xd2\xd9'
+    ...     '\xbd\xd1\xd8\xbd\xd0\xd7\xbc\xcf\xd7\xbb\xcf\xd6\xbb\xce\xd5\xb9\xcd\xd4'
+    ...     '\xb6\xcc\xd4\xb6\xcb\xd3\xb5\xcb\xd2\xb4\xca\xd1\xb2\xc8\xd0\xb1\xc7\xd0'
+    ...     '\xb0\xc7\xcf\xaf\xc6\xce\xae\xc4\xce\xad\xc4\xcd\xab\xc3\xcc\xa9\xc2\xcb'
+    ...     '\xa8\xc1\xca\xa6\xc0\xc9\xa4\xbe\xc8\xa2\xbd\xc7\xa0\xbb\xc5\x9e\xba\xc4'
+    ...     '\x9b\xbf\xcc\x98\xb6\xc1\x8d\xae\xbaFgs\x00\x00\x00\x00\x00\x00\x00\x00'
+    ...     '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    ...     '\x00,\x00\x00\x00\x00\x10\x00\x10\x00\x00\x06z@\x80pH,\x12k\xc8$\xd2f\x04'
+    ...     '\xd4\x84\x01\x01\xe1\xf0d\x16\x9f\x80A\x01\x91\xc0ZmL\xb0\xcd\x00V\xd4'
+    ...     '\xc4a\x87z\xed\xb0-\x1a\xb3\xb8\x95\xbdf8\x1e\x11\xca,MoC$\x15\x18{'
+    ...     '\x006}m\x13\x16\x1a\x1f\x83\x85}6\x17\x1b $\x83\x00\x86\x19\x1d!%)\x8c'
+    ...     '\x866#\'+.\x8ca`\x1c`(,/1\x94B5\x19\x1e"&*-024\xacNq\xba\xbb\xb8h\xbeb'
+    ...     '\x00A\x00;'
+    ...     )
+
+    >>> container.image = namedfile.NamedImage(zptlogo, filename="zpt.gif")
+    >>> container.image.data == zptlogo
+    True
+    >>> container.image.contentType
+    'image/gif'
+    >>> container.image.filename
+    'zpt.gif'
+
+    >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, filename="zpt.gif")
+    >>> container.blobimage.data == zptlogo
+    True
+    >>> container.blobimage.contentType
+    'image/gif'
+    >>> container.blobimage.filename
+    'zpt.gif'
+
+Download view
+-------------
+
+This package also comes with a view that can be used to download files. To 
+use it, link to ../context-object/@@download/fieldname, where `fieldname` is
+the name of the attribute on the context-object where the named file is
+stored.
+
+We will test this with a dummy request, faking traversal.
+
+    >>> from plone.namedfile.browser import Download
+    >>> from zope.publisher.browser import TestRequest
+
+    >>> request = TestRequest()
+    >>> download = Download(container, request).publishTraverse(request, 'simple')
+    >>> download()
+    'dummy test data'
+    >>> request.response.getHeader('Content-Length')
+    '15'
+    >>> request.response.getHeader('Content-Type')
+    'text/plain'
+    >>> request.response.getHeader('Content-Disposition')
+    'attachment; filename=test.txt'
+
+    >>> request = TestRequest()
+    >>> download = Download(container, request).publishTraverse(request, 'blob')
+    >>> data = download()
+    >>> data #doctest: +ELLIPSIS
+    <open file ..., mode 'rb' at ...>
+    >>> data.read()
+    'dummy test data'
+
+    >>> request.response.getHeader('Content-Length')
+    '15'
+    >>> request.response.getHeader('Content-Type')
+    'text/plain'
+    >>> request.response.getHeader('Content-Disposition')
+    'attachment; filename=test.txt'
+
+    >>> request = TestRequest()
+    >>> download = Download(container, request).publishTraverse(request, 'image')
+    >>> download() == zptlogo
+    True
+    
+    >>> request.response.getHeader('Content-Length')
+    '341'
+    >>> request.response.getHeader('Content-Type')
+    'image/gif'
+    >>> request.response.getHeader('Content-Disposition')
+    'attachment; filename=zpt.gif'
+
+    >>> request = TestRequest()
+    >>> download = Download(container, request).publishTraverse(request, 'blobimage')
+    >>> data = download()
+    >>> data #doctest: +ELLIPSIS
+    <open file ..., mode 'rb' at ...>
+    >>> data.read() == zptlogo
+    True
+
+    >>> request.response.getHeader('Content-Length')
+    '341'
+    >>> request.response.getHeader('Content-Type')
+    'image/gif'
+    >>> request.response.getHeader('Content-Disposition')
+    'attachment; filename=zpt.gif'

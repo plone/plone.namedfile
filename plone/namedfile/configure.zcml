@@ -1,0 +1,25 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="plone.namedfile">
+
+    <permission
+        id="zope.View"
+        title="View"
+        />
+    
+    <permission
+        id="zope.ManageContent"
+        title="Modify portal content"
+        />
+        
+    <include package="z3c.blobfile" />
+
+    <browser:view
+        name="download"
+        for="*"
+        class=".browser.Download"
+        permission="zope2.View"
+        />
+
+</configure>
