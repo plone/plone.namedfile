@@ -15,7 +15,7 @@
         
     <include package="z3c.blobfile" />
 
-    <browser:view
+    <browser:page
         name="download"
         for="*"
         class=".browser.Download"

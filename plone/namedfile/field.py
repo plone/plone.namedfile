@@ -10,7 +10,7 @@ from plone.namedfile.interfaces import INamedBlobFile, INamedBlobImage
 from plone.namedfile.file import NamedFile as FileValueType
 from plone.namedfile.file import NamedImage as ImageValueType
 from plone.namedfile.file import NamedBlobFile as BlobFileValueType
-from plone.namedfile.file import NamedBlobImage as BlobImageValueType    
+from plone.namedfile.file import NamedBlobImage as BlobImageValueType
 
 class NamedFile(Object):
     """A NamedFile field

@@ -36,7 +36,7 @@ class Download(BrowserView):
         return self
     
     def __call__(self):
-
+        
         # Ensure that we have at least a filedname
         if not self.fieldname:
             raise NotFound(self, '', self.request)

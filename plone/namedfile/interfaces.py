@@ -36,18 +36,22 @@ class INamedBlobImage(INamedImage, IBlobby, IBlobImage):
 
 # Fields
 
-class INamedFileField(IObject):
+class INamedField(IObject):
+    """Base field type
+    """
+
+class INamedFileField(INamedField):
     """Field for storing INamedFile objects.
     """
 
-class INamedImageField(IObject):
-    """Field for storing INamedImage objects.
-    """
-
-class INamedBlobFileField(IObject):
+class INamedBlobFileField(INamedFileField):
     """Field for storing INamedBlobFile objects.
     """
 
-class INamedBlobImageField(IObject):
+class INamedImageField(INamedField):
+    """Field for storing INamedImage objects.
+    """
+
+class INamedBlobImageField(INamedImageField):
     """Field for storing INamedBlobImage objects.
     """

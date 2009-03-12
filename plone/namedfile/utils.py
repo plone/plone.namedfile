@@ -45,7 +45,7 @@ def set_headers(file, response, filename=None):
     response.setHeader("Content-Length", file.getSize())
     
     if filename is not None:
-        response.setHeader("Content-Disposition", "attachment; filename=%s" % filename)
+        response.setHeader("Content-Disposition", "attachment; filename=\"%s\"" % filename)
 
 def stream_data(file):
     """Return the given file as a stream if possible.

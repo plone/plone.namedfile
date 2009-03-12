@@ -173,7 +173,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Type')
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
-    'attachment; filename=test.txt'
+    'attachment; filename="test.txt"'
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blob')
@@ -188,7 +188,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Type')
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
-    'attachment; filename=test.txt'
+    'attachment; filename="test.txt"'
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'image')
@@ -200,7 +200,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Type')
     'image/gif'
     >>> request.response.getHeader('Content-Disposition')
-    'attachment; filename=zpt.gif'
+    'attachment; filename="zpt.gif"'
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blobimage')
@@ -215,4 +215,4 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Type')
     'image/gif'
     >>> request.response.getHeader('Content-Disposition')
-    'attachment; filename=zpt.gif'
+    'attachment; filename="zpt.gif"'

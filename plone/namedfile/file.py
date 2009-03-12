@@ -26,7 +26,8 @@ class NamedImage(Image):
     """
     implements(INamedImage)
 
-    def __init__(self, data='', filename=None):
+    def __init__(self, data='', contentType='', filename=None):
+        # Note: we're keeping contentType to have a uniform constructor
         super(NamedImage, self).__init__(data)
         self.filename = filename
 
@@ -46,6 +47,7 @@ class NamedBlobImage(BlobImage):
     """
     implements(INamedBlobImage)
 
-    def __init__(self, data='', filename=None):
+    def __init__(self, data='', contentType='', filename=None):
+        # Note: we're keeping contentType to have a uniform constructor
         super(NamedBlobImage, self).__init__(data)
         self.filename = filename
