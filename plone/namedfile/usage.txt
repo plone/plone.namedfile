@@ -151,6 +151,24 @@ Let's also try to read a GIF, courtesy of the zope.app.file tests:
     >>> container.blobimage.filename
     'zpt.gif'
 
+Note that is possible for force the mimetype:
+
+    >>> container.image = namedfile.NamedImage(zptlogo, contentType='image/foo', filename="zpt.gif")
+    >>> container.image.data == zptlogo
+    True
+    >>> container.image.contentType
+    'image/foo'
+    >>> container.image.filename
+    'zpt.gif'
+
+    >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, contentType='image/foo', filename="zpt.gif")
+    >>> container.blobimage.data == zptlogo
+    True
+    >>> container.blobimage.contentType
+    'image/foo'
+    >>> container.blobimage.filename
+    'zpt.gif'
+
 Download view
 -------------
 
@@ -198,7 +216,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Length')
     '341'
     >>> request.response.getHeader('Content-Type')
-    'image/gif'
+    'image/foo'
     >>> request.response.getHeader('Content-Disposition')
     'attachment; filename="zpt.gif"'
 
@@ -213,6 +231,6 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Length')
     '341'
     >>> request.response.getHeader('Content-Type')
-    'image/gif'
+    'image/foo'
     >>> request.response.getHeader('Content-Disposition')
     'attachment; filename="zpt.gif"'
