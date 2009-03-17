@@ -26,9 +26,9 @@ class Download(BrowserView):
         
     def publishTraverse(self, request, name):
         
-        if self.fieldname is None:  # ../@@file/fieldname
+        if self.fieldname is None:  # ../@@download/fieldname
             self.fieldname = name
-        elif self.filename is None: # ../@@file/fieldname/filename
+        elif self.filename is None: # ../@@download/fieldname/filename
             self.filename = name
         else:
             raise NotFound(self, name, request)
