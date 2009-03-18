@@ -20,7 +20,7 @@ class Download(BrowserView):
     implements(IPublishTraverse)
     
     def __init__(self, context, request):
-        super(BrowserView, self).__init__(context, request)
+        super(Download, self).__init__(context, request)
         self.fieldname = None
         self.filename = None
         
