@@ -9,3 +9,4 @@ This package contains fields and wrapper objects for storing:
   * An image stored in a ZODB blob, with a filename
 
 See the usage.txt doctest for more details.
+
