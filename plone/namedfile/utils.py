@@ -1,14 +1,16 @@
 import os.path
 import mimetypes
 
-from plone.namedfile.interfaces import IBlobby
+from plone.namedfile.interfaces import HAVE_BLOBS
+
+if HAVE_BLOBS:
+    from plone.namedfile.interfaces import IBlobby
 
 try:
     # use this to stream data if we can
     from ZPublisher.Iterators import filestream_iterator
 except ImportError:
     filestream_iterator = None
-
 
 def safe_basename(filename):
     """Get the basename of the given filename, regardless of which platform
@@ -51,7 +53,9 @@ def stream_data(file):
     """Return the given file as a stream if possible.
     """
 
-    if IBlobby.providedBy(file) and filestream_iterator is not None:
-        return filestream_iterator(file._blob._current_filename(), 'rb')
-    else:
-        return file.data
+    if HAVE_BLOBS:
+        if IBlobby.providedBy(file) and filestream_iterator is not None:
+            return filestream_iterator(file._blob._current_filename(), 'rb')
+    
+    return file.data
+

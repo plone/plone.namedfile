@@ -1,0 +1,83 @@
+<configure
+    package="z3c.blobfile"
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain='zope'>
+
+  <!-- Custom configuration for z3c.blobfile. We need this because as of
+       z3c.blobfile 0.1.3, set_schema is used, which throws errors in
+       Zope 2.10.
+       
+       Also, use Zope 2 permissions.
+    -->
+
+  <class class=".file.File">
+    <require
+        permission="zope2.View"
+        attributes="contentType data getSize openDetached"
+        />
+    <implements
+       interface="zope.annotation.interfaces.IAttributeAnnotatable"
+       />
+  </class>
+
+  <class class=".image.Image">
+    <require
+        permission="zope2.View"
+        attributes="contentType data getSize getImageSize openDetached"
+        />
+    <implements
+        interface="zope.annotation.interfaces.IAttributeAnnotatable"
+        />
+  </class>
+  
+  <utility
+      name="__builtin__.str"
+      provides=".interfaces.IStorage"
+      factory=".storages.StringStorable"
+      />
+
+  <utility
+      name="__builtin__.unicode"
+      provides=".interfaces.IStorage"
+      factory=".storages.UnicodeStorable"
+      />
+
+  <utility
+      name="zope.app.file.file.FileChunk"
+      provides=".interfaces.IStorage"
+      factory=".storages.FileChunkStorable"
+      />
+
+  <utility
+      name="__builtin__.file"
+      provides=".interfaces.IStorage"
+      factory=".storages.FileDescriptorStorable"
+      />
+
+  <utility
+      name="zope.publisher.browser.FileUpload"
+      provides=".interfaces.IStorage"
+      factory=".storages.FileUploadStorable"
+      />
+
+  <adapter
+      for=".interfaces.IBlobImage"
+      provides="zope.size.interfaces.ISized"
+      factory=".image.ImageSized"
+      />
+
+  <adapter 
+      for=".interfaces.IBlobFile"
+      provides="zope.filerepresentation.interfaces.IReadFile"
+      factory=".file.FileReadFile"
+      />
+
+  <adapter 
+      for=".interfaces.IBlobFile"
+      provides="zope.filerepresentation.interfaces.IWriteFile"
+      factory=".file.FileWriteFile"
+      />
+
+  <adapter factory=".copy.BlobFileCopyHook" />
+
+</configure>

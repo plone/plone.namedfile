@@ -26,10 +26,11 @@ setup(name='plone.namedfile',
       zip_safe=False,
       install_requires=[
           'setuptools',
-          'z3c.blobfile',
           'zope.app.file',
-          # -*- Extra requirements: -*-
       ],
+      extras_require = {
+        'blobs':  ['z3c.blobfile'],
+      },
       entry_points="""
       # -*- Entry points: -*-
       """,

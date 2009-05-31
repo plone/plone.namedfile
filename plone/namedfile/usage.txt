@@ -1,7 +1,8 @@
 Usage
 =====
 
-This demonstrates how to use the package.
+This demonstrates how to use the package. In this instance, we will assume
+that z3c.blobfile is installed so that BLOB based types are supported.
 
 Test setup
 ----------
@@ -33,18 +34,21 @@ code, only the last <include /> should be necessary.
 Schema fields
 -------------
 
-The following schema fields can be used to describe file data.
+The following schema fields can be used to describe file data. We'll only
+test the BLOB versions of the fields if z3c.blobfile is installed.
 
     >>> from zope.interface import Interface
     >>> from plone.namedfile import field
+    >>> from plone.namedfile.interfaces import HAVE_BLOBS
 
     >>> class IFileContainer(Interface):
     ...     simple = field.NamedFile(title=u"Named file")
     ...     image = field.NamedImage(title=u"Named image file")
-    ...     blob = field.NamedBlobFile(title=u"Named blob file")
-    ...     blobimage = field.NamedBlobImage(title=u"Named blob image file")
+    ...     if HAVE_BLOBS:
+    ...         blob = field.NamedBlobFile(title=u"Named blob file")
+    ...         blobimage = field.NamedBlobImage(title=u"Named blob image file")
 
-These store data with the following types:
+These store data with the following types. 
 
     >>> from zope.interface import implements
     >>> from plone import namedfile
@@ -54,8 +58,9 @@ These store data with the following types:
     ...     def __init__(self):
     ...         self.simple = namedfile.NamedFile()
     ...         self.image = namedfile.NamedImage()
-    ...         self.blob = namedfile.NamedBlobFile()
-    ...         self.blobimage = namedfile.NamedBlobImage()
+    ...         if HAVE_BLOBS:
+    ...             self.blob = namedfile.NamedBlobFile()
+    ...             self.blobimage = namedfile.NamedBlobImage()
 
 File data and content type
 --------------------------
@@ -80,20 +85,27 @@ The FileContainer class creates empty objects to start with.
     >>> container.image.filename is None
     True
     
-    >>> container.blob.data
+    >>> if HAVE_BLOBS:
+    ...     print repr(container.blob.data)
+    ...     print repr(container.blob.contentType)
+    ...     print repr(container.blob.filename is None)
+    ...     print repr(container.blobimage.data)
+    ...     print repr(container.blobimage.contentType)
+    ...     print repr(container.blobimage.filename is None)
+    ... else:
+    ...     print repr('')
+    ...     print repr('')
+    ...     print repr(True)
+    ...     print repr('')
+    ...     print repr('')
+    ...     print repr(True)
     ''
-    >>> container.blob.contentType
     ''
-    >>> container.blob.filename is None
+    True
+    ''
+    ''
     True
     
-    >>> container.blobimage.data
-    ''
-    >>> container.blobimage.contentType
-    ''
-    >>> container.blobimage.filename is None
-    True
-
 Let's now set some actual data in these files. Notice how the constructor
 will attempt to guess the filename from the file extension.
 
@@ -105,12 +117,17 @@ will attempt to guess the filename from the file extension.
     >>> container.simple.filename
     'test.txt'
 
-    >>> container.blob = namedfile.NamedBlobFile('dummy test data', filename="test.txt")
-    >>> container.blob.data
+    >>> if HAVE_BLOBS:
+    ...     container.blob = namedfile.NamedBlobFile('dummy test data', filename="test.txt")
+    ...     print repr(container.blob.data)
+    ...     print repr(container.blob.contentType)
+    ...     print repr(container.blob.filename)
+    ... else:
+    ...     print repr('dummy test data')
+    ...     print repr('text/plain')
+    ...     print repr('test.txt')
     'dummy test data'
-    >>> container.blob.contentType
     'text/plain'
-    >>> container.blob.filename
     'test.txt'
     
 Let's also try to read a GIF, courtesy of the zope.app.file tests:
@@ -143,12 +160,17 @@ Let's also try to read a GIF, courtesy of the zope.app.file tests:
     >>> container.image.filename
     'zpt.gif'
 
-    >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, filename="zpt.gif")
-    >>> container.blobimage.data == zptlogo
+    >>> if HAVE_BLOBS:
+    ...     container.blobimage = namedfile.NamedBlobImage(zptlogo, filename="zpt.gif")
+    ...     print repr(container.blobimage.data == zptlogo)
+    ...     print repr(container.blobimage.contentType)
+    ...     print repr(container.blobimage.filename)
+    ... else:
+    ...     print repr(True)
+    ...     print repr('image/gif')
+    ...     print repr('zpt.gif')
     True
-    >>> container.blobimage.contentType
     'image/gif'
-    >>> container.blobimage.filename
     'zpt.gif'
 
 Note that is possible for force the mimetype:
@@ -161,12 +183,17 @@ Note that is possible for force the mimetype:
     >>> container.image.filename
     'zpt.gif'
 
-    >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, contentType='image/foo', filename="zpt.gif")
-    >>> container.blobimage.data == zptlogo
+    >>> if HAVE_BLOBS:
+    ...     container.blobimage = namedfile.NamedBlobImage(zptlogo, contentType='image/foo', filename="zpt.gif")
+    ...     print repr(container.blobimage.data == zptlogo)
+    ...     print repr(container.blobimage.contentType)
+    ...     print repr(container.blobimage.filename)
+    ... else:
+    ...     print repr(True)
+    ...     print repr('image/foo')
+    ...     print repr('zpt.gif')
     True
-    >>> container.blobimage.contentType
     'image/foo'
-    >>> container.blobimage.filename
     'zpt.gif'
 
 Download view
@@ -193,19 +220,25 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Disposition')
     'attachment; filename="test.txt"'
 
-    >>> request = TestRequest()
-    >>> download = Download(container, request).publishTraverse(request, 'blob')
-    >>> data = download()
-    >>> data #doctest: +ELLIPSIS
-    <open file ..., mode 'rb' at ...>
-    >>> data.read()
+    >>> if HAVE_BLOBS:
+    ...     request = TestRequest()
+    ...     download = Download(container, request).publishTraverse(request, 'blob')
+    ...     data = download()
+    ...     print repr(isinstance(data, file))
+    ...     print repr(data.read())
+    ...     print repr(request.response.getHeader('Content-Length'))
+    ...     print repr(request.response.getHeader('Content-Type'))
+    ...     print repr(request.response.getHeader('Content-Disposition'))
+    ... else:
+    ...     print repr(True)
+    ...     print repr('dummy test data')
+    ...     print repr('15')
+    ...     print repr('text/plain')
+    ...     print repr('attachment; filename="test.txt"')
+    True
     'dummy test data'
-
-    >>> request.response.getHeader('Content-Length')
     '15'
-    >>> request.response.getHeader('Content-Type')
     'text/plain'
-    >>> request.response.getHeader('Content-Disposition')
     'attachment; filename="test.txt"'
 
     >>> request = TestRequest()
@@ -221,16 +254,22 @@ We will test this with a dummy request, faking traversal.
     'attachment; filename="zpt.gif"'
 
     >>> request = TestRequest()
-    >>> download = Download(container, request).publishTraverse(request, 'blobimage')
-    >>> data = download()
-    >>> data #doctest: +ELLIPSIS
-    <open file ..., mode 'rb' at ...>
-    >>> data.read() == zptlogo
+    >>> if HAVE_BLOBS:
+    ...     download = Download(container, request).publishTraverse(request, 'blobimage')
+    ...     data = download()
+    ...     print repr(isinstance(data, file))
+    ...     print repr(data.read() == zptlogo)
+    ...     print repr(request.response.getHeader('Content-Length'))
+    ...     print repr(request.response.getHeader('Content-Type'))
+    ...     print repr(request.response.getHeader('Content-Disposition'))
+    ... else:
+    ...     print repr(True)
+    ...     print repr(True)
+    ...     print repr('341')
+    ...     print repr('image/foo')
+    ...     print repr('attachment; filename="zpt.gif"')
     True
-
-    >>> request.response.getHeader('Content-Length')
+    True
     '341'
-    >>> request.response.getHeader('Content-Type')
     'image/foo'
-    >>> request.response.getHeader('Content-Disposition')
     'attachment; filename="zpt.gif"'
