@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.0b2 - 2009-09-17
+------------------
+
+* Add plone.supermodel import/export handlers (only installed if
+  plone.supermodel is available).
+  [optilude]
+
 1.0b1 - 2009-05-30
 ------------------
 
