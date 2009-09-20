@@ -7,7 +7,7 @@ This package contains fields and wrapper objects for storing:
   * An image with a filename
  
 BLOB based types are supported if the z3c.blobfile package is installed.
-This will also require the ZODB3 package to be on version 3.8.1 or later,
+This will also require the ZODB3 package to be at version 3.8.1 or later,
 and BLOBs to be configured in zope.conf.
 
 One way to make sure that z3c.blobfile is installed is to depend on the 
@@ -17,9 +17,8 @@ One way to make sure that z3c.blobfile is installed is to depend on the
         ...
         'plone.namedfile[blobs]',
     ]
-
-*NOTE*: On Zope 2.10 at least, you probably want to pin z3c.blobfile to 
-version 0.1.2!
+    
+plone.supermodel handlers are registered if plone.supermodel is installed.
+The [supermodel] extra will ensure this.
   
 See the usage.txt doctest for more details.
-

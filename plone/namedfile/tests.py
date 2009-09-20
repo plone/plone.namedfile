@@ -8,7 +8,11 @@ def test_suite():
         doctestunit.DocFileSuite(
             'usage.txt', package='plone.namedfile',
             setUp=testing.setUp, tearDown=testing.tearDown),
-
+        
+        doctestunit.DocFileSuite(
+            'handler.txt', package='plone.namedfile',
+            setUp=testing.setUp, tearDown=testing.tearDown),
+        
         ])
 
 if __name__ == '__main__':

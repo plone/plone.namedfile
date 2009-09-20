@@ -1,0 +1,28 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="plone.namedfile">
+
+    <include package="plone.supermodel" />
+
+    <!-- plone.supermodel configuration -->
+
+    <utility
+        component=".handler.NamedFileHandler"
+        name="plone.namedfile.field.NamedFile"
+        />
+    <utility
+        component=".handler.NamedImageHandler"
+        name="plone.namedfile.field.NamedImage"
+        />
+        
+    <utility zcml:condition="installed z3c.blobfile"
+        component=".handler.NamedBlobFileHandler"
+        name="plone.namedfile.field.NamedBlobFile"
+        />
+    <utility zcml:condition="installed z3c.blobfile"
+        component=".handler.NamedBlobImageHandler"
+        name="plone.namedfile.field.NamedBlobImage"
+        />
+
+</configure>

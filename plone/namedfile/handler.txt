@@ -1,0 +1,196 @@
+plone.supermodel handler
+========================
+
+If plone.supermodel is installed, this package will register a handler
+for the RichText field.
+
+First, we wire up the handlers
+
+    >>> configuration = """\
+    ... <configure
+    ...      xmlns="http://namespaces.zope.org/zope"
+    ...      i18n_domain="plone.namedfile">
+    ...      
+    ...     <include package="zope.component" file="meta.zcml" />
+    ...     <include package="zope.app.component" file="meta.zcml" />
+    ...     
+    ...     <include package="plone.namedfile" file="handler.zcml" />
+    ...     
+    ... </configure>
+    ... """
+
+    >>> from StringIO import StringIO
+    >>> from zope.configuration import xmlconfig
+    >>> xmlconfig.xmlconfig(StringIO(configuration))
+
+Then, let's test the fields. Note that 'default' and 'missing_value' are
+unsupported.
+
+    >>> from zope.component import getUtility
+    >>> from plone.namedfile.field import NamedFile, NamedImage, NamedBlobFile, NamedBlobImage
+
+    >>> from plone.supermodel.interfaces import IFieldExportImportHandler
+    >>> from plone.supermodel.interfaces import IFieldNameExtractor
+    >>> from plone.supermodel.utils import prettyXML
+
+    >>> from elementtree import ElementTree
+
+Named file
+-----------
+
+    >>> field = NamedFile(__name__=u"dummy", title=u"Test", 
+    ...     description=u"Test desc", required=False, readonly=True)
+    >>> fieldType = IFieldNameExtractor(field)()
+    >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
+    >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
+    >>> print prettyXML(element)
+    <field name="dummy" type="plone.namedfile.field.NamedFile">
+      <description>Test desc</description>
+      <readonly>True</readonly>
+      <required>False</required>
+      <title>Test</title>
+    </field>
+
+    >>> element = ElementTree.XML("""\
+    ... <field name="dummy" type="plone.namedfile.field.NamedFile">
+    ...   <description>Test desc</description>
+    ...   <missing_value />
+    ...   <readonly>True</readonly>
+    ...   <required>False</required>
+    ...   <title>Test</title>
+    ... </field>
+    ... """)
+    
+    >>> reciprocal = handler.read(element)
+    >>> reciprocal.__class__
+    <class 'plone.namedfile.field.NamedFile'>
+    >>> reciprocal.__name__
+    u'dummy'
+    >>> reciprocal.title
+    u'Test'
+    >>> reciprocal.description
+    u'Test desc'
+    >>> reciprocal.required
+    False
+    >>> reciprocal.readonly
+    True
+
+Named image
+-----------
+
+    >>> field = NamedImage(__name__=u"dummy", title=u"Test", 
+    ...     description=u"Test desc", required=False, readonly=True)
+    >>> fieldType = IFieldNameExtractor(field)()
+    >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
+    >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
+    >>> print prettyXML(element)
+    <field name="dummy" type="plone.namedfile.field.NamedImage">
+      <description>Test desc</description>
+      <readonly>True</readonly>
+      <required>False</required>
+      <title>Test</title>
+    </field>
+
+    >>> element = ElementTree.XML("""\
+    ... <field name="dummy" type="plone.namedfile.field.NamedImage">
+    ...   <description>Test desc</description>
+    ...   <missing_value />
+    ...   <readonly>True</readonly>
+    ...   <required>False</required>
+    ...   <title>Test</title>
+    ... </field>
+    ... """)
+    
+    >>> reciprocal = handler.read(element)
+    >>> reciprocal.__class__
+    <class 'plone.namedfile.field.NamedImage'>
+    >>> reciprocal.__name__
+    u'dummy'
+    >>> reciprocal.title
+    u'Test'
+    >>> reciprocal.description
+    u'Test desc'
+    >>> reciprocal.required
+    False
+    >>> reciprocal.readonly
+    True
+
+Named blob file
+---------------
+
+    >>> field = NamedBlobFile(__name__=u"dummy", title=u"Test", 
+    ...     description=u"Test desc", required=False, readonly=True)
+    >>> fieldType = IFieldNameExtractor(field)()
+    >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
+    >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
+    >>> print prettyXML(element)
+    <field name="dummy" type="plone.namedfile.field.NamedBlobFile">
+      <description>Test desc</description>
+      <readonly>True</readonly>
+      <required>False</required>
+      <title>Test</title>
+    </field>
+
+    >>> element = ElementTree.XML("""\
+    ... <field name="dummy" type="plone.namedfile.field.NamedBlobFile">
+    ...   <description>Test desc</description>
+    ...   <missing_value />
+    ...   <readonly>True</readonly>
+    ...   <required>False</required>
+    ...   <title>Test</title>
+    ... </field>
+    ... """)
+    
+    >>> reciprocal = handler.read(element)
+    >>> reciprocal.__class__
+    <class 'plone.namedfile.field.NamedBlobFile'>
+    >>> reciprocal.__name__
+    u'dummy'
+    >>> reciprocal.title
+    u'Test'
+    >>> reciprocal.description
+    u'Test desc'
+    >>> reciprocal.required
+    False
+    >>> reciprocal.readonly
+    True
+
+Named blob image
+----------------
+
+    >>> field = NamedBlobImage(__name__=u"dummy", title=u"Test", 
+    ...     description=u"Test desc", required=False, readonly=True)
+    >>> fieldType = IFieldNameExtractor(field)()
+    >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
+    >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
+    >>> print prettyXML(element)
+    <field name="dummy" type="plone.namedfile.field.NamedBlobImage">
+      <description>Test desc</description>
+      <readonly>True</readonly>
+      <required>False</required>
+      <title>Test</title>
+    </field>
+
+    >>> element = ElementTree.XML("""\
+    ... <field name="dummy" type="plone.namedfile.field.NamedBlobImage">
+    ...   <description>Test desc</description>
+    ...   <missing_value />
+    ...   <readonly>True</readonly>
+    ...   <required>False</required>
+    ...   <title>Test</title>
+    ... </field>
+    ... """)
+    
+    >>> reciprocal = handler.read(element)
+    >>> reciprocal.__class__
+    <class 'plone.namedfile.field.NamedBlobImage'>
+    >>> reciprocal.__name__
+    u'dummy'
+    >>> reciprocal.title
+    u'Test'
+    >>> reciprocal.description
+    u'Test desc'
+    >>> reciprocal.required
+    False
+    >>> reciprocal.readonly
+    True
