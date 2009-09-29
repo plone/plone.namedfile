@@ -1,0 +1,16 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="plone.namedfile">
+
+    <adapter factory=".marshaler.NamedFileFieldMarshaler" />
+    <adapter factory=".marshaler.NamedImageFieldMarshaler" />
+    
+    <adapter zcml:condition="installed z3c.blobfile"
+        factory=".marshaler.NamedBlobFileFieldMarshaler"
+        />
+    <adapter zcml:condition="installed z3c.blobfile"
+        factory=".marshaler.NamedBlobImageFieldMarshaler"
+        />
+
+</configure>

@@ -13,6 +13,10 @@ def test_suite():
             'handler.txt', package='plone.namedfile',
             setUp=testing.setUp, tearDown=testing.tearDown),
         
+        doctestunit.DocFileSuite(
+            'marshaler.txt', package='plone.namedfile',
+            setUp=testing.setUp, tearDown=testing.tearDown),
+        
         ])
 
 if __name__ == '__main__':

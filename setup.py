@@ -31,6 +31,7 @@ setup(name='plone.namedfile',
       extras_require = {
         'blobs':  ['z3c.blobfile'],
         'supermodel': ['plone.supermodel'],
+        'marshaler': ['plone.rfc822'],
       },
       entry_points="""
       # -*- Entry points: -*-
