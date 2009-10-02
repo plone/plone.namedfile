@@ -46,7 +46,10 @@ if HAVE_MARSHALER:
             if value is None:
                 return None
             return value.contentType
-            
+        
+        def getCharset(self, default='utf-8'):
+            return None
+        
         def postProcessMessage(self, message):
             """Encode message as base64 and set content disposition
             """

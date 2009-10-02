@@ -103,6 +103,8 @@ Let's try it with primary fields:
     
     >>> marshaler.getContentType()
     'text/plain'
+    >>> marshaler.getCharset('utf-8') is None
+    True
     >>> marshaler.ascii
     False
 
@@ -112,6 +114,8 @@ Let's try it with primary fields:
 
     >>> marshaler.getContentType()
     'image/gif'
+    >>> marshaler.getCharset('utf-8') is None
+    True
     >>> marshaler.ascii
     False
 
