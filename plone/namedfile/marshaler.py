@@ -30,7 +30,7 @@ if HAVE_MARSHALER:
             # we only support encoding a file value in the body of a message,
             # never in a header
             if not primary:
-                return None
+                raise ValueError("File fields can only be marshaled as primary fields")
             if value is None:
                 return None
             return value.data

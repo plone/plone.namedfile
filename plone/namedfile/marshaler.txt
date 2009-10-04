@@ -80,8 +80,11 @@ to marshal a non-primary field, as it does not make much sense to encode
 binary data into a UTF-8 string in a header.
 
     >>> marshaler = getMultiAdapter((t, ITestContent['_file']), IFieldMarshaler)
-    >>> marshaler.marshal() is None
-    True
+    >>> marshaler.marshal()
+    Traceback (most recent call last):
+    ...
+    ValueError: File fields can only be marshaled as primary fields
+    
     >>> marshaler.getContentType()
     'text/plain'
     >>> marshaler.ascii
@@ -89,7 +92,10 @@ binary data into a UTF-8 string in a header.
 
     >>> marshaler = getMultiAdapter((t, ITestContent['_image']), IFieldMarshaler)
     >>> marshaler.marshal() is None
-    True
+    Traceback (most recent call last):
+    ...
+    ValueError: File fields can only be marshaled as primary fields
+    
     >>> marshaler.getContentType()
     'image/gif'
     >>> marshaler.ascii
