@@ -1,0 +1,27 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:zcml="http://namespaces.zope.org/zcml">
+
+  <utility
+      zcml:condition="not-installed z3c.blobfile"
+      name="plone.namedfile.field.NamedFile"
+      component=".editor.NamedFileFactory"
+      />
+  <utility
+      zcml:condition="not-installed z3c.blobfile"
+      name="plone.namedfile.field.NamedImage"
+      component=".editor.NamedImageFactory"
+      />
+
+  <utility
+      zcml:condition="installed z3c.blobfile"
+      name="plone.namedfile.field.NamedBlobFile"
+      component=".editor.NamedBlobFileFactory"
+      />
+  <utility
+      zcml:condition="installed z3c.blobfile"
+      name="plone.namedfile.field.NamedBlobImage"
+      component=".editor.NamedBlobImageFactory"
+      />
+
+</configure>

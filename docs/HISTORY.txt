@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.0b4 - unreleased
+------------------
+
+* Add field factories for plone.schemaeditor (only installed if
+  plone.schemaeditor is available)
+  [davisagli]
+
 1.0b3 - 2009-10-08
 ------------------
 

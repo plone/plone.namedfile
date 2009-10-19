@@ -30,6 +30,7 @@ setup(name='plone.namedfile',
       ],
       extras_require = {
         'blobs':  ['z3c.blobfile'],
+        'editor': ['plone.schemaeditor'],
         'supermodel': ['plone.supermodel'],
         'marshaler': ['plone.rfc822'],
       },
