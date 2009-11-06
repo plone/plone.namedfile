@@ -4,6 +4,10 @@ Changelog
 1.0b4 - unreleased
 ------------------
 
+* Avoid using the internal _current_filename() helper, which disappeared in
+  ZODB 3.9.
+  [optilude]
+
 * Add field factories for plone.schemaeditor (only installed if
   plone.schemaeditor is available)
   [davisagli]
