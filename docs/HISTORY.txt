@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0b4 - unreleased
+1.0b4 - 2009-11-17
 ------------------
 
 * Avoid using the internal _current_filename() helper, which disappeared in
