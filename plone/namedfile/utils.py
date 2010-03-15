@@ -36,15 +36,18 @@ def get_contenttype(file=None, filename=None, default='application/octet-stream'
     
     return default
 
-def set_headers(file, response, filename=None):
+def set_headers(file, response, filename=None, size=None):
     """Set response headers for the given file. If filename is given, set
     the Content-Disposition to attachment.
     """
     
     contenttype = get_contenttype(file)
     
+    if size is None:
+        size = file.getSize()
+    
     response.setHeader("Content-Type", contenttype)
-    response.setHeader("Content-Length", file.getSize())
+    response.setHeader("Content-Length", size)
     
     if filename is not None:
         response.setHeader("Content-Disposition", "attachment; filename=\"%s\"" % filename)
@@ -59,7 +62,7 @@ def stream_data(file):
             # in case of uncomitted changes
             # filename = file._blob.committed()
             
-            filename = file._blob._p_blob_uncommitted or file._blob._p_blob_committed
+            filename = file._blob._p_blob_uncommitted or file._blob.committed()
             return filestream_iterator(filename, 'rb')
     
     return file.data

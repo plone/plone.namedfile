@@ -1,6 +1,7 @@
 from zope.interface import implements
 from zope.publisher.interfaces import IPublishTraverse, NotFound
 
+from plone.namedfile.scales import NamedImageScaleStorage
 from plone.namedfile.utils import set_headers, stream_data
 
 from Acquisition import aq_base
@@ -51,3 +52,28 @@ class Download(BrowserView):
         set_headers(file, self.request.response, filename=self.filename)
         
         return stream_data(file)
+
+class ImageScaleDownload(Download):
+    
+    implements(IPublishTraverse)
+    
+    def __init__(self, context, request):
+        super(ImageScaleDownload, self).__init__(context, request)
+        self.scale_id = None
+        
+    def publishTraverse(self, request, name):
+        
+        if self.scale_id is None:  # ../@@image-scale-download/scale_id
+            self.scale_id = name
+        else:
+            raise NotFound(self, name, request)
+        return self
+    
+    def __call__(self):
+        scale_storage = NamedImageScaleStorage(self.context)
+        if not self.scale_id or self.scale_id not in scale_storage:
+            raise NotFound(self, self.scale_id, self.request)
+        
+        data = scale_storage.annotations["plone.scale.%s" % self.scale_id][1]
+        set_headers(data, self.request.response, filename=data.filename)
+        return stream_data(data)

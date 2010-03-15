@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+  
+  <browser:page
+    name="image-scaling"
+    for="*"
+    class=".scales.NamedImageScaleStorage"
+    allowed_interface="plone.scale.storage.IImageScaleStorage"
+    permission="zope2.View"
+    />
+  <browser:page
+    name="image-scale-download"
+    for="*"
+    class=".browser.ImageScaleDownload"
+    permission="zope2.View"
+    />
+  
+  <adapter factory=".scales.BlobImageData" />
+
+</configure>
