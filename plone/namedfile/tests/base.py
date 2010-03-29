@@ -1,5 +1,5 @@
 import os
-from unittest import TestCase
+from Testing.ZopeTestCase import TestCase
 from zope.component import testing
 from zope.configuration import xmlconfig
 
@@ -8,14 +8,15 @@ def getFile(filename):
     filename = os.path.join(os.path.dirname(__file__), filename)
     return open(filename, 'r')
 
-def setUp(self):
+def setUp(self=None):
     testing.setUp()
     xmlconfig.xmlconfig(getFile('testing.zcml'))
-    try:
-        self.afterSetUp()
-    except AttributeError:
-        pass
+
+class NamedFileLayer:
+    setUp = classmethod(setUp)
+    tearDown = classmethod(testing.tearDown)
 
 class NamedFileTestCase(TestCase):
-    setUp = setUp
-    tearDown = testing.tearDown
+    layer = NamedFileLayer
+    def _app(self): # we don't need the app, and it takes forever to load products
+        return
