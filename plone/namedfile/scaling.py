@@ -64,10 +64,14 @@ class ImageScale(BrowserView):
 
         return '%s />' % result
 
-    def __call__(self):
+    def index_html(self):
         """ download the image """
         set_headers(self.data, self.request.response, filename=self.data.filename)
         return stream_data(self.data)
+
+    def __call__(self):
+        # avoid the need to prefix with nocall: in TAL
+        return self
 
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
