@@ -1,21 +1,22 @@
 import unittest
 from zope.testing import doctestunit
-from zope.component import testing
+from plone.namedfile.tests.base import setUp
+from zope.component.testing import tearDown
 
 def test_suite():
     return unittest.TestSuite([
 
         doctestunit.DocFileSuite(
             'usage.txt', package='plone.namedfile',
-            setUp=testing.setUp, tearDown=testing.tearDown),
+            setUp=setUp, tearDown=tearDown),
         
         doctestunit.DocFileSuite(
             'handler.txt', package='plone.namedfile',
-            setUp=testing.setUp, tearDown=testing.tearDown),
+            setUp=setUp, tearDown=tearDown),
         
         doctestunit.DocFileSuite(
             'marshaler.txt', package='plone.namedfile',
-            setUp=testing.setUp, tearDown=testing.tearDown),
+            setUp=setUp, tearDown=tearDown),
         
         ])
 

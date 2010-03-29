@@ -1,0 +1,14 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+  
+  <include package="zope.annotation"/>
+  
+  <browser:page
+    name="images"
+    for=".interfaces.IImageScaleTraversable"
+    class=".scaling.ImageScaling"
+    permission="zope2.View"
+    />
+  
+</configure>

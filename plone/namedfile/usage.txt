@@ -7,21 +7,13 @@ that z3c.blobfile is installed so that BLOB based types are supported.
 Test setup
 ----------
 
-We must first load the package's ZCML plus some dependencies. In your own
-code, only the last <include /> should be necessary.
+We must first load the package's ZCML.
 
     >>> configuration = """\
     ... <configure
     ...      xmlns="http://namespaces.zope.org/zope"
     ...      i18n_domain="plone.namedfile.tests">
     ...      
-    ...     <include package="zope.security" file="meta.zcml" />
-    ...     <include package="zope.component" file="meta.zcml" />
-    ...     <include package="zope.app.component" file="meta.zcml" />
-    ...     <include package="zope.app.publisher" file="meta.zcml" />
-    ...     
-    ...     <permission id="zope2.View" title="View" />
-    ...     
     ...     <include package="plone.namedfile" />
     ...     
     ... </configure>

@@ -15,6 +15,6 @@
     <include zcml:condition="installed plone.supermodel" file="handler.zcml" />
     <include zcml:condition="installed plone.rfc822" file="marshaler.zcml" />
     <include zcml:condition="installed plone.schemaeditor" file="editor.zcml" />
-    <include zcml:condition="installed plone.scale" file="scales.zcml" />
+    <include zcml:condition="installed plone.scale" file="scaling.zcml" />
 
 </configure>

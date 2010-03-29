@@ -11,6 +11,11 @@ try:
 except ImportError:
     HAVE_BLOBS = False
 
+class IImageScaleTraversable(Interface):
+    """Marker for items that should provide access to image scales for named
+    image fields via the @@images view.
+    """
+
 # Values
 
 class INamed(Interface):
