@@ -94,8 +94,10 @@ class ImageScaling(BrowserView):
     def create(self, fieldname, direction='keep', **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
         orig_value = getattr(self.context, fieldname)
-        # XXX adapter to make work for blob and non-blob
-        orig_data = getattr(aq_base(orig_value), 'data', orig_value)
+        if hasattr(aq_base(orig_value), 'open'):
+            orig_data = orig_value.open()
+        else:
+            orig_data = getattr(aq_base(orig_value), 'data', orig_value)
         if not orig_data:
             return
         try:
