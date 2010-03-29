@@ -1,7 +1,8 @@
 import os
-from Testing.ZopeTestCase import TestCase, layer
+from Testing import ZopeTestCase as ztc
 from zope.component import testing
 from zope.configuration import xmlconfig
+from Products.Five.testbrowser import Browser
 
 def getFile(filename):
     """ return contents of the file with the given name """
@@ -12,9 +13,28 @@ def setUp(self=None):
     testing.setUp()
     xmlconfig.xmlconfig(getFile('testing.zcml'))
 
-class NamedFileLayer(layer.ZopeLite):
+class NamedFileLayer(ztc.layer.ZopeLite):
     setUp = classmethod(setUp)
     tearDown = classmethod(testing.tearDown)
 
-class NamedFileTestCase(TestCase):
+class ImageTestMixin(object):
+    def assertImage(self, image, format, size):
+        self.assertEqual(image.contentType, format)
+        self.assertEqual(image.getImageSize(), size)
+
+class NamedFileTestCase(ztc.TestCase, ImageTestMixin):
     layer = NamedFileLayer
+
+class NamedFileFunctionalTestCase(ztc.Functional, ztc.ZopeTestCase, ImageTestMixin):
+    layer = NamedFileLayer
+
+    def getCredentials(self):
+        return '%s:%s' % (ztc.user_name, ztc.user_password)
+
+    def getBrowser(self, loggedIn=True):
+        """ instantiate and return a testbrowser for convenience """
+        browser = Browser()
+        if loggedIn:
+            auth = 'Basic %s' % self.getCredentials()
+            browser.addHeader('Authorization', auth)
+        return browser

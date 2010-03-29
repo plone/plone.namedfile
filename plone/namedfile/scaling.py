@@ -1,8 +1,9 @@
+from cgi import escape
 from logging import exception
 from Acquisition import aq_base
 from ZODB.POSException import ConflictError
-#from zope.interface import implements
-#from zope.traversing.interfaces import ITraversable, TraversalError
+from zope.interface import implements
+from zope.traversing.interfaces import ITraversable, TraversalError
 #from zope.publisher.interfaces import IPublishTraverse, NotFound
 # XXX needs to move to plone.scale?
 #from plone.app.imaging.interfaces import IImageScaleFactory
@@ -35,15 +36,47 @@ class ImageScale(BrowserView):
         self.__dict__.update(**info)
 
         url = self.context.absolute_url()
-        extension = info['mimetype'].split('/')[-1]
-        self.url = '%s/@@images/%s.%s' % (url, info['uid'], extension)
+        extension = self.data.contentType.split('/')[-1].lower()
+        if 'fieldname' in info:
+            self.url = '%s/@@images/%s' % (url, info['fieldname'])
+        else:
+            self.url = '%s/@@images/%s.%s' % (url, info['uid'], extension)
 
     def absolute_url(self):
         return self.url
 
-    def tag(self, **kw):
-        # XXX
-        raise NotImplemented
+    def tag(self, height=None, width=None, alt=None,
+            css_class=None, title=None, **kwargs):
+        """Create a tag including scale
+        """
+        if height is None:
+            height = self.height
+        if width is None:
+            width = self.width
+
+        if alt is None:
+            alt = self.context.Title()
+        if title is None:
+            title = self.context.Title()
+
+        values = {'src' : self.url,
+                  'alt' : escape(alt, quote=True),
+                  'title' : escape(title, quote=True),
+                  'height' : height,
+                  'width' : width,
+                 }
+
+        result = '<img src="%(src)s" alt="%(alt)s" title="%(title)s" '\
+                 'height="%(height)s" width="%(width)s"' % values
+
+        if css_class is not None:
+            result = '%s class="%s"' % (result, css_class)
+
+        for key, value in kwargs.items():
+            if value:
+                result = '%s %s="%s"' % (result, key, value)
+
+        return '%s />' % result
 
     def __call__(self):
         """ download the image """
@@ -55,6 +88,7 @@ class ImageScale(BrowserView):
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
 #    implements(IImageScaling, ITraversable, IPublishTraverse)
+    implements(ITraversable)
 
     # def publishTraverse(self, request, name):
     #     """ used for traversal via publisher, i.e. when using as a url """
@@ -78,18 +112,19 @@ class ImageScaling(BrowserView):
     #         return image
     #     raise NotFound(self, name, self.request)
 
-    # def traverse(self, name, furtherPath):
-    #     """ used for path traversal, i.e. in zope page templates """
-    #     if not furtherPath:
-    #         field = self.context.getField(name)
-    #         return field.get(self.context).tag()
-    #     image = self.scale(name, furtherPath.pop())
-    #     if image is not None:
-    #         return image.tag()
-    #     raise TraversalError(self, name)
+    def traverse(self, name, furtherPath):
+        """ used for path traversal, i.e. in zope page templates """
+        if not furtherPath:
+            value = getattr(self.context, name)
+            image = ImageScale(value, fieldname=name)
+        else:
+            image = self.scale(name, furtherPath.pop())
+        if image is not None:
+            return image.tag()
+        raise TraversalError(self, name)
 
     # XXX use plone.app.imaging.utils.getAllowedSizes if present
-    available_sizes = {}
+    available_sizes = {'thumb': (128,128)}
 
     def create(self, fieldname, direction='keep', **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
