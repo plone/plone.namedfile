@@ -1,4 +1,6 @@
 import os
+from StringIO import StringIO
+import PIL.Image
 from Testing import ZopeTestCase as ztc
 from zope.component import testing
 from zope.configuration import xmlconfig
@@ -18,9 +20,10 @@ class NamedFileLayer(ztc.layer.ZopeLite):
     tearDown = classmethod(testing.tearDown)
 
 class ImageTestMixin(object):
-    def assertImage(self, image, format, size):
-        self.assertEqual(image.contentType, format)
-        self.assertEqual(image.getImageSize(), size)
+    def assertImage(self, data, format, size):
+        image = PIL.Image.open(StringIO(data))
+        self.assertEqual(image.format, format)
+        self.assertEqual(image.size, size)
 
 class NamedFileTestCase(ztc.TestCase, ImageTestMixin):
     layer = NamedFileLayer
