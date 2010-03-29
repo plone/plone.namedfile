@@ -1,5 +1,5 @@
 import os
-from Testing.ZopeTestCase import TestCase
+from Testing.ZopeTestCase import TestCase, layer
 from zope.component import testing
 from zope.configuration import xmlconfig
 
@@ -12,11 +12,9 @@ def setUp(self=None):
     testing.setUp()
     xmlconfig.xmlconfig(getFile('testing.zcml'))
 
-class NamedFileLayer:
+class NamedFileLayer(layer.ZopeLite):
     setUp = classmethod(setUp)
     tearDown = classmethod(testing.tearDown)
 
 class NamedFileTestCase(TestCase):
     layer = NamedFileLayer
-    def _app(self): # we don't need the app, and it takes forever to load products
-        return
