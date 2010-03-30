@@ -16,6 +16,10 @@ class IImageScaleTraversable(Interface):
     image fields via the @@images view.
     """
 
+class IAvailableSizes(Interface):
+    """A callable returning a dictionary of scale name => (width, height)
+    """
+
 # Values
 
 class INamed(Interface):

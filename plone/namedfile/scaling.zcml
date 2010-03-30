@@ -8,6 +8,7 @@
     name="images"
     for=".interfaces.IImageScaleTraversable"
     class=".scaling.ImageScaling"
+    allowed_attributes="scale"
     permission="zope2.View"
     />
   

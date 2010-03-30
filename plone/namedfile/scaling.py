@@ -2,6 +2,7 @@ from cgi import escape
 from logging import exception
 from Acquisition import aq_base
 from ZODB.POSException import ConflictError
+from zope.component import queryUtility
 from zope.interface import implements
 from zope.traversing.interfaces import ITraversable, TraversalError
 from zope.publisher.interfaces import IPublishTraverse, NotFound
@@ -9,10 +10,13 @@ from plone.scale.storage import AnnotationStorage
 from plone.scale.scale import scaleImage
 from Products.Five import BrowserView
 
+from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.utils import set_headers, stream_data
 
 class ImageScale(BrowserView):
     """ view used for rendering image scales """
+    
+    __allow_access_to_unprotected_subobjects__ = 1
     
     def __init__(self, context, request, **info):
         self.context = context
@@ -36,9 +40,9 @@ class ImageScale(BrowserView):
         """Create a tag including scale
         """
         if height is None:
-            height = self.height
+            height = getattr(self, 'height', self.data._height)
         if width is None:
-            width = self.width
+            width = getattr(self, 'width', self.data._width)
 
         if alt is None:
             alt = self.context.Title()
@@ -113,8 +117,14 @@ class ImageScaling(BrowserView):
             return image.tag()
         raise TraversalError(self, name)
 
-    # XXX use plone.app.imaging.utils.getAllowedSizes if present
-    available_sizes = {'thumb': (128,128)}
+    _sizes = {}
+    @apply
+    def available_sizes():
+        def get(self):
+            return queryUtility(IAvailableSizes, default=self._sizes)
+        def set(self, value):
+            self._sizes = value
+        return property(get, set)
 
     def create(self, fieldname, direction='keep', **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
