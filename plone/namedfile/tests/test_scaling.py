@@ -102,7 +102,7 @@ class ImageScalingTests(NamedFileTestCase):
         def custom_available_sizes():
             return {'bar': (10,10)}
         sm = getSiteManager()
-        sm.registerUtility(factory=custom_available_sizes, provided=IAvailableSizes)
+        sm.registerUtility(component=custom_available_sizes, provided=IAvailableSizes)
         self.assertEqual(self.scaling.available_sizes, {'bar': (10,10)})
         sm.unregisterUtility(provided=IAvailableSizes)
         # for testing purposes, the sizes may also be set directly on

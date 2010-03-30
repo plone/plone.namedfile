@@ -121,7 +121,13 @@ class ImageScaling(BrowserView):
     @apply
     def available_sizes():
         def get(self):
-            return queryUtility(IAvailableSizes, default=self._sizes)
+            getAvailableSizes = queryUtility(IAvailableSizes)
+            if getAvailableSizes is None:
+                return self._sizes
+            sizes = getAvailableSizes()
+            if sizes is None:
+                return {}
+            return sizes
         def set(self, value):
             self._sizes = value
         return property(get, set)

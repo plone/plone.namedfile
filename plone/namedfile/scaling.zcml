@@ -1,6 +1,7 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
-    xmlns:browser="http://namespaces.zope.org/browser">
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:zcml="http://namespaces.zope.org/zcml">
   
   <include package="zope.annotation"/>
   
@@ -10,6 +11,13 @@
     class=".scaling.ImageScaling"
     allowed_attributes="scale"
     permission="zope2.View"
+    />
+  
+  <!-- get scale sizes from plone.app.imaging if it's present -->
+  <utility
+    component="plone.app.imaging.utils.getAllowedSizes"
+    provides=".interfaces.IAvailableSizes"
+    zcml:condition="installed plone.app.imaging"
     />
   
 </configure>
