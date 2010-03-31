@@ -1,6 +1,7 @@
 import re
 from DateTime import DateTime
 from OFS.SimpleItem import SimpleItem
+from zExceptions import Unauthorized
 
 from plone.namedfile.tests.base import NamedFileTestCase, getFile
 from plone.namedfile.tests.base import NamedFileFunctionalTestCase
@@ -109,6 +110,12 @@ class ImageScalingTests(NamedFileTestCase):
         # the scaling adapter
         self.scaling.available_sizes = {'qux': (12, 12)}
         self.assertEqual(self.scaling.available_sizes, {'qux': (12, 12)})
+    
+    def testGuardedAccess(self):
+        # make sure it's not possible to access scales of forbidden images
+        self.item.__allow_access_to_unprotected_subobjects__ = 0
+        self.assertRaises(Unauthorized, self.scaling.guarded_orig_image, 'image')
+        self.item.__allow_access_to_unprotected_subobjects__ = 1
 
 class ImageTraverseTests(NamedFileTestCase):
 
@@ -178,6 +185,11 @@ class ImageTraverseTests(NamedFileTestCase):
         self.assertEqual(height, 42)
         self.assertNotEqual(uid1, uid2, 'scale not updated?')
 
+    def testGuardedAccess(self):
+        # make sure it's not possible to access scales of forbidden images
+        self.item.__allow_access_to_unprotected_subobjects__ = 0
+        self.assertRaises(Unauthorized, self.traverse, 'image/foo')
+        self.item.__allow_access_to_unprotected_subobjects__ = 1
 
 class ImagePublisherTests(NamedFileFunctionalTestCase):
 
@@ -246,6 +258,15 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         response = self.publish('/item/@@images/image/foo', basic=credentials)
         self.assertEqual(response.getStatus(), 200)
         self.assertImage(response.getBody(), 'JPEG', (23, 23))
+
+    def testGuardedAccess(self):
+        # make sure it's not possible to access scales of forbidden images
+        self.item.__allow_access_to_unprotected_subobjects__ = 0
+        ImageScaling.available_sizes = {'foo': (23,23)}
+        credentials = self.getCredentials()
+        response = self.publish('/item/@@images/image/foo', basic=credentials)
+        self.assertEqual(response.getStatus(), 401)
+        self.item.__allow_access_to_unprotected_subobjects__ = 1
 
 def test_suite():
     from unittest import defaultTestLoader 

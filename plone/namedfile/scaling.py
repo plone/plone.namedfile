@@ -1,6 +1,7 @@
 from cgi import escape
 from logging import exception
 from Acquisition import aq_base
+from AccessControl.ZopeGuards import guarded_getattr
 from ZODB.POSException import ConflictError
 from zope.component import queryUtility
 from zope.interface import implements
@@ -25,12 +26,12 @@ class ImageScale(BrowserView):
 
         url = self.context.absolute_url()
         extension = self.data.contentType.split('/')[-1].lower()
-        if 'fieldname' in info:
-            self.__name__ = info['fieldname']
-            self.url = '%s/@@images/%s' % (url, info['fieldname'])
-        else:
+        if 'uid' in info:
             self.__name__ = '%s.%s' % (info['uid'], extension)
             self.url = '%s/@@images/%s' % (url, self.__name__)
+        else:
+            self.__name__ = info['fieldname']
+            self.url = '%s/@@images/%s' % (url, info['fieldname'])
 
     def absolute_url(self):
         return self.url
@@ -94,11 +95,13 @@ class ImageScaling(BrowserView):
             storage = AnnotationStorage(self.context)
             info = storage.get(uid)
             if info is not None:
+                # validate access
+                self.guarded_orig_image(info['data'].fieldname)
                 scale_view = ImageScale(self.context, self.request, **info)
                 return scale_view.__of__(self.context)
         else:
             # otherwise `name` must refer to a field...
-            value = getattr(self.context, name)
+            value = self.guarded_orig_image(name)
             scale_view = ImageScale(self.context, self.request, data=value, fieldname=name)
             return scale_view.__of__(self.context)
         if image is not None:
@@ -108,8 +111,7 @@ class ImageScaling(BrowserView):
     def traverse(self, name, furtherPath):
         """ used for path traversal, i.e. in zope page templates """
         if not furtherPath:
-            # XXX untested
-            value = getattr(self.context, name)
+            value = self.guarded_orig_image(name)
             image = ImageScale(self.context, self.request, data=value, fieldname=name)
         else:
             image = self.scale(name, furtherPath.pop())
@@ -131,10 +133,13 @@ class ImageScaling(BrowserView):
         def set(self, value):
             self._sizes = value
         return property(get, set)
+    
+    def guarded_orig_image(self, fieldname):
+        return guarded_getattr(self.context, fieldname)
 
     def create(self, fieldname, direction='keep', **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
-        orig_value = getattr(self.context, fieldname)
+        orig_value = self.guarded_orig_image(fieldname)
         if hasattr(aq_base(orig_value), 'open'):
             orig_data = orig_value.open()
         else:
@@ -153,6 +158,7 @@ class ImageScaling(BrowserView):
             data, format, dimensions = result
             mimetype = 'image/%s' % format.lower()
             value = orig_value.__class__(data, contentType=mimetype, filename=orig_value.filename)
+            value.fieldname = fieldname
             return value, format, dimensions
 
     def modified(self):
@@ -161,6 +167,8 @@ class ImageScaling(BrowserView):
         return self.context.modified().millis()
 
     def scale(self, fieldname=None, scale=None, **parameters):
+        # validate access to original image
+        self.guarded_orig_image(fieldname)
         if scale is not None:
             available = self.available_sizes
             if not scale in available:
