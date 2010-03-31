@@ -12,12 +12,5 @@
     allowed_attributes="scale"
     permission="zope2.View"
     />
-  
-  <!-- get scale sizes from plone.app.imaging if it's present -->
-  <utility
-    component="plone.app.imaging.utils.getAllowedSizes"
-    provides=".interfaces.IAvailableSizes"
-    zcml:condition="installed plone.app.imaging"
-    />
-  
+
 </configure>
