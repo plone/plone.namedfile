@@ -59,7 +59,7 @@ def stream_data(file):
             # in case of uncomitted changes
             # filename = file._blob.committed()
             
-            filename = file._blob._p_blob_uncommitted or file._blob._p_blob_committed
+            filename = file._blob._p_blob_uncommitted or file._blob.committed()
             return filestream_iterator(filename, 'rb')
     
     return file.data

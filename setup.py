@@ -33,6 +33,7 @@ setup(name='plone.namedfile',
         'editor': ['plone.schemaeditor'],
         'supermodel': ['plone.supermodel'],
         'marshaler': ['plone.rfc822'],
+        'scales': ['plone.scale'],
       },
       entry_points="""
       # -*- Entry points: -*-

@@ -1,0 +1,15 @@
+<configure
+     xmlns="http://namespaces.zope.org/zope"
+     i18n_domain="plone.namedfile.tests">
+     
+    <include package="zope.security" file="meta.zcml" />
+    <include package="zope.component" file="meta.zcml" />
+    <include package="zope.app.component" file="meta.zcml" />
+    <include package="zope.app.publisher" file="meta.zcml" />
+    <include package="zope.traversing" file="configure.zcml" />
+    
+    <permission id="zope2.View" title="View" />
+    
+    <include package="plone.namedfile" />
+    
+</configure>
