@@ -188,6 +188,7 @@ class ImageTraverseTests(NamedFileTestCase):
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
         self.item.__allow_access_to_unprotected_subobjects__ = 0
+        ImageScaling.available_sizes = {'foo': (42,42)}
         self.assertRaises(Unauthorized, self.traverse, 'image/foo')
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 

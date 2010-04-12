@@ -71,6 +71,9 @@ class ImageScale(BrowserView):
 
     def index_html(self):
         """ download the image """
+        # validate access
+        fieldname = getattr(self.data, 'fieldname', getattr(self, 'fieldname', None))
+        guarded_getattr(self.context, fieldname)
         set_headers(self.data, self.request.response, filename=self.data.filename)
         return stream_data(self.data)
 
@@ -95,13 +98,11 @@ class ImageScaling(BrowserView):
             storage = AnnotationStorage(self.context)
             info = storage.get(uid)
             if info is not None:
-                # validate access
-                self.guarded_orig_image(info['data'].fieldname)
                 scale_view = ImageScale(self.context, self.request, **info)
                 return scale_view.__of__(self.context)
         else:
             # otherwise `name` must refer to a field...
-            value = self.guarded_orig_image(name)
+            value = getattr(self.context, name)
             scale_view = ImageScale(self.context, self.request, data=value, fieldname=name)
             return scale_view.__of__(self.context)
         if image is not None:
@@ -110,8 +111,9 @@ class ImageScaling(BrowserView):
 
     def traverse(self, name, furtherPath):
         """ used for path traversal, i.e. in zope page templates """
+        # validate access
+        value = self.guarded_orig_image(name)
         if not furtherPath:
-            value = self.guarded_orig_image(name)
             image = ImageScale(self.context, self.request, data=value, fieldname=name)
         else:
             image = self.scale(name, furtherPath.pop())
@@ -139,7 +141,7 @@ class ImageScaling(BrowserView):
 
     def create(self, fieldname, direction='keep', **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
-        orig_value = self.guarded_orig_image(fieldname)
+        orig_value = getattr(self.context, fieldname)
         if hasattr(aq_base(orig_value), 'open'):
             orig_data = orig_value.open()
         else:
@@ -167,8 +169,6 @@ class ImageScaling(BrowserView):
         return self.context.modified().millis()
 
     def scale(self, fieldname=None, scale=None, **parameters):
-        # validate access to original image
-        self.guarded_orig_image(fieldname)
         if scale is not None:
             available = self.available_sizes
             if not scale in available:
