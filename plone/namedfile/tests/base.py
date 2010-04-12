@@ -15,9 +15,16 @@ def setUp(self=None):
     testing.setUp()
     xmlconfig.xmlconfig(getFile('testing.zcml'))
 
-class NamedFileLayer(ztc.layer.ZopeLite):
+class NamedFileLayer:
     setUp = classmethod(setUp)
     tearDown = classmethod(testing.tearDown)
+
+try:
+    from Testing.ZopeTestCase.layer import ZopeLite
+except ImportError:
+    pass
+else:
+    NamedFileLayer.__bases__ = (ZopeLite,)
 
 class ImageTestMixin(object):
     def assertImage(self, data, format, size):
