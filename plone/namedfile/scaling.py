@@ -88,6 +88,7 @@ class ImageScaling(BrowserView):
     def publishTraverse(self, request, name):
         """ used for traversal via publisher, i.e. when using as a url """
         stack = request.get('TraversalRequestNameStack')
+        image = None
         if stack:
             # field and scale name were given...
             scale = stack.pop()

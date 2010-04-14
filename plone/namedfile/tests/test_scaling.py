@@ -260,6 +260,14 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertEqual(response.getStatus(), 200)
         self.assertImage(response.getBody(), 'JPEG', (23, 23))
 
+    def testPublishScaleWithInvalidUID(self):
+        scale = self.view.scale('image', width=64, height=64)
+        url = scale.url.replace('http://nohost', '')
+        # change the url so it's invalid...
+        url = url.replace('.jpeg', 'x.jpeg')
+        response = self.publish(url, basic=self.getCredentials())
+        self.assertEqual(response.getStatus(), 404)
+
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
         self.item.__allow_access_to_unprotected_subobjects__ = 0
