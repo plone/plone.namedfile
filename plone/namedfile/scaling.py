@@ -140,7 +140,7 @@ class ImageScaling(BrowserView):
     def guarded_orig_image(self, fieldname):
         return guarded_getattr(self.context, fieldname)
 
-    def create(self, fieldname, direction='keep', **parameters):
+    def create(self, fieldname, direction='thumbnail', **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
         orig_value = getattr(self.context, fieldname)
         if hasattr(aq_base(orig_value), 'open'):
