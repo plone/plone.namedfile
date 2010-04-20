@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0b5 - unreleased
+1.0b5 - 2010-04-19
 ------------------
 
 * Add support for scaled images.  See usage.txt for details.
