@@ -59,7 +59,6 @@ We'll create an instance with some data, too.
     ...     )
     >>> imageValue = NamedImage(zptlogo, 'image/gif', filename='zptlogo.gif')
 
-    >>> from plone.app.textfield.value import RichTextValue
     >>> from zope.interface import implements
     >>> class TestContent(object):
     ...     implements(ITestContent)
