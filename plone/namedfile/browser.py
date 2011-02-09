@@ -1,6 +1,7 @@
 from zope.interface import implements
 from zope.publisher.interfaces import IPublishTraverse, NotFound
 
+from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.namedfile.utils import set_headers, stream_data
 
 from Acquisition import aq_base
@@ -15,6 +16,9 @@ class Download(BrowserView):
     
     The attribute under `fieldname` should contain a named (blob) file/image
     instance from this package.
+    
+    If no `fieldname` is supplied, then a default field is looked up through
+    adaption to `plone.rfc822.interfaces.IPrimaryFieldInfo`.
     """
     
     implements(IPublishTraverse)
@@ -36,12 +40,16 @@ class Download(BrowserView):
         return self
     
     def __call__(self):
-        
-        # Ensure that we have at least a filedname
         if not self.fieldname:
-            raise NotFound(self, '', self.request)
+            info = IPrimaryFieldInfo(self.context, None)
+            if info is None:
+                # Ensure that we have at least a filedname
+                raise NotFound(self, '', self.request)
+            self.fieldname = info.fieldname
+            file = info.value
+        else:
+            file = getattr(aq_base(self.context), self.fieldname, None)
         
-        file = getattr(aq_base(self.context), self.fieldname, None)
         if file is None:
             raise NotFound(self, self.fieldname, self.request)
         

@@ -7,6 +7,7 @@ from zope.component import queryUtility
 from zope.interface import implements
 from zope.traversing.interfaces import ITraversable, TraversalError
 from zope.publisher.interfaces import IPublishTraverse, NotFound
+from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.storage import AnnotationStorage
 from plone.scale.scale import scaleImage
 from Products.Five import BrowserView
@@ -123,20 +124,29 @@ class ImageScaling(BrowserView):
         raise TraversalError(self, name)
 
     _sizes = {}
-    @apply
-    def available_sizes():
-        def get(self):
-            getAvailableSizes = queryUtility(IAvailableSizes)
-            if getAvailableSizes is None:
-                return self._sizes
-            sizes = getAvailableSizes()
-            if sizes is None:
-                return {}
-            return sizes
-        def set(self, value):
-            self._sizes = value
-        return property(get, set)
+
+    def getAvailableSizes(self, fieldname=None):
+        # fieldname is ignored by default
+        getAvailableSizes = queryUtility(IAvailableSizes)
+        if getAvailableSizes is None:
+            return self._sizes
+        sizes = getAvailableSizes()
+        if sizes is None:
+            return {}
+        return sizes
     
+    def _set_sizes(self, value):
+        self._sizes = value
+    
+    available_sizes = property(getAvailableSizes, _set_sizes)
+
+    def getImageSize(self, fieldname=None):
+        if fieldname is not None:
+            value = self.guarded_orig_image(fieldname)
+            return value.getImageSize()
+        value = IPrimaryFieldInfo(self.context).value
+        return value.getImageSize()
+
     def guarded_orig_image(self, fieldname):
         return guarded_getattr(self.context, fieldname)
 
@@ -170,8 +180,10 @@ class ImageScaling(BrowserView):
         return self.context.modified().millis()
 
     def scale(self, fieldname=None, scale=None, **parameters):
+        if fieldname is None:
+            fieldname = IPrimaryFieldInfo(self.context).fieldname
         if scale is not None:
-            available = self.available_sizes
+            available = self.getAvailableSizes(fieldname)
             if not scale in available:
                 return None
             width, height = available[scale]

@@ -4,6 +4,12 @@ Changelog
 1.0b6 - unreleased
 ------------------
 
+* Add primary field support to @@download and @@images views.
+  [elro]
+
+* Add getAvailableSizes and getImageSize to the @@images view.
+  [elro]
+
 1.0b5 - 2010-04-19
 ------------------
 

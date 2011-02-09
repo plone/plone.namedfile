@@ -266,6 +266,41 @@ We will test this with a dummy request, faking traversal.
     'image/foo'
     'attachment; filename="zpt.gif"'
 
+Specifying the primary field
+----------------------------
+
+To use the @@download view without specifying the field in the URL, the
+primary field information must be registered with an adapter. (Frameworks such
+as plone.dexterity may already have done this for you.)
+
+    >>> from plone.rfc822.interfaces import IPrimaryFieldInfo
+    >>> from zope.component import adapts
+
+    >>> class FieldContainerPrimaryFieldInfo(object):
+    ...     implements(IPrimaryFieldInfo)
+    ...     adapts(IFileContainer)
+    ...     fieldname = 'simple'
+    ...     field = IFileContainer['simple']
+    ...     def __init__(self, context):
+    ...         self.value = context.simple
+
+    >>> from zope.component import getSiteManager
+    >>> components = getSiteManager()
+    >>> components.registerAdapter(FieldContainerPrimaryFieldInfo)
+
+We will test this with a dummy request, faking traversal.
+
+    >>> request = TestRequest()
+    >>> download = Download(container, request)
+    >>> download()
+    'dummy test data'
+    >>> request.response.getHeader('Content-Length')
+    '15'
+    >>> request.response.getHeader('Content-Type')
+    'text/plain'
+    >>> request.response.getHeader('Content-Disposition')
+    'attachment; filename="test.txt"'
+
 Image scales
 ------------
 

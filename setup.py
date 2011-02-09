@@ -27,12 +27,13 @@ setup(name='plone.namedfile',
       install_requires=[
           'setuptools',
           'zope.app.file',
+          'plone.rfc822',
       ],
       extras_require = {
         'blobs':  ['z3c.blobfile'],
         'editor': ['plone.schemaeditor'],
         'supermodel': ['plone.supermodel'],
-        'marshaler': ['plone.rfc822'],
+        'marshaler': [], # for BBB, we now depend on this
         'scales': ['plone.scale[storage] >=1.1dev'],
       },
       entry_points="""
