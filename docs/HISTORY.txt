@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0b6 - unreleased
+1.0b6 - 2011-02-11
 ------------------
 
 * Add primary field support to @@download and @@images views.
