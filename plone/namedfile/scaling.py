@@ -28,11 +28,11 @@ class ImageScale(BrowserView):
         url = self.context.absolute_url()
         extension = self.data.contentType.split('/')[-1].lower()
         if 'uid' in info:
-            self.__name__ = '%s.%s' % (info['uid'], extension)
-            self.url = '%s/@@images/%s' % (url, self.__name__)
+            name = info['uid']
         else:
-            self.__name__ = info['fieldname']
-            self.url = '%s/@@images/%s' % (url, info['fieldname'])
+            name = info['fieldname']
+        self.__name__ = '%s.%s' % (name, extension)
+        self.url = '%s/@@images/%s' % (url, self.__name__)
 
     def absolute_url(self):
         return self.url
@@ -94,16 +94,19 @@ class ImageScaling(BrowserView):
             # field and scale name were given...
             scale = stack.pop()
             image = self.scale(name, scale)             # this is aq-wrapped
-        elif '.' in name:
+        elif '-' in name:
             # we got a uid...
-            uid, ext = name.rsplit('.', 1)
+            if '.' in name:
+                name, ext = name.rsplit('.', 1)
             storage = AnnotationStorage(self.context)
-            info = storage.get(uid)
+            info = storage.get(name)
             if info is not None:
                 scale_view = ImageScale(self.context, self.request, **info)
                 return scale_view.__of__(self.context)
         else:
             # otherwise `name` must refer to a field...
+            if '.' in name:
+                name, ext = name.rsplit('.', 1)
             value = getattr(self.context, name)
             scale_view = ImageScale(self.context, self.request, data=value, fieldname=name)
             return scale_view.__of__(self.context)
@@ -179,7 +182,7 @@ class ImageScaling(BrowserView):
             items, so stored image scales can be invalidated """
         return self.context.modified().millis()
 
-    def scale(self, fieldname=None, scale=None, **parameters):
+    def scale(self, fieldname=None, scale=None, height=None, width=None, **parameters):
         if fieldname is None:
             fieldname = IPrimaryFieldInfo(self.context).fieldname
         if scale is not None:
@@ -187,10 +190,17 @@ class ImageScaling(BrowserView):
             if not scale in available:
                 return None
             width, height = available[scale]
-            parameters.update(width=width, height=height)
-        storage = AnnotationStorage(self.context, self.modified)
-        info = storage.scale(factory=self.create,
-            fieldname=fieldname, **parameters)
+        if height is None and width is None:
+            value = getattr(self.context, fieldname)
+            info = dict(data=value, fieldname=fieldname)
+        else:
+            storage = AnnotationStorage(self.context, self.modified)
+            info = storage.scale(factory=self.create,
+                fieldname=fieldname, height=height, width=width, **parameters)
         if info is not None:
             scale_view = ImageScale(self.context, self.request, **info)
             return scale_view.__of__(self.context)
+
+    def tag(self, fieldname=None, scale=None, height=None, width=None, **kwargs):
+        scale = self.scale(fieldname, scale, height, width)
+        return scale.tag(**kwargs)

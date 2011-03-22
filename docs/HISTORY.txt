@@ -4,6 +4,12 @@ Changelog
 1.0b7 - unreleased
 ------------------
 
+* Support getting the original size as a scale.
+  [elro]
+
+* Add tag() method to scaling view.
+  [elro]
+
 * Scaling: quote values of extra tag attributes.
   [elro]
 

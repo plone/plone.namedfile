@@ -124,6 +124,10 @@ class ImageScalingTests(NamedFileTestCase):
     def testGetImageSize(self):
         assert self.scaling.getImageSize('image') == (200, 200)
 
+    def testGetOriginalScaleTag(self):
+        self.assertEquals(self.scaling.tag('image'),
+            '<img src="http://nohost/item/@@images/image.gif" alt="foo" '
+            'title="foo" height="200" width="200" />')
 
 class ImageTraverseTests(NamedFileTestCase):
 
