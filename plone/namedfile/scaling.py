@@ -65,8 +65,8 @@ class ImageScale(BrowserView):
             result = '%s class="%s"' % (result, css_class)
 
         for key, value in kwargs.items():
-            if value:
-                result = '%s %s="%s"' % (result, key, value)
+            if value is not None:
+                result = '%s %s="%s"' % (result, key, escape(value, quote=True))
 
         return '%s />' % result
 

@@ -4,6 +4,8 @@ Changelog
 1.0b7 - unreleased
 ------------------
 
+* Scaling: quote values of extra tag attributes.
+  [elro]
 
 1.0b6 - 2011-02-11
 ------------------
