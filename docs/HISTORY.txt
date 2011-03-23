@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0b8 - unreleased
+------------------
+
+* Declare dependency on plone.rfc822 >= 1.0b2 (for IPrimaryField).
+  [davisagli]
+
 1.0b7 - 2011-03-22
 ------------------
 

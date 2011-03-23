@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version = '1.0b7'
+version = '1.0b8'
 
 setup(name='plone.namedfile',
       version=version,
@@ -27,7 +27,7 @@ setup(name='plone.namedfile',
       install_requires=[
           'setuptools',
           'zope.app.file',
-          'plone.rfc822',
+          'plone.rfc822>=1.0b2',
       ],
       extras_require = {
         'blobs':  ['z3c.blobfile'],
