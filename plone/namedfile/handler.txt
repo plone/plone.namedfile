@@ -38,7 +38,7 @@ unsupported.
 Named file
 -----------
 
-    >>> field = NamedFile(__name__=u"dummy", title=u"Test", 
+    >>> field = NamedFile(__name__="dummy", title=u"Test", 
     ...     description=u"Test desc", required=False, readonly=True)
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
@@ -65,7 +65,7 @@ Named file
     >>> reciprocal.__class__
     <class 'plone.namedfile.field.NamedFile'>
     >>> reciprocal.__name__
-    u'dummy'
+    'dummy'
     >>> reciprocal.title
     u'Test'
     >>> reciprocal.description
@@ -78,7 +78,7 @@ Named file
 Named image
 -----------
 
-    >>> field = NamedImage(__name__=u"dummy", title=u"Test", 
+    >>> field = NamedImage(__name__="dummy", title=u"Test", 
     ...     description=u"Test desc", required=False, readonly=True)
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
@@ -105,7 +105,7 @@ Named image
     >>> reciprocal.__class__
     <class 'plone.namedfile.field.NamedImage'>
     >>> reciprocal.__name__
-    u'dummy'
+    'dummy'
     >>> reciprocal.title
     u'Test'
     >>> reciprocal.description
@@ -118,7 +118,7 @@ Named image
 Named blob file
 ---------------
 
-    >>> field = NamedBlobFile(__name__=u"dummy", title=u"Test", 
+    >>> field = NamedBlobFile(__name__="dummy", title=u"Test", 
     ...     description=u"Test desc", required=False, readonly=True)
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
@@ -145,7 +145,7 @@ Named blob file
     >>> reciprocal.__class__
     <class 'plone.namedfile.field.NamedBlobFile'>
     >>> reciprocal.__name__
-    u'dummy'
+    'dummy'
     >>> reciprocal.title
     u'Test'
     >>> reciprocal.description
@@ -158,7 +158,7 @@ Named blob file
 Named blob image
 ----------------
 
-    >>> field = NamedBlobImage(__name__=u"dummy", title=u"Test", 
+    >>> field = NamedBlobImage(__name__="dummy", title=u"Test", 
     ...     description=u"Test desc", required=False, readonly=True)
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
@@ -185,7 +185,7 @@ Named blob image
     >>> reciprocal.__class__
     <class 'plone.namedfile.field.NamedBlobImage'>
     >>> reciprocal.__name__
-    u'dummy'
+    'dummy'
     >>> reciprocal.title
     u'Test'
     >>> reciprocal.description
