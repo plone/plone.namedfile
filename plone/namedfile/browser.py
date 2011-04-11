@@ -40,6 +40,14 @@ class Download(BrowserView):
         return self
     
     def __call__(self):
+        file = self._getFile()
+
+        if not self.filename:
+            self.filename = getattr(file, 'filename', self.fieldname)
+        set_headers(file, self.request.response, filename=self.filename)
+        return stream_data(file)
+
+    def _getFile(self):
         if not self.fieldname:
             info = IPrimaryFieldInfo(self.context, None)
             if info is None:
@@ -53,9 +61,15 @@ class Download(BrowserView):
         if file is None:
             raise NotFound(self, self.fieldname, self.request)
         
-        if not self.filename:
-            self.filename = getattr(file, 'filename', self.fieldname)
+        return file
         
-        set_headers(file, self.request.response, filename=self.filename)
-        
+class DisplayFile(Download):
+    """Display a file, via ../context/@@display-file/fieldname/filename
+    
+    Same as Download, however in this case we don't set the filename so the
+    browser can decide to display the file instead.
+    """
+    def __call__(self):
+        file = self._getFile()
+        set_headers(file, self.request.response)
         return stream_data(file)

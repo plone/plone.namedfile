@@ -191,10 +191,11 @@ Note that is possible for force the mimetype:
 Download view
 -------------
 
-This package also comes with a view that can be used to download files. To 
-use it, link to ../context-object/@@download/fieldname, where `fieldname` is
-the name of the attribute on the context-object where the named file is
-stored.
+This package also comes with a view that can be used to download files. This 
+will set Content-Disposition to ensure the browser downloads the file rather 
+than displaying it. To use it, link to ../context-object/@@download/fieldname,
+where `fieldname` is the name of the attribute on the context-object where the
+named file is stored.
 
 We will test this with a dummy request, faking traversal.
 
@@ -265,6 +266,82 @@ We will test this with a dummy request, faking traversal.
     '341'
     'image/foo'
     'attachment; filename="zpt.gif"'
+
+Display-file view
+-------------
+
+This package also comes with a view that can be used to display files in the
+browser. To use it, link to ../context-object/@@display-file/fieldname, where 
+`fieldname` is the name of the attribute on the context-object where the named
+file is stored.
+
+We will test this with a dummy request, faking traversal.
+
+    >>> from plone.namedfile.browser import DisplayFile
+    >>> from zope.publisher.browser import TestRequest
+
+    >>> request = TestRequest()
+    >>> display_file = DisplayFile(container, request).publishTraverse(request, 'simple')
+    >>> display_file()
+    'dummy test data'
+    >>> request.response.getHeader('Content-Length')
+    '15'
+    >>> request.response.getHeader('Content-Type')
+    'text/plain'
+    >>> request.response.getHeader('Content-Disposition')
+
+    >>> if HAVE_BLOBS:
+    ...     request = TestRequest()
+    ...     display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
+    ...     data = display_file()
+    ...     print repr(isinstance(data, file))
+    ...     print repr(data.read())
+    ...     print repr(request.response.getHeader('Content-Length'))
+    ...     print repr(request.response.getHeader('Content-Type'))
+    ...     print repr(request.response.getHeader('Content-Disposition'))
+    ... else:
+    ...     print repr(True)
+    ...     print repr('dummy test data')
+    ...     print repr('15')
+    ...     print repr('text/plain')
+    ...     print repr(None)
+    True
+    'dummy test data'
+    '15'
+    'text/plain'
+    None
+
+    >>> request = TestRequest()
+    >>> display_file = DisplayFile(container, request).publishTraverse(request, 'image')
+    >>> display_file() == zptlogo
+    True
+    
+    >>> request.response.getHeader('Content-Length')
+    '341'
+    >>> request.response.getHeader('Content-Type')
+    'image/foo'
+    >>> request.response.getHeader('Content-Disposition')
+
+    >>> request = TestRequest()
+    >>> if HAVE_BLOBS:
+    ...     display_file = DisplayFile(container, request).publishTraverse(request, 'blobimage')
+    ...     data = display_file()
+    ...     print repr(isinstance(data, file))
+    ...     print repr(data.read() == zptlogo)
+    ...     print repr(request.response.getHeader('Content-Length'))
+    ...     print repr(request.response.getHeader('Content-Type'))
+    ...     print repr(request.response.getHeader('Content-Disposition'))
+    ... else:
+    ...     print repr(True)
+    ...     print repr(True)
+    ...     print repr('341')
+    ...     print repr('image/foo')
+    ...     print repr(None)
+    True
+    True
+    '341'
+    'image/foo'
+    None
 
 Specifying the primary field
 ----------------------------

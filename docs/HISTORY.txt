@@ -7,6 +7,10 @@ Changelog
 * Declare dependency on plone.rfc822 >= 1.0b2 (for IPrimaryField).
   [davisagli]
 
+* Add a @@display-file view which doesn't set Content-Disposition, so we don't
+  force download of images, for example.
+  [lentinj]
+
 1.0b7 - 2011-03-22
 ------------------
 

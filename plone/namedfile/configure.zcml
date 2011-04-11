@@ -11,6 +11,13 @@
         permission="zope2.View"
         />
     
+    <browser:page
+        name="display-file"
+        for="*"
+        class=".browser.DisplayFile"
+        permission="zope2.View"
+        />
+    
     <include zcml:condition="installed z3c.blobfile" file="z3c-blobfile.zcml" />
     <include zcml:condition="installed plone.supermodel" file="handler.zcml" />
     <include zcml:condition="installed plone.rfc822" file="marshaler.zcml" />
