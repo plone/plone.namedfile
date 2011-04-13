@@ -75,7 +75,7 @@ class ImageScale(BrowserView):
         # validate access
         fieldname = getattr(self.data, 'fieldname', getattr(self, 'fieldname', None))
         guarded_getattr(self.context, fieldname)
-        set_headers(self.data, self.request.response, filename=self.data.filename)
+        set_headers(self.data, self.request.response)
         return stream_data(self.data)
 
     def __call__(self):

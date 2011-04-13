@@ -4,6 +4,9 @@ Changelog
 1.0b8 - 2011-04-12
 ------------------
 
+* Avoid Content-Disposition for image scales.
+  [elro]
+
 * Declare dependency on plone.rfc822 >= 1.0b2 (for IPrimaryField).
   [davisagli]
 
