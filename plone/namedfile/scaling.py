@@ -24,7 +24,8 @@ class ImageScale(BrowserView):
         self.context = context
         self.request = request
         self.__dict__.update(**info)
-
+        if self.data is None:
+            self.data = getattr(self.context, self.fieldname)
         url = self.context.absolute_url()
         extension = self.data.contentType.split('/')[-1].lower()
         if 'uid' in info:
@@ -153,9 +154,14 @@ class ImageScaling(BrowserView):
     def guarded_orig_image(self, fieldname):
         return guarded_getattr(self.context, fieldname)
 
-    def create(self, fieldname, direction='thumbnail', **parameters):
+    def create(self, fieldname, direction='thumbnail', height=None, width=None, **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
         orig_value = getattr(self.context, fieldname)
+        if orig_value is None:
+            return
+        if height is None and width is None:
+            _, format = orig_value.contentType.split('/', 1)
+            return None, format, (orig_value._width, orig_value._height)
         if hasattr(aq_base(orig_value), 'open'):
             orig_data = orig_value.open()
         else:
@@ -163,7 +169,7 @@ class ImageScaling(BrowserView):
         if not orig_data:
             return
         try:
-            result = scaleImage(orig_data, direction=direction, **parameters)
+            result = scaleImage(orig_data, direction=direction, height=height, width=width, **parameters)
         except (ConflictError, KeyboardInterrupt):
             raise
         except Exception:
@@ -190,14 +196,11 @@ class ImageScaling(BrowserView):
             if not scale in available:
                 return None
             width, height = available[scale]
-        if height is None and width is None:
-            value = getattr(self.context, fieldname)
-            info = dict(data=value, fieldname=fieldname)
-        else:
-            storage = AnnotationStorage(self.context, self.modified)
-            info = storage.scale(factory=self.create,
-                fieldname=fieldname, height=height, width=width, **parameters)
+        storage = AnnotationStorage(self.context, self.modified)
+        info = storage.scale(factory=self.create,
+            fieldname=fieldname, height=height, width=width, **parameters)
         if info is not None:
+            info['fieldname'] = fieldname
             scale_view = ImageScale(self.context, self.request, **info)
             return scale_view.__of__(self.context)
 
