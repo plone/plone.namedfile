@@ -268,7 +268,7 @@ We will test this with a dummy request, faking traversal.
     'attachment; filename="zpt.gif"'
 
 Display-file view
--------------
+-----------------
 
 This package also comes with a view that can be used to display files in the
 browser. To use it, link to ../context-object/@@display-file/fieldname, where 
