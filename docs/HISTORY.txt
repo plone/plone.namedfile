@@ -13,10 +13,6 @@ Changelog
   filenames.
   [davisagli]
 
-* Relicense under BSD license.
-  See http://plone.org/foundation/materials/foundation-resolutions/plone-framework-components-relicensing-policy
-  [davisagli]
-
 1.0 - 2011-04-30
 ----------------
 

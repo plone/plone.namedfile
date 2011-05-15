@@ -5,7 +5,7 @@ version = '1.0.1'
 
 setup(name='plone.namedfile',
       version=version,
-      description="File types and fields for images, files and blob files with filenames",
+      description="File types tand fields for images, files and blob files with filenames",
       long_description=open("README.txt").read() + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read() + "\n" + 
                        open(os.path.join("plone", "namedfile", "usage.txt")).read(),
@@ -14,13 +14,12 @@ setup(name='plone.namedfile',
         "Framework :: Plone",
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "License :: OSI Approved :: BSD License",
         ],
       keywords='plone named file image blob',
       author='Laurence Rowe, Martin Aspeli',
       author_email='plone-developers@lists.sourceforge.net',
       url='http://pypi.python.org/pypi/plone.namedfile',
-      license='BSD',
+      license='GPL',
       packages=find_packages(exclude=['ez_setup']),
       namespace_packages=['plone'],
       include_package_data=True,
@@ -28,7 +27,7 @@ setup(name='plone.namedfile',
       install_requires=[
           'setuptools',
           'zope.app.file',
-          'plone.rfc822',
+          'plone.rfc822>=1.0b2',
       ],
       extras_require = {
         'blobs':  ['z3c.blobfile'],
