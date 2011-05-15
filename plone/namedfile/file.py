@@ -1,4 +1,5 @@
 from zope.interface import implements
+from zope.schema.fieldproperty import FieldProperty
 
 from zope.app.file.file import File
 from zope.app.file.image import Image
@@ -17,6 +18,7 @@ class NamedFile(File):
     """A non-BLOB file that stores a filename
     """
     implements(INamedFile)
+    filename = FieldProperty(INamedFile['filename'])
 
     def __init__(self, data='', contentType='', filename=None):
         if filename is not None and contentType in ('', 'application/octet-stream'):
@@ -28,6 +30,7 @@ class NamedImage(Image):
     """An non-BLOB image with a filename
     """
     implements(INamedImage)
+    filename = FieldProperty(INamedFile['filename'])
 
     def __init__(self, data='', contentType='', filename=None):
         super(NamedImage, self).__init__(data)
@@ -43,6 +46,7 @@ if HAVE_BLOBS:
         """A file stored in a ZODB BLOB, file a filename
         """
         implements(INamedBlobFile)
+        filename = FieldProperty(INamedFile['filename'])
 
         def __init__(self, data='', contentType='', filename=None):
             if filename is not None and contentType in ('', 'application/octet-stream'):
@@ -54,6 +58,7 @@ if HAVE_BLOBS:
         """An image stored in a ZODB BLOB with a filename
         """
         implements(INamedBlobImage)
+        filename = FieldProperty(INamedFile['filename'])
 
         def __init__(self, data='', contentType='', filename=None):
             super(NamedBlobImage, self).__init__(data)

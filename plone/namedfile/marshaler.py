@@ -57,7 +57,12 @@ if HAVE_MARSHALER:
             if value is not None:
                 filename = value.filename
                 if filename:
-                    message.add_header('Content-Disposition', 'attachment', filename=filename)
+                    message.add_header('Content-Disposition', 'attachment')
+                    message.set_param('filename',
+                        filename.encode('utf-8'),
+                        header='Content-Disposition',
+                        charset='utf-8'
+                        )
             
             encode_base64(message)
         

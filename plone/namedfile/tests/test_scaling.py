@@ -31,7 +31,7 @@ class ImageScalingTests(NamedFileTestCase):
     def afterSetUp(self):
         data = getFile('image.gif').read()
         item = DummyContent()
-        item.image = NamedImage(data, 'image/gif', 'image.gif')
+        item.image = NamedImage(data, 'image/gif', u'image.gif')
         self.app._setOb('item', item)
         self.item = self.app.item
         self.scaling = ImageScaling(self.app.item, None)
@@ -79,7 +79,7 @@ class ImageScalingTests(NamedFileTestCase):
         foo1 = self.scaling.scale('image', scale='foo')
         # now upload a new one and make sure the scale has changed
         data = getFile('image.jpg').read()
-        self.item.image = NamedImage(data, 'image/jpeg', 'image.jpg')
+        self.item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
         foo2 = self.scaling.scale('image', scale='foo')
         self.failIf(foo1.data == foo2.data, 'scale not updated?')
 
@@ -137,7 +137,7 @@ class ImageTraverseTests(NamedFileTestCase):
     def afterSetUp(self):
         data = getFile('image.gif').read()
         item = DummyContent()
-        item.image = NamedImage(data, 'image/gif', 'image.gif')
+        item.image = NamedImage(data, 'image/gif', u'image.gif')
         self.app._setOb('item', item)
         self.item = self.app.item
         self._orig_sizes = ImageScaling._sizes
@@ -178,7 +178,7 @@ class ImageTraverseTests(NamedFileTestCase):
         uid1, ext, width1, height1 = self.traverse('image/thumb')
         # now upload a new one and make sure the thumbnail has changed
         data = getFile('image.jpg').read()
-        self.item.image = NamedImage(data, 'image/jpeg', 'image.jpg')
+        self.item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
         uid2, ext, width2, height2 = self.traverse('image/thumb')
         self.assertNotEqual(uid1, uid2, 'thumb not updated?')
         # the height also differs as the original image had a size of 200, 200
@@ -212,7 +212,7 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
     def afterSetUp(self):
         data = getFile('image.gif').read()
         item = DummyContent()
-        item.image = NamedImage(data, 'image/gif', 'image.gif')
+        item.image = NamedImage(data, 'image/gif', u'image.gif')
         self.app._setOb('item', item)
         self.item = self.app.item
         self.view = self.item.unrestrictedTraverse('@@images')

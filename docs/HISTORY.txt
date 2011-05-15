@@ -1,8 +1,17 @@
 Changelog
 =========
 
-1.0.1 - unreleased
-------------------
+1.1 - unreleased
+----------------
+
+* In marshalled file fields, encode the filename parameter of the
+  Content-Disposition header in accordance with RFC 2231. This ensures that
+  filenames with non-ASCII characters can be successfully demarshalled.
+  [davisagli]
+
+* Make the various file classes be strict about only accepting unicode
+  filenames.
+  [davisagli]
 
 * Relicense under BSD license.
   See http://plone.org/foundation/materials/foundation-resolutions/plone-framework-components-relicensing-policy

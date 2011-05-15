@@ -101,26 +101,26 @@ The FileContainer class creates empty objects to start with.
 Let's now set some actual data in these files. Notice how the constructor
 will attempt to guess the filename from the file extension.
 
-    >>> container.simple = namedfile.NamedFile('dummy test data', filename="test.txt")
+    >>> container.simple = namedfile.NamedFile('dummy test data', filename=u"test.txt")
     >>> container.simple.data
     'dummy test data'
     >>> container.simple.contentType
     'text/plain'
     >>> container.simple.filename
-    'test.txt'
+    u'test.txt'
 
     >>> if HAVE_BLOBS:
-    ...     container.blob = namedfile.NamedBlobFile('dummy test data', filename="test.txt")
+    ...     container.blob = namedfile.NamedBlobFile('dummy test data', filename=u"test.txt")
     ...     print repr(container.blob.data)
     ...     print repr(container.blob.contentType)
     ...     print repr(container.blob.filename)
     ... else:
     ...     print repr('dummy test data')
     ...     print repr('text/plain')
-    ...     print repr('test.txt')
+    ...     print repr(u'test.txt')
     'dummy test data'
     'text/plain'
-    'test.txt'
+    u'test.txt'
     
 Let's also try to read a GIF, courtesy of the zope.app.file tests:
 
@@ -144,49 +144,56 @@ Let's also try to read a GIF, courtesy of the zope.app.file tests:
     ...     '\x00A\x00;'
     ...     )
 
-    >>> container.image = namedfile.NamedImage(zptlogo, filename="zpt.gif")
+    >>> container.image = namedfile.NamedImage(zptlogo, filename=u"zpt.gif")
     >>> container.image.data == zptlogo
     True
     >>> container.image.contentType
     'image/gif'
     >>> container.image.filename
-    'zpt.gif'
+    u'zpt.gif'
 
     >>> if HAVE_BLOBS:
-    ...     container.blobimage = namedfile.NamedBlobImage(zptlogo, filename="zpt.gif")
+    ...     container.blobimage = namedfile.NamedBlobImage(zptlogo, filename=u"zpt.gif")
     ...     print repr(container.blobimage.data == zptlogo)
     ...     print repr(container.blobimage.contentType)
     ...     print repr(container.blobimage.filename)
     ... else:
     ...     print repr(True)
     ...     print repr('image/gif')
-    ...     print repr('zpt.gif')
+    ...     print repr(u'zpt.gif')
     True
     'image/gif'
-    'zpt.gif'
+    u'zpt.gif'
 
 Note that is possible for force the mimetype:
 
-    >>> container.image = namedfile.NamedImage(zptlogo, contentType='image/foo', filename="zpt.gif")
+    >>> container.image = namedfile.NamedImage(zptlogo, contentType='image/foo', filename=u"zpt.gif")
     >>> container.image.data == zptlogo
     True
     >>> container.image.contentType
     'image/foo'
     >>> container.image.filename
-    'zpt.gif'
+    u'zpt.gif'
 
     >>> if HAVE_BLOBS:
-    ...     container.blobimage = namedfile.NamedBlobImage(zptlogo, contentType='image/foo', filename="zpt.gif")
+    ...     container.blobimage = namedfile.NamedBlobImage(zptlogo, contentType='image/foo', filename=u"zpt.gif")
     ...     print repr(container.blobimage.data == zptlogo)
     ...     print repr(container.blobimage.contentType)
     ...     print repr(container.blobimage.filename)
     ... else:
     ...     print repr(True)
     ...     print repr('image/foo')
-    ...     print repr('zpt.gif')
+    ...     print repr(u'zpt.gif')
     True
     'image/foo'
-    'zpt.gif'
+    u'zpt.gif'
+
+The filename must be set to a unicode string, not a bytestring:
+
+    >>> container.image.filename = 'foo'
+    Traceback (most recent call last):
+    ...
+    WrongType: ('foo', <type 'unicode'>, 'filename')
 
 Download view
 -------------
