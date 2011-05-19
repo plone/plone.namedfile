@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.2 - 2011-05-19
+------------------
+
+* Don't omit empty string attributes from ImageScale tag.
+  [elro]
+
 1.0.1 - 2011-05-19
 ------------------
 
