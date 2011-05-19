@@ -1,8 +1,8 @@
 Changelog
 =========
 
-1.1 - unreleased
-----------------
+1.0.1 - 2011-05-19
+------------------
 
 * In the tag method of ImageScale to allow height/width/alt/title to be
   omitted when they are supplied as a None argument.
