@@ -1,5 +1,5 @@
-from cgi import escape
 from logging import exception
+from xml.sax.saxutils import quoteattr
 from Acquisition import aq_base
 from AccessControl.ZopeGuards import guarded_getattr
 from ZODB.POSException import ConflictError
@@ -14,6 +14,8 @@ from Products.Five import BrowserView
 
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.utils import set_headers, stream_data
+
+_marker = object()
 
 class ImageScale(BrowserView):
     """ view used for rendering image scales """
@@ -38,38 +40,35 @@ class ImageScale(BrowserView):
     def absolute_url(self):
         return self.url
 
-    def tag(self, height=None, width=None, alt=None,
-            css_class=None, title=None, **kwargs):
+    def tag(self, height=_marker, width=_marker, alt=_marker,
+            css_class=None, title=_marker, **kwargs):
         """Create a tag including scale
         """
-        if height is None:
+        if height is _marker:
             height = getattr(self, 'height', self.data._height)
-        if width is None:
+        if width is _marker:
             width = getattr(self, 'width', self.data._width)
 
-        if alt is None:
+        if alt is _marker:
             alt = self.context.Title()
-        if title is None:
+        if title is _marker:
             title = self.context.Title()
 
-        values = {'src' : self.url,
-                  'alt' : escape(alt, quote=True),
-                  'title' : escape(title, quote=True),
-                  'height' : height,
-                  'width' : width,
-                 }
+        values = [
+            ('src', self.url),
+            ('alt', alt),
+            ('title', title),
+            ('height', height),
+            ('width', width),
+            ('class', css_class),
+            ]
+        values.extend(kwargs.items())
 
-        result = '<img src="%(src)s" alt="%(alt)s" title="%(title)s" '\
-                 'height="%(height)s" width="%(width)s"' % values
-
-        if css_class is not None:
-            result = '%s class="%s"' % (result, css_class)
-
-        for key, value in kwargs.items():
-            if value is not None:
-                result = '%s %s="%s"' % (result, key, escape(value, quote=True))
-
-        return '%s />' % result
+        parts = ['<img']
+        parts.extend("%s=%s" % (k, quoteattr(unicode(v))) for k, v in values if v)
+        parts.append('/>')
+        
+        return u' '.join(parts)
 
     def index_html(self):
         """ download the image """

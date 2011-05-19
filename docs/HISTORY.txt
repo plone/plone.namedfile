@@ -4,6 +4,10 @@ Changelog
 1.1 - unreleased
 ----------------
 
+* In the tag method of ImageScale to allow height/width/alt/title to be
+  omitted when they are supplied as a None argument.
+  [elro]
+
 * In marshalled file fields, encode the filename parameter of the
   Content-Disposition header in accordance with RFC 2231. This ensures that
   filenames with non-ASCII characters can be successfully demarshalled.
