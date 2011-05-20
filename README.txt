@@ -22,3 +22,6 @@ plone.supermodel handlers are registered if plone.supermodel is installed.
 The [supermodel] extra will ensure this.
   
 See the usage.txt doctest for more details.
+
+Note: This packages is licensed under a BSD license. Contributors, please do
+not add dependencies on GPL code.

@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 import os
 
-version = '1.0.2'
+version = '1.0.3'
 
 setup(name='plone.namedfile',
       version=version,
-      description="File types tand fields for images, files and blob files with filenames",
+      description="File types and fields for images, files and blob files with filenames",
       long_description=open("README.txt").read() + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read() + "\n" + 
                        open(os.path.join("plone", "namedfile", "usage.txt")).read(),
@@ -14,12 +14,13 @@ setup(name='plone.namedfile',
         "Framework :: Plone",
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries :: Python Modules",
+        "License :: OSI Approved :: BSD License",
         ],
       keywords='plone named file image blob',
       author='Laurence Rowe, Martin Aspeli',
       author_email='plone-developers@lists.sourceforge.net',
       url='http://pypi.python.org/pypi/plone.namedfile',
-      license='GPL',
+      license='BSD',
       packages=find_packages(exclude=['ez_setup']),
       namespace_packages=['plone'],
       include_package_data=True,
