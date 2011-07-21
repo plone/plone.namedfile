@@ -4,6 +4,9 @@ Changelog
 1.0.4 - unreleased
 ------------------
 
+* Add unit tests for safe_filename, since not exercised within this module.
+  (should be moved to plone.formwidget.namedfile?)
+  [lentinj]
 
 1.0.3 - 2011-05-20
 ------------------

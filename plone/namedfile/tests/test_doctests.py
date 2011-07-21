@@ -18,6 +18,10 @@ def test_suite():
             'marshaler.txt', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
         
+        doctest.DocFileSuite(
+            'utils.txt', package='plone.namedfile',
+            setUp=setUp, tearDown=tearDown),
+        
         ])
 
 if __name__ == '__main__':
