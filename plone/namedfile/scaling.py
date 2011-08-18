@@ -20,6 +20,10 @@ _marker = object()
 class ImageScale(BrowserView):
     """ view used for rendering image scales """
     
+    # Grant full access to this view even if the object being viewed is protected
+    # (it's okay because we explicitly validate access to the image attribute
+    # when we retrieve it)
+    __roles__ = ('Anonymous',)
     __allow_access_to_unprotected_subobjects__ = 1
     
     def __init__(self, context, request, **info):

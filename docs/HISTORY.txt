@@ -4,6 +4,10 @@ Changelog
 1.0.4 - unreleased
 ------------------
 
+* Make sure image scales of allowed attributes can be accessed on disallowed
+  containers.
+  [davisagli]
+
 * Add unit tests for safe_filename, since not exercised within this module.
   (should be moved to plone.formwidget.namedfile?)
   [lentinj]
