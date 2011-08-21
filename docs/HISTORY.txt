@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0.4 - unreleased
+1.0.4 - 2011-08-21
 ------------------
 
 * Fix bug in producing tag for a scale on an item whose title has non-ASCII
