@@ -129,7 +129,15 @@ class ImageScalingTests(NamedFileTestCase):
         base = self.item.absolute_url()
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
-        groups = re.match(expected, tag).groups()
+        self.assertTrue(re.match(expected, tag).groups())
+    
+    def testScaleOnItemWithNonASCIITitle(self):
+        self.item.title = '\xc3\xbc'
+        tag = self.scaling.tag('image')
+        base = self.item.absolute_url()
+        expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
+            r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
+        self.assertTrue(re.match(expected, tag).groups())
 
 
 class ImageTraverseTests(NamedFileTestCase):

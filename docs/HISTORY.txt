@@ -4,6 +4,10 @@ Changelog
 1.0.4 - unreleased
 ------------------
 
+* Fix bug in producing tag for a scale on an item whose title has non-ASCII
+  characters.
+  [davisagli]
+
 * Make sure image scales of allowed attributes can be accessed on disallowed
   containers.
   [davisagli]

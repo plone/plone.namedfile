@@ -62,14 +62,14 @@ class ImageScale(BrowserView):
             ('src', self.url),
             ('alt', alt),
             ('title', title),
-            ('height', height),
-            ('width', width),
+            ('height', str(height)),
+            ('width', str(width)),
             ('class', css_class),
             ]
         values.extend(kwargs.items())
 
         parts = ['<img']
-        parts.extend("%s=%s" % (k, quoteattr(unicode(v))) for k, v in values if v is not None)
+        parts.extend("%s=%s" % (k, quoteattr(unicode(v, 'utf8'))) for k, v in values if v is not None)
         parts.append('/>')
         
         return u' '.join(parts)
