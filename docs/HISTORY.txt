@@ -4,6 +4,10 @@ Changelog
 1.0.5 - unreleased
 ------------------
 
+* Make the ``download`` view respect custom read permissions for the field
+  being downloaded, rather than only checking the view permission for the
+  object as a whole.
+  [davisagli]
 
 1.0.4 - 2011-08-21
 ------------------

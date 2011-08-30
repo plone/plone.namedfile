@@ -4,7 +4,7 @@ from zope.publisher.interfaces import IPublishTraverse, NotFound
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.namedfile.utils import set_headers, stream_data
 
-from Acquisition import aq_base
+from AccessControl.ZopeGuards import guarded_getattr
 from Products.Five.browser import BrowserView
 
 class Download(BrowserView):
@@ -56,7 +56,8 @@ class Download(BrowserView):
             self.fieldname = info.fieldname
             file = info.value
         else:
-            file = getattr(aq_base(self.context), self.fieldname, None)
+            context = getattr(self.context, 'aq_explicit', self.context)
+            file = guarded_getattr(context, self.fieldname, None)
         
         if file is None:
             raise NotFound(self, self.fieldname, self.request)
