@@ -61,7 +61,7 @@ class ImageScalingTests(NamedFileTestCase):
         expected_url = re.compile(r'http://nohost/item/@@images/[-a-z0-9]{36}\.jpeg')
         self.failUnless(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
-        
+
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
@@ -110,7 +110,7 @@ class ImageScalingTests(NamedFileTestCase):
         # the scaling adapter
         self.scaling.available_sizes = {'qux': (12, 12)}
         self.assertEqual(self.scaling.available_sizes, {'qux': (12, 12)})
-    
+
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
         self.item.__allow_access_to_unprotected_subobjects__ = 0
@@ -130,13 +130,21 @@ class ImageScalingTests(NamedFileTestCase):
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
         self.assertTrue(re.match(expected, tag).groups())
-    
+
     def testScaleOnItemWithNonASCIITitle(self):
         self.item.title = '\xc3\xbc'
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
+        self.assertTrue(re.match(expected, tag).groups())
+
+    def testScaleOnItemWithUnicodeTitle(self):
+        self.item.title = u'Unicode here'
+        tag = self.scaling.tag('image')
+        base = self.item.absolute_url()
+        expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
+            r'alt="Unicode here" title="Unicode here" height="(\d+)" width="(\d+)" />' % base
         self.assertTrue(re.match(expected, tag).groups())
 
 
@@ -152,7 +160,7 @@ class ImageTraverseTests(NamedFileTestCase):
 
     def beforeTearDown(self):
         ImageScaling._sizes = self._orig_sizes
-    
+
     def traverse(self, path=''):
         view = self.item.unrestrictedTraverse('@@images')
         stack = path.split('/')
@@ -225,7 +233,7 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.item = self.app.item
         self.view = self.item.unrestrictedTraverse('@@images')
         self._orig_sizes = ImageScaling._sizes
-    
+
     def beforeTearDown(self):
         ImageScaling._sizes = self._orig_sizes
 
@@ -301,5 +309,5 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 
 def test_suite():
-    from unittest import defaultTestLoader 
+    from unittest import defaultTestLoader
     return defaultTestLoader.loadTestsFromName(__name__)
