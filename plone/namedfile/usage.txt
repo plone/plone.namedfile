@@ -47,6 +47,7 @@ These store data with the following types.
 
     >>> class FileContainer(object):
     ...     implements(IFileContainer)
+    ...     __allow_access_to_unprotected_subobjects__ = 1
     ...     def __init__(self):
     ...         self.simple = namedfile.NamedFile()
     ...         self.image = namedfile.NamedImage()
