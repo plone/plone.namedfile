@@ -4,6 +4,10 @@ Changelog
 1.0.6 - unreleased
 ------------------
 
+* Re-fix bug in producing tag for a scale - it should handle both unicode 
+  and non unicode.
+  [naro]
+
 * Fix test failure.
   [davisagli]
 
