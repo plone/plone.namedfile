@@ -14,8 +14,10 @@ from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
 from plone.namedfile.scaling import ImageScaling
 
+
 class IHasImage(IImageScaleTraversable):
     image = NamedImageField()
+
 
 class DummyContent(SimpleItem):
     implements(IAttributeAnnotatable, IHasImage)
@@ -23,8 +25,10 @@ class DummyContent(SimpleItem):
     modified = DateTime
     id = __name__ = 'item'
     title = 'foo'
+
     def Title(self):
         return self.title
+
 
 class ImageScalingTests(NamedFileTestCase):
 
@@ -51,7 +55,7 @@ class ImageScalingTests(NamedFileTestCase):
         self.assertEqual(foo, None)
 
     def testGetScaleByName(self):
-        self.scaling.available_sizes = {'foo': (60,60)}
+        self.scaling.available_sizes = {'foo': (60, 60)}
         foo = self.scaling.scale('image', scale='foo')
         self.failUnless(foo.uid)
         self.assertEqual(foo.mimetype, 'image/jpeg')
@@ -61,7 +65,7 @@ class ImageScalingTests(NamedFileTestCase):
         expected_url = re.compile(r'http://nohost/item/@@images/[-a-z0-9]{36}\.jpeg')
         self.failUnless(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
-        
+
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
@@ -75,7 +79,7 @@ class ImageScalingTests(NamedFileTestCase):
 
     def testScaleInvalidation(self):
         # first get the scale of the original image
-        self.scaling.available_sizes = {'foo': (23,23)}
+        self.scaling.available_sizes = {'foo': (23, 23)}
         foo1 = self.scaling.scale('image', scale='foo')
         # now upload a new one and make sure the scale has changed
         data = getFile('image.jpg').read()
@@ -85,13 +89,13 @@ class ImageScalingTests(NamedFileTestCase):
 
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
-        self.scaling.available_sizes = {'foo': (23,23)}
+        self.scaling.available_sizes = {'foo': (23, 23)}
         foo = self.scaling.scale('image', scale='foo')
         self.assertEqual(foo.width, 23)
         self.assertEqual(foo.height, 23)
         # now let's update the scale dimensions, after which the scale
         # shouldn't be the same...
-        self.scaling.available_sizes = {'foo': (42,42)}
+        self.scaling.available_sizes = {'foo': (42, 42)}
         foo = self.scaling.scale('image', scale='foo')
         self.assertEqual(foo.width, 42)
         self.assertEqual(foo.height, 42)
@@ -99,18 +103,19 @@ class ImageScalingTests(NamedFileTestCase):
     def testAvailableSizes(self):
         # by default, no named scales are configured
         self.assertEqual(self.scaling.available_sizes, {})
+
         # a callable can be used to look up the available sizes
         def custom_available_sizes():
-            return {'bar': (10,10)}
+            return {'bar': (10, 10)}
         sm = getSiteManager()
         sm.registerUtility(component=custom_available_sizes, provided=IAvailableSizes)
-        self.assertEqual(self.scaling.available_sizes, {'bar': (10,10)})
+        self.assertEqual(self.scaling.available_sizes, {'bar': (10, 10)})
         sm.unregisterUtility(provided=IAvailableSizes)
         # for testing purposes, the sizes may also be set directly on
         # the scaling adapter
         self.scaling.available_sizes = {'qux': (12, 12)}
         self.assertEqual(self.scaling.available_sizes, {'qux': (12, 12)})
-    
+
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
         self.item.__allow_access_to_unprotected_subobjects__ = 0
@@ -118,7 +123,7 @@ class ImageScalingTests(NamedFileTestCase):
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 
     def testGetAvailableSizes(self):
-        self.scaling.available_sizes = {'foo': (60,60)}
+        self.scaling.available_sizes = {'foo': (60, 60)}
         assert self.scaling.getAvailableSizes('image') == {'foo': (60, 60)}
 
     def testGetImageSize(self):
@@ -130,13 +135,21 @@ class ImageScalingTests(NamedFileTestCase):
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
         self.assertTrue(re.match(expected, tag).groups())
-    
+
     def testScaleOnItemWithNonASCIITitle(self):
         self.item.title = '\xc3\xbc'
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
+        self.assertTrue(re.match(expected, tag).groups())
+
+    def testScaleOnItemWithUnicodeTitle(self):
+        self.item.title = u'foo'
+        tag = self.scaling.tag('image')
+        base = self.item.absolute_url()
+        expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
+            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
         self.assertTrue(re.match(expected, tag).groups())
 
 
@@ -152,7 +165,7 @@ class ImageTraverseTests(NamedFileTestCase):
 
     def beforeTearDown(self):
         ImageScaling._sizes = self._orig_sizes
-    
+
     def traverse(self, path=''):
         view = self.item.unrestrictedTraverse('@@images')
         stack = path.split('/')
@@ -167,14 +180,14 @@ class ImageTraverseTests(NamedFileTestCase):
         return uid, ext, int(width), int(height)
 
     def testImageThumb(self):
-        ImageScaling._sizes = {'thumb': (128,128)}
+        ImageScaling._sizes = {'thumb': (128, 128)}
         uid, ext, width, height = self.traverse('image/thumb')
         self.assertEqual((width, height), ImageScaling._sizes['thumb'])
         self.assertEqual(ext, 'jpeg')
 
     def testCustomSizes(self):
         # set custom image sizes
-        ImageScaling._sizes = {'foo': (23,23)}
+        ImageScaling._sizes = {'foo': (23, 23)}
         # make sure traversing works with the new sizes
         uid, ext, width, height = self.traverse('image/foo')
         self.assertEqual(width, 23)
@@ -182,7 +195,7 @@ class ImageTraverseTests(NamedFileTestCase):
 
     def testScaleInvalidation(self):
         # first view the thumbnail of the original image
-        ImageScaling._sizes = {'thumb': (128,128)}
+        ImageScaling._sizes = {'thumb': (128, 128)}
         uid1, ext, width1, height1 = self.traverse('image/thumb')
         # now upload a new one and make sure the thumbnail has changed
         data = getFile('image.jpg').read()
@@ -196,13 +209,13 @@ class ImageTraverseTests(NamedFileTestCase):
 
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
-        ImageScaling._sizes = {'foo': (23,23)}
+        ImageScaling._sizes = {'foo': (23, 23)}
         uid1, ext, width, height = self.traverse('image/foo')
         self.assertEqual(width, 23)
         self.assertEqual(height, 23)
         # now let's update the scale dimensions, after which the scale
         # should also have been updated...
-        ImageScaling._sizes = {'foo': (42,42)}
+        ImageScaling._sizes = {'foo': (42, 42)}
         uid2, ext, width, height = self.traverse('image/foo')
         self.assertEqual(width, 42)
         self.assertEqual(height, 42)
@@ -211,9 +224,10 @@ class ImageTraverseTests(NamedFileTestCase):
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
         self.item.__allow_access_to_unprotected_subobjects__ = 0
-        ImageScaling._sizes = {'foo': (42,42)}
+        ImageScaling._sizes = {'foo': (42, 42)}
         self.assertRaises(Unauthorized, self.traverse, 'image/foo')
         self.item.__allow_access_to_unprotected_subobjects__ = 1
+
 
 class ImagePublisherTests(NamedFileFunctionalTestCase):
 
@@ -225,7 +239,7 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.item = self.app.item
         self.view = self.item.unrestrictedTraverse('@@images')
         self._orig_sizes = ImageScaling._sizes
-    
+
     def beforeTearDown(self):
         ImageScaling._sizes = self._orig_sizes
 
@@ -239,7 +253,7 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertImage(response.getBody(), 'JPEG', (64, 64))
 
     def testPublishThumbViaUID(self):
-        ImageScaling._sizes = {'thumb': (128,128)}
+        ImageScaling._sizes = {'thumb': (128, 128)}
         scale = self.view.scale('image', 'thumb')
         # make sure the referenced image scale is available
         url = scale.url.replace('http://nohost', '')
@@ -250,7 +264,7 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
 
     def testPublishCustomSizeViaUID(self):
         # set custom image sizes
-        ImageScaling._sizes = {'foo': (23,23)}
+        ImageScaling._sizes = {'foo': (23, 23)}
         scale = self.view.scale('image', 'foo')
         # make sure the referenced image scale is available
         url = scale.url.replace('http://nohost', '')
@@ -260,7 +274,7 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertImage(response.getBody(), 'JPEG', (23, 23))
 
     def testPublishThumbViaName(self):
-        ImageScaling._sizes = {'thumb': (128,128)}
+        ImageScaling._sizes = {'thumb': (128, 128)}
         # make sure traversing works as is and with scaling
         credentials = self.getCredentials()
         # first the field without a scale name
@@ -276,7 +290,7 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
 
     def testPublishCustomSizeViaName(self):
         # set custom image sizes
-        ImageScaling._sizes = {'foo': (23,23)}
+        ImageScaling._sizes = {'foo': (23, 23)}
         # make sure traversing works as expected
         credentials = self.getCredentials()
         response = self.publish('/item/@@images/image/foo', basic=credentials)
@@ -294,12 +308,13 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
         self.item.__allow_access_to_unprotected_subobjects__ = 0
-        ImageScaling._sizes = {'foo': (23,23)}
+        ImageScaling._sizes = {'foo': (23, 23)}
         credentials = self.getCredentials()
         response = self.publish('/item/@@images/image/foo', basic=credentials)
         self.assertEqual(response.getStatus(), 401)
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 
+
 def test_suite():
-    from unittest import defaultTestLoader 
+    from unittest import defaultTestLoader
     return defaultTestLoader.loadTestsFromName(__name__)
