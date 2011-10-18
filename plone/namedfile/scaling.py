@@ -17,15 +17,16 @@ from plone.namedfile.utils import set_headers, stream_data
 
 _marker = object()
 
+
 class ImageScale(BrowserView):
     """ view used for rendering image scales """
-    
+
     # Grant full access to this view even if the object being viewed is protected
     # (it's okay because we explicitly validate access to the image attribute
     # when we retrieve it)
     __roles__ = ('Anonymous',)
     __allow_access_to_unprotected_subobjects__ = 1
-    
+
     def __init__(self, context, request, **info):
         self.context = context
         self.request = request
@@ -76,7 +77,7 @@ class ImageScale(BrowserView):
                 v = str(v)
             parts.append("%s=%s" % (k, quoteattr(unicode(v, 'utf8'))))
         parts.append('/>')
-        
+
         return u' '.join(parts)
 
     def index_html(self):
@@ -90,6 +91,7 @@ class ImageScale(BrowserView):
     def __call__(self):
         # avoid the need to prefix with nocall: in TAL
         return self
+
 
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
@@ -146,10 +148,10 @@ class ImageScaling(BrowserView):
         if sizes is None:
             return {}
         return sizes
-    
+
     def _set_sizes(self, value):
         self._sizes = value
-    
+
     available_sizes = property(getAvailableSizes, _set_sizes)
 
     def getImageSize(self, fieldname=None):
