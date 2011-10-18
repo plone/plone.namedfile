@@ -144,6 +144,14 @@ class ImageScalingTests(NamedFileTestCase):
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
         self.assertTrue(re.match(expected, tag).groups())
 
+    def testScaleOnItemWithUnicodeTitle(self):
+        self.item.title = u'foo'
+        tag = self.scaling.tag('image')
+        base = self.item.absolute_url()
+        expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
+            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
+        self.assertTrue(re.match(expected, tag).groups())
+
 
 class ImageTraverseTests(NamedFileTestCase):
 

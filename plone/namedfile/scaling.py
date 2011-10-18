@@ -75,7 +75,9 @@ class ImageScale(BrowserView):
                 continue
             if isinstance(v, int):
                 v = str(v)
-            parts.append("%s=%s" % (k, quoteattr(unicode(v, 'utf8'))))
+            elif isinstance(v, str):
+                v = unicode(v, 'utf8')
+            parts.append("%s=%s" % (k, quoteattr(v)))
         parts.append('/>')
 
         return u' '.join(parts)

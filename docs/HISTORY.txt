@@ -7,6 +7,9 @@ Changelog
 * Fix test failure.
   [davisagli]
 
+* Fix bug in producing tag for a scale on an item with a unicode title
+  [tomster]
+
 1.0.5 - 2011-09-24
 ------------------
 
