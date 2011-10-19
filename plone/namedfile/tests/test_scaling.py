@@ -145,11 +145,11 @@ class ImageScalingTests(NamedFileTestCase):
         self.assertTrue(re.match(expected, tag).groups())
 
     def testScaleOnItemWithUnicodeTitle(self):
-        self.item.title = u'foo'
+        self.item.Title = lambda: '\xc3\xbc'.decode('utf8')
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
+            r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
         self.assertTrue(re.match(expected, tag).groups())
 
 
