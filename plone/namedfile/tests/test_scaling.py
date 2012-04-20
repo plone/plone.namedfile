@@ -252,6 +252,16 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertEqual(response.getHeader('Content-Type'), 'image/jpeg')
         self.assertImage(response.getBody(), 'JPEG', (64, 64))
 
+    def testHeadRequestMethod(self):
+        scale = self.view.scale('image', width=64, height=64)
+        # make sure the referenced image scale is available
+        url = scale.url.replace('http://nohost', '')
+        response = self.publish(url, basic=self.getCredentials(), request_method = 'HEAD')
+        self.assertEqual(response.getStatus(), 200)
+        self.assertEqual(response.getHeader('Content-Type'), 'image/jpeg')
+        self.assertEqual(response.getHeader('Content-Length'), '312')
+        self.assertEqual(response.getBody(), '')
+
     def testPublishThumbViaUID(self):
         ImageScaling._sizes = {'thumb': (128, 128)}
         scale = self.view.scale('image', 'thumb')

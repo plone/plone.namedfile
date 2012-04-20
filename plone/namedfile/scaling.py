@@ -82,11 +82,13 @@ class ImageScale(BrowserView):
 
         return u' '.join(parts)
 
-    def index_html(self):
-        """ download the image """
-        # validate access
+    def validate_access(self):
         fieldname = getattr(self.data, 'fieldname', getattr(self, 'fieldname', None))
         guarded_getattr(self.context, fieldname)
+
+    def index_html(self):
+        """ download the image """
+        self.validate_access()
         set_headers(self.data, self.request.response)
         return stream_data(self.data)
 
@@ -94,6 +96,15 @@ class ImageScale(BrowserView):
         # avoid the need to prefix with nocall: in TAL
         return self
 
+    def HEAD(self, REQUEST, RESPONSE = None):
+        """ Obtain metainformation about the image implied by the request without
+            transfer of the image itself
+        """
+        self.validate_access()
+        set_headers(self.data, REQUEST.response)
+        return ''
+
+    HEAD.__roles__ = ('Anonymous',)
 
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
