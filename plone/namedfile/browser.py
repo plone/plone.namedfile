@@ -41,11 +41,13 @@ class Download(BrowserView):
     
     def __call__(self):
         file = self._getFile()
+        self.set_headers(file)
+        return stream_data(file)
 
+    def set_headers(self, file):
         if not self.filename:
             self.filename = getattr(file, 'filename', self.fieldname)
         set_headers(file, self.request.response, filename=self.filename)
-        return stream_data(file)
 
     def _getFile(self):
         if not self.fieldname:
@@ -70,7 +72,5 @@ class DisplayFile(Download):
     Same as Download, however in this case we don't set the filename so the
     browser can decide to display the file instead.
     """
-    def __call__(self):
-        file = self._getFile()
+    def set_headers(self, file):
         set_headers(file, self.request.response)
-        return stream_data(file)
