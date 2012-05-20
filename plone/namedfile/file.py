@@ -12,15 +12,12 @@ from zope.component import getUtility
 from zope.interface import implements
 from zope.schema.fieldproperty import FieldProperty
 
-from plone.namedfile.interfaces import HAVE_BLOBS
-
 from plone.namedfile.interfaces import INamedFile, INamedImage
 from plone.namedfile.utils import get_contenttype
 
-if HAVE_BLOBS:
-    from ZODB.blob import Blob
-    from plone.namedfile.interfaces import INamedBlobFile, INamedBlobImage
-    from plone.namedfile.interfaces import IStorage
+from ZODB.blob import Blob
+from plone.namedfile.interfaces import INamedBlobFile, INamedBlobImage
+from plone.namedfile.interfaces import IStorage
 
 MAXCHUNKSIZE = 1 << 16
 IMAGE_INFO_BYTES = 1024
@@ -349,105 +346,103 @@ def getImageInfo(data):
     return content_type, width, height
 
 
-if HAVE_BLOBS:
+class NamedBlobFile(Persistent):
+    """A file stored in a ZODB BLOB, with a filename"""
+    implements(INamedBlobFile)
 
-    class NamedBlobFile(Persistent):
-        """A file stored in a ZODB BLOB, with a filename"""
-        implements(INamedBlobFile)
+    filename = FieldProperty(INamedFile['filename'])
 
-        filename = FieldProperty(INamedFile['filename'])
+    def __init__(self, data='', contentType='', filename=None):
+        if filename is not None and contentType in ('', 'application/octet-stream'):
+            contentType = get_contenttype(filename=filename)
+        self.contentType = contentType
+        self._blob = Blob()
+        f = self._blob.open('w')
+        f.write('')
+        f.close()
+        self._setData(data)
+        self.filename = filename
 
-        def __init__(self, data='', contentType='', filename=None):
-            if filename is not None and contentType in ('', 'application/octet-stream'):
-                contentType = get_contenttype(filename=filename)
+    def open(self, mode='r'):
+        if mode != 'r' and 'size' in self.__dict__:
+            del self.__dict__['size']
+        return self._blob.open(mode)
+
+    def openDetached(self):
+        return open(self._blob.committed(), 'rb')
+
+    def _setData(self, data):
+        if 'size' in self.__dict__:
+            del self.__dict__['size']
+        # Search for a storable that is able to store the data
+        dottedName = ".".join((data.__class__.__module__,
+                               data.__class__.__name__))
+        storable = getUtility(IStorage, name=dottedName)
+        storable.store(data, self._blob)
+
+    def _getData(self):
+        fp = self._blob.open('r')
+        data = fp.read()
+        fp.close()
+        return data
+
+    _data = property(_getData, _setData)
+    data = property(_getData, _setData)
+
+    @property
+    def size(self):
+        if 'size' in self.__dict__:
+            return self.__dict__['size']
+        reader = self._blob.open()
+        reader.seek(0,2)
+        size = int(reader.tell())
+        reader.close()
+        self.__dict__['size'] = size
+        return size
+
+    def getSize(self):
+        return self.size
+
+
+class NamedBlobImage(NamedBlobFile):
+    """An image stored in a ZODB BLOB with a filename
+    """
+    implements(INamedBlobImage)
+
+    def __init__(self, data='', contentType='', filename=None):
+        super(NamedBlobImage, self).__init__(data, filename=filename)
+    
+        # Allow override of the image sniffer
+        if contentType:
             self.contentType = contentType
-            self._blob = Blob()
-            f = self._blob.open('w')
-            f.write('')
-            f.close()
-            self._setData(data)
-            self.filename = filename
 
-        def open(self, mode='r'):
-            if mode != 'r' and 'size' in self.__dict__:
-                del self.__dict__['size']
-            return self._blob.open(mode)
-
-        def openDetached(self):
-            return open(self._blob.committed(), 'rb')
-
-        def _setData(self, data):
-            if 'size' in self.__dict__:
-                del self.__dict__['size']
-            # Search for a storable that is able to store the data
-            dottedName = ".".join((data.__class__.__module__,
-                                   data.__class__.__name__))
-            storable = getUtility(IStorage, name=dottedName)
-            storable.store(data, self._blob)
-
-        def _getData(self):
-            fp = self._blob.open('r')
-            data = fp.read()
-            fp.close()
-            return data
-
-        _data = property(_getData, _setData)
-        data = property(_getData, _setData)
-
-        @property
-        def size(self):
-            if 'size' in self.__dict__:
-                return self.__dict__['size']
-            reader = self._blob.open()
-            reader.seek(0,2)
-            size = int(reader.tell())
-            reader.close()
-            self.__dict__['size'] = size
-            return size
-
-        def getSize(self):
-            return self.size
-
-
-    class NamedBlobImage(NamedBlobFile):
-        """An image stored in a ZODB BLOB with a filename
-        """
-        implements(INamedBlobImage)
-
-        def __init__(self, data='', contentType='', filename=None):
-            super(NamedBlobImage, self).__init__(data, filename=filename)
-        
-            # Allow override of the image sniffer
-            if contentType:
-                self.contentType = contentType
-
-        def _setData(self, data):
-            super(NamedBlobImage, self)._setData(data)
-            firstbytes = self.getFirstBytes()
+    def _setData(self, data):
+        super(NamedBlobImage, self)._setData(data)
+        firstbytes = self.getFirstBytes()
+        res = getImageInfo(firstbytes)
+        if res == ('image/jpeg', -1, -1):
+            # header was longer than firstbytes
+            start = len(firstbytes)
+            length = max(0, MAX_INFO_BYTES - start)
+            firstbytes += self.getFirstBytes(start, length)
             res = getImageInfo(firstbytes)
-            if res == ('image/jpeg', -1, -1):
-                # header was longer than firstbytes
-                start = len(firstbytes)
-                length = max(0, MAX_INFO_BYTES - start)
-                firstbytes += self.getFirstBytes(start, length)
-                res = getImageInfo(firstbytes)
-            contentType, self._width, self._height = res
-            if contentType:
-                self.contentType = contentType
+        contentType, self._width, self._height = res
+        if contentType:
+            self.contentType = contentType
 
-        data = property(NamedBlobFile._getData, _setData)
+    data = property(NamedBlobFile._getData, _setData)
 
-        def getFirstBytes(self, start=0, length=IMAGE_INFO_BYTES):
-            """Returns the first bytes of the file.
-            
-            Returns an amount which is sufficient to determine the image type.
-            """
-            fp = self.open('r')
-            fp.seek(start)
-            firstbytes = fp.read(length)
-            fp.close()
-            return firstbytes
+    def getFirstBytes(self, start=0, length=IMAGE_INFO_BYTES):
+        """Returns the first bytes of the file.
         
-        def getImageSize(self):
-            """See interface `IImage`"""
-            return (self._width, self._height)
+        Returns an amount which is sufficient to determine the image type.
+        """
+        fp = self.open('r')
+        fp.seek(start)
+        firstbytes = fp.read(length)
+        fp.close()
+        return firstbytes
+    
+    def getImageSize(self):
+        """See interface `IImage`"""
+        return (self._width, self._height)

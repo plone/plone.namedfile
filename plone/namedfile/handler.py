@@ -5,12 +5,8 @@ except ImportError:
     HAVE_SUPERMODEL = False
     
 if HAVE_SUPERMODEL:
-
-    from zope.interface import implements
-    from zope.component import adapts
     
     from plone.namedfile import field
-    from plone.namedfile.interfaces import HAVE_BLOBS
     
     class FileFieldHandler(ObjectHandler):
         
@@ -20,6 +16,5 @@ if HAVE_SUPERMODEL:
     NamedFileHandler = FileFieldHandler(field.NamedFile)
     NamedImageHandler = FileFieldHandler(field.NamedImage)
     
-    if HAVE_BLOBS:
-        NamedBlobFileHandler = FileFieldHandler(field.NamedBlobFile)
-        NamedBlobImageHandler = FileFieldHandler(field.NamedBlobImage)
+    NamedBlobFileHandler = FileFieldHandler(field.NamedBlobFile)
+    NamedBlobImageHandler = FileFieldHandler(field.NamedBlobImage)
