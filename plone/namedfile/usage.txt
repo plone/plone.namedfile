@@ -1,8 +1,7 @@
 Usage
 =====
 
-This demonstrates how to use the package. In this instance, we will assume
-that z3c.blobfile is installed so that BLOB based types are supported.
+This demonstrates how to use the package.
 
 Test setup
 ----------

@@ -16,11 +16,11 @@
         name="plone.namedfile.field.NamedImage"
         />
         
-    <utility zcml:condition="installed z3c.blobfile"
+    <utility
         component=".handler.NamedBlobFileHandler"
         name="plone.namedfile.field.NamedBlobFile"
         />
-    <utility zcml:condition="installed z3c.blobfile"
+    <utility
         component=".handler.NamedBlobImageHandler"
         name="plone.namedfile.field.NamedBlobImage"
         />
