@@ -5,12 +5,7 @@
 
     <adapter factory=".marshaler.NamedFileFieldMarshaler" />
     <adapter factory=".marshaler.NamedImageFieldMarshaler" />
-    
-    <adapter zcml:condition="installed z3c.blobfile"
-        factory=".marshaler.NamedBlobFileFieldMarshaler"
-        />
-    <adapter zcml:condition="installed z3c.blobfile"
-        factory=".marshaler.NamedBlobImageFieldMarshaler"
-        />
+    <adapter factory=".marshaler.NamedBlobFileFieldMarshaler" />
+    <adapter factory=".marshaler.NamedBlobImageFieldMarshaler" />
 
 </configure>

@@ -33,7 +33,7 @@ unsupported.
     >>> from plone.supermodel.interfaces import IFieldNameExtractor
     >>> from plone.supermodel.utils import prettyXML
 
-    >>> from elementtree import ElementTree
+    >>> from lxml import etree
 
 Named file
 -----------
@@ -51,7 +51,7 @@ Named file
       <title>Test</title>
     </field>
 
-    >>> element = ElementTree.XML("""\
+    >>> element = etree.XML("""\
     ... <field name="dummy" type="plone.namedfile.field.NamedFile">
     ...   <description>Test desc</description>
     ...   <missing_value />
@@ -91,7 +91,7 @@ Named image
       <title>Test</title>
     </field>
 
-    >>> element = ElementTree.XML("""\
+    >>> element = etree.XML("""\
     ... <field name="dummy" type="plone.namedfile.field.NamedImage">
     ...   <description>Test desc</description>
     ...   <missing_value />
@@ -131,7 +131,7 @@ Named blob file
       <title>Test</title>
     </field>
 
-    >>> element = ElementTree.XML("""\
+    >>> element = etree.XML("""\
     ... <field name="dummy" type="plone.namedfile.field.NamedBlobFile">
     ...   <description>Test desc</description>
     ...   <missing_value />
@@ -171,7 +171,7 @@ Named blob image
       <title>Test</title>
     </field>
 
-    >>> element = ElementTree.XML("""\
+    >>> element = etree.XML("""\
     ... <field name="dummy" type="plone.namedfile.field.NamedBlobImage">
     ...   <description>Test desc</description>
     ...   <missing_value />

@@ -1,8 +1,7 @@
 Usage
 =====
 
-This demonstrates how to use the package. In this instance, we will assume
-that z3c.blobfile is installed so that BLOB based types are supported.
+This demonstrates how to use the package.
 
 Test setup
 ----------
@@ -31,14 +30,12 @@ test the BLOB versions of the fields if z3c.blobfile is installed.
 
     >>> from zope.interface import Interface
     >>> from plone.namedfile import field
-    >>> from plone.namedfile.interfaces import HAVE_BLOBS
 
     >>> class IFileContainer(Interface):
     ...     simple = field.NamedFile(title=u"Named file")
     ...     image = field.NamedImage(title=u"Named image file")
-    ...     if HAVE_BLOBS:
-    ...         blob = field.NamedBlobFile(title=u"Named blob file")
-    ...         blobimage = field.NamedBlobImage(title=u"Named blob image file")
+    ...     blob = field.NamedBlobFile(title=u"Named blob file")
+    ...     blobimage = field.NamedBlobImage(title=u"Named blob image file")
 
 These store data with the following types. 
 
@@ -51,9 +48,8 @@ These store data with the following types.
     ...     def __init__(self):
     ...         self.simple = namedfile.NamedFile()
     ...         self.image = namedfile.NamedImage()
-    ...         if HAVE_BLOBS:
-    ...             self.blob = namedfile.NamedBlobFile()
-    ...             self.blobimage = namedfile.NamedBlobImage()
+    ...         self.blob = namedfile.NamedBlobFile()
+    ...         self.blobimage = namedfile.NamedBlobImage()
 
 File data and content type
 --------------------------
@@ -78,20 +74,12 @@ The FileContainer class creates empty objects to start with.
     >>> container.image.filename is None
     True
     
-    >>> if HAVE_BLOBS:
-    ...     print repr(container.blob.data)
-    ...     print repr(container.blob.contentType)
-    ...     print repr(container.blob.filename is None)
-    ...     print repr(container.blobimage.data)
-    ...     print repr(container.blobimage.contentType)
-    ...     print repr(container.blobimage.filename is None)
-    ... else:
-    ...     print repr('')
-    ...     print repr('')
-    ...     print repr(True)
-    ...     print repr('')
-    ...     print repr('')
-    ...     print repr(True)
+    >>> print repr(container.blob.data)
+    ... print repr(container.blob.contentType)
+    ... print repr(container.blob.filename is None)
+    ... print repr(container.blobimage.data)
+    ... print repr(container.blobimage.contentType)
+    ... print repr(container.blobimage.filename is None)
     ''
     ''
     True
@@ -110,15 +98,10 @@ will attempt to guess the filename from the file extension.
     >>> container.simple.filename
     u'test.txt'
 
-    >>> if HAVE_BLOBS:
-    ...     container.blob = namedfile.NamedBlobFile('dummy test data', filename=u"test.txt")
-    ...     print repr(container.blob.data)
-    ...     print repr(container.blob.contentType)
-    ...     print repr(container.blob.filename)
-    ... else:
-    ...     print repr('dummy test data')
-    ...     print repr('text/plain')
-    ...     print repr(u'test.txt')
+    >>> container.blob = namedfile.NamedBlobFile('dummy test data', filename=u"test.txt")
+    ... print repr(container.blob.data)
+    ... print repr(container.blob.contentType)
+    ... print repr(container.blob.filename)
     'dummy test data'
     'text/plain'
     u'test.txt'
@@ -153,15 +136,10 @@ Let's also try to read a GIF, courtesy of the zope.app.file tests:
     >>> container.image.filename
     u'zpt.gif'
 
-    >>> if HAVE_BLOBS:
-    ...     container.blobimage = namedfile.NamedBlobImage(zptlogo, filename=u"zpt.gif")
-    ...     print repr(container.blobimage.data == zptlogo)
-    ...     print repr(container.blobimage.contentType)
-    ...     print repr(container.blobimage.filename)
-    ... else:
-    ...     print repr(True)
-    ...     print repr('image/gif')
-    ...     print repr(u'zpt.gif')
+    >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, filename=u"zpt.gif")
+    ... print repr(container.blobimage.data == zptlogo)
+    ... print repr(container.blobimage.contentType)
+    ... print repr(container.blobimage.filename)
     True
     'image/gif'
     u'zpt.gif'
@@ -176,15 +154,10 @@ Note that is possible for force the mimetype:
     >>> container.image.filename
     u'zpt.gif'
 
-    >>> if HAVE_BLOBS:
-    ...     container.blobimage = namedfile.NamedBlobImage(zptlogo, contentType='image/foo', filename=u"zpt.gif")
-    ...     print repr(container.blobimage.data == zptlogo)
-    ...     print repr(container.blobimage.contentType)
-    ...     print repr(container.blobimage.filename)
-    ... else:
-    ...     print repr(True)
-    ...     print repr('image/foo')
-    ...     print repr(u'zpt.gif')
+    >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, contentType='image/foo', filename=u"zpt.gif")
+    ... print repr(container.blobimage.data == zptlogo)
+    ... print repr(container.blobimage.contentType)
+    ... print repr(container.blobimage.filename)
     True
     'image/foo'
     u'zpt.gif'
@@ -221,21 +194,14 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Disposition')
     'attachment; filename="test.txt"'
 
-    >>> if HAVE_BLOBS:
-    ...     request = TestRequest()
-    ...     download = Download(container, request).publishTraverse(request, 'blob')
-    ...     data = download()
-    ...     print repr(isinstance(data, file))
-    ...     print repr(data.read())
-    ...     print repr(request.response.getHeader('Content-Length'))
-    ...     print repr(request.response.getHeader('Content-Type'))
-    ...     print repr(request.response.getHeader('Content-Disposition'))
-    ... else:
-    ...     print repr(True)
-    ...     print repr('dummy test data')
-    ...     print repr('15')
-    ...     print repr('text/plain')
-    ...     print repr('attachment; filename="test.txt"')
+    >>> request = TestRequest()
+    ... download = Download(container, request).publishTraverse(request, 'blob')
+    ... data = download()
+    ... print repr(isinstance(data, file))
+    ... print repr(data.read())
+    ... print repr(request.response.getHeader('Content-Length'))
+    ... print repr(request.response.getHeader('Content-Type'))
+    ... print repr(request.response.getHeader('Content-Disposition'))
     True
     'dummy test data'
     '15'
@@ -255,20 +221,13 @@ We will test this with a dummy request, faking traversal.
     'attachment; filename="zpt.gif"'
 
     >>> request = TestRequest()
-    >>> if HAVE_BLOBS:
-    ...     download = Download(container, request).publishTraverse(request, 'blobimage')
-    ...     data = download()
-    ...     print repr(isinstance(data, file))
-    ...     print repr(data.read() == zptlogo)
-    ...     print repr(request.response.getHeader('Content-Length'))
-    ...     print repr(request.response.getHeader('Content-Type'))
-    ...     print repr(request.response.getHeader('Content-Disposition'))
-    ... else:
-    ...     print repr(True)
-    ...     print repr(True)
-    ...     print repr('341')
-    ...     print repr('image/foo')
-    ...     print repr('attachment; filename="zpt.gif"')
+    >>> download = Download(container, request).publishTraverse(request, 'blobimage')
+    ... data = download()
+    ... print repr(isinstance(data, file))
+    ... print repr(data.read() == zptlogo)
+    ... print repr(request.response.getHeader('Content-Length'))
+    ... print repr(request.response.getHeader('Content-Type'))
+    ... print repr(request.response.getHeader('Content-Disposition'))
     True
     True
     '341'
@@ -298,21 +257,14 @@ We will test this with a dummy request, faking traversal.
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
 
-    >>> if HAVE_BLOBS:
-    ...     request = TestRequest()
-    ...     display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
-    ...     data = display_file()
-    ...     print repr(isinstance(data, file))
-    ...     print repr(data.read())
-    ...     print repr(request.response.getHeader('Content-Length'))
-    ...     print repr(request.response.getHeader('Content-Type'))
-    ...     print repr(request.response.getHeader('Content-Disposition'))
-    ... else:
-    ...     print repr(True)
-    ...     print repr('dummy test data')
-    ...     print repr('15')
-    ...     print repr('text/plain')
-    ...     print repr(None)
+    >>> request = TestRequest()
+    ... display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
+    ... data = display_file()
+    ... print repr(isinstance(data, file))
+    ... print repr(data.read())
+    ... print repr(request.response.getHeader('Content-Length'))
+    ... print repr(request.response.getHeader('Content-Type'))
+    ... print repr(request.response.getHeader('Content-Disposition'))
     True
     'dummy test data'
     '15'
@@ -331,20 +283,13 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Disposition')
 
     >>> request = TestRequest()
-    >>> if HAVE_BLOBS:
-    ...     display_file = DisplayFile(container, request).publishTraverse(request, 'blobimage')
-    ...     data = display_file()
-    ...     print repr(isinstance(data, file))
-    ...     print repr(data.read() == zptlogo)
-    ...     print repr(request.response.getHeader('Content-Length'))
-    ...     print repr(request.response.getHeader('Content-Type'))
-    ...     print repr(request.response.getHeader('Content-Disposition'))
-    ... else:
-    ...     print repr(True)
-    ...     print repr(True)
-    ...     print repr('341')
-    ...     print repr('image/foo')
-    ...     print repr(None)
+    >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blobimage')
+    ... data = display_file()
+    ... print repr(isinstance(data, file))
+    ... print repr(data.read() == zptlogo)
+    ... print repr(request.response.getHeader('Content-Length'))
+    ... print repr(request.response.getHeader('Content-Type'))
+    ... print repr(request.response.getHeader('Content-Disposition'))
     True
     True
     '341'

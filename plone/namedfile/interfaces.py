@@ -3,13 +3,40 @@ from zope.interface import Interface
 from zope import schema
 from zope.schema.interfaces import IObject
 
-from zope.app.file.interfaces import IFile, IImage
+HAVE_BLOBS = True
 
-try:
-    from z3c.blobfile.interfaces import IBlobFile, IBlobImage
-    HAVE_BLOBS = True
-except ImportError:
-    HAVE_BLOBS = False
+
+class IFile(Interface):
+
+    contentType = schema.BytesLine(
+        title = u'Content Type',
+        description=u'The content type identifies the type of data.',
+        default='',
+        required=False,
+        missing_value=''
+        )
+
+    data = schema.Bytes(
+        title=u'Data',
+        description=u'The actual content of the object.',
+        default='',
+        missing_value='',
+        required=False,
+        )
+
+    def getSize():
+        """Return the byte-size of the data of the object."""
+
+
+class IImage(IFile):
+    """This interface defines an Image that can be displayed.
+    """
+
+    def getImageSize():
+        """Return a tuple (x, y) that describes the dimensions of
+        the object.
+        """
+
 
 class IImageScaleTraversable(Interface):
     """Marker for items that should provide access to image scales for named
@@ -50,28 +77,41 @@ class INamedImageField(INamedField):
     """Field for storing INamedImage objects.
     """
 
-if HAVE_BLOBS:
+class IStorage(Interface):
+    """Store file data
+    """
 
-    # Values
+    def store(data, blob):
+        """Store the data into the blob
 
-    class IBlobby(Interface):
-        """Marker interface for objects that support blobs.
+        Raises NonStorable if data is not storable.
         """
+
+class NotStorable(Exception):
+    """Data is not storable
+    """
+
+
+# Values
+
+class IBlobby(Interface):
+    """Marker interface for objects that support blobs.
+    """
+
+class INamedBlobFile(INamedFile, IBlobby):
+    """A BLOB file with a filename
+    """
+
+class INamedBlobImage(INamedImage, IBlobby):
+    """A BLOB image with a filename
+    """
     
-    class INamedBlobFile(INamedFile, IBlobby, IBlobFile):
-        """A BLOB file with a filename
-        """
+# Fields
 
-    class INamedBlobImage(INamedImage, IBlobby, IBlobImage):
-        """A BLOB image with a filename
-        """
-        
-    # Fields
+class INamedBlobFileField(INamedFileField):
+    """Field for storing INamedBlobFile objects.
+    """
 
-    class INamedBlobFileField(INamedFileField):
-        """Field for storing INamedBlobFile objects.
-        """
-
-    class INamedBlobImageField(INamedImageField):
-        """Field for storing INamedBlobImage objects.
-        """
+class INamedBlobImageField(INamedImageField):
+    """Field for storing INamedBlobImage objects.
+    """

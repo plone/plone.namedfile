@@ -22,6 +22,8 @@ def test_suite():
             'utils.txt', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
         
+        doctest.DocTestSuite('plone.namedfile.file'),
+
         ])
 
 if __name__ == '__main__':

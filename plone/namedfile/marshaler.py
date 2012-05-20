@@ -1,5 +1,3 @@
-from plone.namedfile.interfaces import HAVE_BLOBS
-
 try:
     from plone.rfc822.defaultfields import BaseFieldMarshaler
     HAVE_MARSHALER = True
@@ -80,8 +78,6 @@ if HAVE_MARSHALER:
         adapts(Interface, INamedImageField)
         factory = NamedImage
 
-if HAVE_MARSHALER and HAVE_BLOBS:
-    
     from plone.namedfile.interfaces import INamedBlobFileField
     from plone.namedfile.interfaces import INamedBlobImageField
     

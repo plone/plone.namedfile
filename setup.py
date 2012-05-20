@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version = '1.0.7dev'
+version = '2.0dev'
 
 setup(name='plone.namedfile',
       version=version,
@@ -30,14 +30,14 @@ setup(name='plone.namedfile',
           'zope.component',
           'zope.security',
           'zope.traversing',
-          'zope.app.file',
           'plone.rfc822>=1.0b2',
       ],
       extras_require = {
-        'blobs':  ['z3c.blobfile'],
+        'blobs':  [], # BBB
         'editor': ['plone.schemaeditor'],
         'supermodel': ['plone.supermodel'],
         'marshaler': [], # for BBB, we now depend on this
         'scales': ['plone.scale[storage] >=1.1dev'],
+        'test': ['lxml'],
       },
       )

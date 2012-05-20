@@ -1,10 +1,7 @@
 import os.path
 import mimetypes
 
-from plone.namedfile.interfaces import HAVE_BLOBS
-
-if HAVE_BLOBS:
-    from plone.namedfile.interfaces import IBlobby
+from plone.namedfile.interfaces import IBlobby
 
 try:
     # use this to stream data if we can
@@ -53,13 +50,12 @@ def stream_data(file):
     """Return the given file as a stream if possible.
     """
 
-    if HAVE_BLOBS:
-        if IBlobby.providedBy(file) and filestream_iterator is not None:
-            # XXX: we may want to use this instead, which would raise an error
-            # in case of uncomitted changes
-            # filename = file._blob.committed()
-            
-            filename = file._blob._p_blob_uncommitted or file._blob.committed()
-            return filestream_iterator(filename, 'rb')
+    if IBlobby.providedBy(file) and filestream_iterator is not None:
+        # XXX: we may want to use this instead, which would raise an error
+        # in case of uncomitted changes
+        # filename = file._blob.committed()
+        
+        filename = file._blob._p_blob_uncommitted or file._blob.committed()
+        return filestream_iterator(filename, 'rb')
     
     return file.data
