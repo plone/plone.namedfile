@@ -9,7 +9,6 @@ setup(name='plone.namedfile',
       long_description=open("README.txt").read() + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read() + "\n" + 
                        open(os.path.join("plone", "namedfile", "usage.txt")).read(),
-      # Get more strings from http://www.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
         "Framework :: Plone",
         "Programming Language :: Python",
@@ -37,7 +36,4 @@ setup(name='plone.namedfile',
         'marshaler': [], # for BBB, we now depend on this
         'scales': ['plone.scale[storage] >=1.1dev'],
       },
-      entry_points="""
-      # -*- Entry points: -*-
-      """,
       )
