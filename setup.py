@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version = '1.0.7dev'
+version = '2.0dev'
 
 setup(name='plone.namedfile',
       version=version,

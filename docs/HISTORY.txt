@@ -1,12 +1,16 @@
 Changelog
 =========
 
-1.1 - unreleased
+2.0 - unreleased
 ----------------
 
 * Move file and image value implementations here instead of extending
   the ones from zope.app.file and z3c.blobfile. This helps tame a mess
   of dependencies.
+  [davisagli]
+
+* The blob-based file and image implementations are now always available.
+  (But they will only work if Zope is using a storage with blob support.)
   [davisagli]
 
 * Add support for HEAD requests to @@images view

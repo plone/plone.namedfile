@@ -1,3 +1,6 @@
+# This file was borrowed from z3c.blobfile and is licensed under the terms of
+# the ZPL.
+
 ##############################################################################
 #
 # Copyright (c) 2009 Zope Foundation and Contributors.

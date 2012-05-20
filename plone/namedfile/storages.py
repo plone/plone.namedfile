@@ -1,3 +1,6 @@
+# This file was borrowed from z3c.blobfile and is licensed under the terms of
+# the ZPL.
+
 ##############################################################################
 #
 # Copyright (c) 2008 Zope Foundation and Contributors.
@@ -11,12 +14,6 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-"""Storables
-
-$Id: storages.py 113078 2010-06-04 06:32:13Z ctheune $
-"""
-
-__docformat__ = 'restructuredtext'
 
 from zope.interface import implements
 from plone.namedfile.file import FileChunk
