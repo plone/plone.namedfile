@@ -74,17 +74,17 @@ The FileContainer class creates empty objects to start with.
     >>> container.image.filename is None
     True
     
-    >>> print repr(container.blob.data)
-    ... print repr(container.blob.contentType)
-    ... print repr(container.blob.filename is None)
-    ... print repr(container.blobimage.data)
-    ... print repr(container.blobimage.contentType)
-    ... print repr(container.blobimage.filename is None)
+    >>> container.blob.data
     ''
+    >>> container.blob.contentType
     ''
+    >>> container.blob.filename is None
     True
+    >>> container.blobimage.data
     ''
+    >>> container.blobimage.contentType
     ''
+    >>> container.blobimage.filename is None
     True
     
 Let's now set some actual data in these files. Notice how the constructor
@@ -99,11 +99,11 @@ will attempt to guess the filename from the file extension.
     u'test.txt'
 
     >>> container.blob = namedfile.NamedBlobFile('dummy test data', filename=u"test.txt")
-    ... print repr(container.blob.data)
-    ... print repr(container.blob.contentType)
-    ... print repr(container.blob.filename)
+    >>> container.blob.data
     'dummy test data'
+    >>> container.blob.contentType
     'text/plain'
+    >>> container.blob.filename
     u'test.txt'
     
 Let's also try to read a GIF, courtesy of the zope.app.file tests:
@@ -137,11 +137,11 @@ Let's also try to read a GIF, courtesy of the zope.app.file tests:
     u'zpt.gif'
 
     >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, filename=u"zpt.gif")
-    ... print repr(container.blobimage.data == zptlogo)
-    ... print repr(container.blobimage.contentType)
-    ... print repr(container.blobimage.filename)
+    >>> container.blobimage.data == zptlogo
     True
+    >>> container.blobimage.contentType
     'image/gif'
+    >>> container.blobimage.filename
     u'zpt.gif'
 
 Note that is possible for force the mimetype:
@@ -155,11 +155,11 @@ Note that is possible for force the mimetype:
     u'zpt.gif'
 
     >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, contentType='image/foo', filename=u"zpt.gif")
-    ... print repr(container.blobimage.data == zptlogo)
-    ... print repr(container.blobimage.contentType)
-    ... print repr(container.blobimage.filename)
+    >>> container.blobimage.data == zptlogo
     True
+    >>> container.blobimage.contentType
     'image/foo'
+    >>> container.blobimage.filename
     u'zpt.gif'
 
 The filename must be set to a unicode string, not a bytestring:
@@ -195,17 +195,17 @@ We will test this with a dummy request, faking traversal.
     'attachment; filename="test.txt"'
 
     >>> request = TestRequest()
-    ... download = Download(container, request).publishTraverse(request, 'blob')
-    ... data = download()
-    ... print repr(isinstance(data, file))
-    ... print repr(data.read())
-    ... print repr(request.response.getHeader('Content-Length'))
-    ... print repr(request.response.getHeader('Content-Type'))
-    ... print repr(request.response.getHeader('Content-Disposition'))
+    >>> download = Download(container, request).publishTraverse(request, 'blob')
+    >>> data = download()
+    >>> isinstance(data, file)
     True
+    >>> data.read()
     'dummy test data'
+    >>> request.response.getHeader('Content-Length')
     '15'
+    >>> request.response.getHeader('Content-Type')
     'text/plain'
+    >>> request.response.getHeader('Content-Disposition')
     'attachment; filename="test.txt"'
 
     >>> request = TestRequest()
@@ -222,16 +222,16 @@ We will test this with a dummy request, faking traversal.
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blobimage')
-    ... data = download()
-    ... print repr(isinstance(data, file))
-    ... print repr(data.read() == zptlogo)
-    ... print repr(request.response.getHeader('Content-Length'))
-    ... print repr(request.response.getHeader('Content-Type'))
-    ... print repr(request.response.getHeader('Content-Disposition'))
+    >>> data = download()
+    >>> isinstance(data, file)
     True
+    >>> data.read() == zptlogo
     True
+    >>> request.response.getHeader('Content-Length')
     '341'
+    >>> request.response.getHeader('Content-Type')
     'image/foo'
+    >>> request.response.getHeader('Content-Disposition')
     'attachment; filename="zpt.gif"'
 
 Display-file view
@@ -258,18 +258,17 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Disposition')
 
     >>> request = TestRequest()
-    ... display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
-    ... data = display_file()
-    ... print repr(isinstance(data, file))
-    ... print repr(data.read())
-    ... print repr(request.response.getHeader('Content-Length'))
-    ... print repr(request.response.getHeader('Content-Type'))
-    ... print repr(request.response.getHeader('Content-Disposition'))
+    >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
+    >>> data = display_file()
+    >>> isinstance(data, file)
     True
+    >>> data.read()
     'dummy test data'
+    >>> request.response.getHeader('Content-Length')
     '15'
+    >>> request.response.getHeader('Content-Type')
     'text/plain'
-    None
+    >>> request.response.getHeader('Content-Disposition')
 
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'image')
@@ -284,17 +283,16 @@ We will test this with a dummy request, faking traversal.
 
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blobimage')
-    ... data = display_file()
-    ... print repr(isinstance(data, file))
-    ... print repr(data.read() == zptlogo)
-    ... print repr(request.response.getHeader('Content-Length'))
-    ... print repr(request.response.getHeader('Content-Type'))
-    ... print repr(request.response.getHeader('Content-Disposition'))
+    >>> data = display_file()
+    >>> isinstance(data, file)
     True
+    >>> data.read() == zptlogo
     True
+    >>> request.response.getHeader('Content-Length')
     '341'
+    >>> request.response.getHeader('Content-Type')
     'image/foo'
-    None
+    >>> request.response.getHeader('Content-Disposition')
 
 Specifying the primary field
 ----------------------------
