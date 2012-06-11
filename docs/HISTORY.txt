@@ -19,6 +19,9 @@ Changelog
 * Add hook to override headers in subclasses of file download view
   [anthonygerrard]
 
+* Don't set filename in header if filename contains non ascii chars.
+  [do3cc]
+
 1.0.6 - 2011-10-18
 ------------------
 

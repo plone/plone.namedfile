@@ -44,7 +44,13 @@ def set_headers(file, response, filename=None):
     response.setHeader("Content-Length", file.getSize())
     
     if filename is not None:
-        response.setHeader("Content-Disposition", "attachment; filename=\"%s\"" % filename)
+        try:
+            response.setHeader("Content-Disposition", "attachment; filename=\"%s\"" % filename)
+        except UnicodeEncodeError:
+            # It's 2012, the time where the world can handle non-ascii
+            # chars in http headers has not arrived fully yet
+            # http://stackoverflow.com/questions/1361604/how-to-encode-utf8-filename-for-http-headers-python-django
+            pass
 
 def stream_data(file):
     """Return the given file as a stream if possible.
