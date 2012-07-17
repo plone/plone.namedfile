@@ -258,7 +258,7 @@ class NamedImage(NamedFile):
         self.contentType, self._width, self._height = getImageInfo(data)
         self.data = data
         self.filename = filename
-        
+
         # Allow override of the image sniffer
         if contentType:
             self.contentType = contentType
@@ -334,6 +334,8 @@ def getImageInfo(data):
         except struct.error:
             pass
         except ValueError:
+            pass
+        except TypeError:
             pass
 
     # handle BMPs
@@ -411,7 +413,7 @@ class NamedBlobImage(NamedBlobFile):
 
     def __init__(self, data='', contentType='', filename=None):
         super(NamedBlobImage, self).__init__(data, filename=filename)
-    
+
         # Allow override of the image sniffer
         if contentType:
             self.contentType = contentType
@@ -434,7 +436,7 @@ class NamedBlobImage(NamedBlobFile):
 
     def getFirstBytes(self, start=0, length=IMAGE_INFO_BYTES):
         """Returns the first bytes of the file.
-        
+
         Returns an amount which is sufficient to determine the image type.
         """
         fp = self.open('r')
@@ -442,7 +444,7 @@ class NamedBlobImage(NamedBlobFile):
         firstbytes = fp.read(length)
         fp.close()
         return firstbytes
-    
+
     def getImageSize(self):
         """See interface `IImage`"""
         return (self._width, self._height)
