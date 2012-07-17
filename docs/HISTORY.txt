@@ -22,6 +22,10 @@ Changelog
 * Don't set filename in header if filename contains non ascii chars.
   [do3cc]
 
+* Adding Dexterity Image caused TypeError if jpeg file contained
+  corrupt metadata. Closes http://dev.plone.org/ticket/12753.
+  [patch by joka, applied by kleist]
+
 1.0.6 - 2011-10-18
 ------------------
 
