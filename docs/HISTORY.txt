@@ -4,8 +4,11 @@ Changelog
 2.0.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
-
+* Add direction parameter support in scaling (was ignored in tag and scale
+  functions).
+  Now calling tag function with parameter direction='down' crops the image.
+  direction='thumbnail' by default so default behaviour remains the same.
+  [jriboux]
 
 2.0 (2012-08-29)
 ----------------
