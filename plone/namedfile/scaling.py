@@ -211,7 +211,8 @@ class ImageScaling(BrowserView):
             items, so stored image scales can be invalidated """
         return self.context.modified().millis()
 
-    def scale(self, fieldname=None, scale=None, height=None, width=None, **parameters):
+
+    def scale(self, fieldname=None, scale=None, height=None, width=None, direction='thumbnail', **parameters):
         if fieldname is None:
             fieldname = IPrimaryFieldInfo(self.context).fieldname
         if scale is not None:
@@ -221,12 +222,12 @@ class ImageScaling(BrowserView):
             width, height = available[scale]
         storage = AnnotationStorage(self.context, self.modified)
         info = storage.scale(factory=self.create,
-            fieldname=fieldname, height=height, width=width, **parameters)
+            fieldname=fieldname, height=height, width=width, direction=direction, **parameters)
         if info is not None:
             info['fieldname'] = fieldname
             scale_view = ImageScale(self.context, self.request, **info)
             return scale_view.__of__(self.context)
 
-    def tag(self, fieldname=None, scale=None, height=None, width=None, **kwargs):
-        scale = self.scale(fieldname, scale, height, width)
+    def tag(self, fieldname=None, scale=None, height=None, width=None, direction='thumbnail', **kwargs):
+        scale = self.scale(fieldname, scale, height, width, direction)
         return scale.tag(**kwargs)
