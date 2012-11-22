@@ -3,6 +3,7 @@ from xml.sax.saxutils import quoteattr
 from Acquisition import aq_base
 from AccessControl.ZopeGuards import guarded_getattr
 from ZODB.POSException import ConflictError
+from zope.app.component.hooks import getSite
 from zope.component import queryUtility
 from zope.interface import implements
 from zope.traversing.interfaces import ITraversable, TraversalError
@@ -177,6 +178,16 @@ class ImageScaling(BrowserView):
     def guarded_orig_image(self, fieldname):
         return guarded_getattr(self.context, fieldname)
 
+    def getQuality(self):
+        """Get plone.app.imaging's quality setting"""
+        try:
+            from plone.app.imaging.interfaces import IImagingSchema
+            plonesite = getSite()
+            imaging_schema = IImagingSchema(plonesite)
+            return imaging_schema.quality
+        except:
+            return None
+
     def create(self, fieldname, direction='thumbnail', height=None, width=None, **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
         orig_value = getattr(self.context, fieldname)
@@ -191,6 +202,10 @@ class ImageScaling(BrowserView):
             orig_data = getattr(aq_base(orig_value), 'data', orig_value)
         if not orig_data:
             return
+        if 'quality' not in parameters:
+            quality = self.getQuality()
+            if quality:
+                parameters['quality'] = quality
         try:
             result = scaleImage(orig_data, direction=direction, height=height, width=width, **parameters)
         except (ConflictError, KeyboardInterrupt):
