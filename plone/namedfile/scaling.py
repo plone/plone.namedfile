@@ -13,7 +13,8 @@ from plone.scale.storage import AnnotationStorage
 from plone.scale.scale import scaleImage
 from Products.Five import BrowserView
 
-from plone.namedfile.interfaces import IAvailableSizes
+from plone.namedfile.interfaces import IAvailableSizes, \
+    IScaledImageQuality
 from plone.namedfile.utils import set_headers, stream_data
 
 _marker = object()
@@ -180,13 +181,10 @@ class ImageScaling(BrowserView):
 
     def getQuality(self):
         """Get plone.app.imaging's quality setting"""
-        try:
-            from plone.app.imaging.interfaces import IImagingSchema
-            plonesite = getSite()
-            imaging_schema = IImagingSchema(plonesite)
-            return imaging_schema.quality
-        except:
+        getScaledImageQuality = queryUtility(IScaledImageQuality)
+        if getScaledImageQuality is None:
             return None
+        return getScaledImageQuality()
 
     def create(self, fieldname, direction='thumbnail', height=None, width=None, **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
