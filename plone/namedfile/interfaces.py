@@ -47,6 +47,11 @@ class IAvailableSizes(Interface):
     """A callable returning a dictionary of scale name => (width, height)
     """
 
+class IScaledImageQuality(Interface):
+    """A callable returning an integer from 1 to 100 for image quality, or None
+    if it wasn't set
+    """
+
 # Values
 
 class INamed(Interface):
