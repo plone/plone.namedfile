@@ -4,8 +4,10 @@ Changelog
 2.0.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
-
+* fix invalidation on contexts that do not implement dublin core; Notably
+  portlet assignments. Fallback is bobo_modification_time. Maybe portlet
+  assignments should implement modified() instead?
+  [tmog]
 
 2.0.1 (2013-01-17)
 ------------------
