@@ -219,7 +219,16 @@ class ImageScaling(BrowserView):
     def modified(self):
         """ provide a callable to return the modification time of content
             items, so stored image scales can be invalidated """
-        return self.context.modified().millis()
+        context = aq_base(self.context)
+        date = None
+        try:
+            if hasattr(context, 'modified') and callable(context.modified):
+                date =  context.modified()
+            else:
+                date = context.bobobase_modification_time()
+        except AttributeError:
+            date = self.context.modified().millis()
+        return date.millis()
 
     def scale(self, fieldname=None, scale=None, height=None, width=None, direction='thumbnail', **parameters):
         if fieldname is None:
