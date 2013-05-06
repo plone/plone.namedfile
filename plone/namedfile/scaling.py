@@ -3,6 +3,7 @@ from xml.sax.saxutils import quoteattr
 from Acquisition import aq_base
 from AccessControl.ZopeGuards import guarded_getattr
 from ZODB.POSException import ConflictError
+from zope.app.component.hooks import getSite
 from zope.component import queryUtility
 from zope.interface import implements
 from zope.traversing.interfaces import ITraversable, TraversalError
@@ -13,7 +14,8 @@ from plone.scale.storage import AnnotationStorage
 from plone.scale.scale import scaleImage
 from Products.Five import BrowserView
 
-from plone.namedfile.interfaces import IAvailableSizes
+from plone.namedfile.interfaces import IAvailableSizes, \
+    IScaledImageQuality
 from plone.namedfile.utils import set_headers, stream_data
 
 _marker = object()
@@ -179,6 +181,13 @@ class ImageScaling(BrowserView):
     def guarded_orig_image(self, fieldname):
         return guarded_getattr(self.context, fieldname)
 
+    def getQuality(self):
+        """Get plone.app.imaging's quality setting"""
+        getScaledImageQuality = queryUtility(IScaledImageQuality)
+        if getScaledImageQuality is None:
+            return None
+        return getScaledImageQuality()
+
     def create(self, fieldname, direction='thumbnail', height=None, width=None, **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
         orig_value = getattr(self.context, fieldname)
@@ -200,6 +209,11 @@ class ImageScaling(BrowserView):
             # Convert data to 8-bit string
             # (FileChunk does not provide read() access)
             orig_data = str(orig_data)
+
+        if 'quality' not in parameters:
+            quality = self.getQuality()
+            if quality:
+                parameters['quality'] = quality
 
         try:
             result = scaleImage(orig_data, direction=direction, height=height, width=width, **parameters)
