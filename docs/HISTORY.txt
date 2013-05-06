@@ -4,16 +4,13 @@ Changelog
 2.0.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
-
-
-2.0.1 (2013-01-17)
-------------------
-
 * Use plone.app.imaging's quality setting if it exists (new in
   plone.app.imaging 1.0.7).
   Related to https://dev.plone.org/ticket/13337
   [khink]
+
+2.0.1 (2013-01-17)
+------------------
 
 * Add direction parameter support in scaling (was ignored in tag and scale
   functions).
