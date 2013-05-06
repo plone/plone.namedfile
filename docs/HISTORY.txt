@@ -5,7 +5,7 @@ Changelog
 ------------------
 
 * Use plone.app.imaging's quality setting if it exists (new in
-  plone.app.imaging 1.0.7).
+  plone.app.imaging 1.0.8).
   Related to https://dev.plone.org/ticket/13337
   [khink]
 
