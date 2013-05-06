@@ -4,7 +4,10 @@ Changelog
 2.0.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fixed handling of TTW Dexterity content type image field
+  data when image data is large and stored as
+  zope.app.file.file.FileChunk in ZODB instead of raw string data.
+  Issue appearated after Plone 4.3 migration [miohtama]
 
 
 2.0.1 (2013-01-17)
