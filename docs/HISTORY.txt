@@ -4,7 +4,12 @@ Changelog
 2.0.2 (unreleased)
 ------------------
 
-- Fixed handling of TTW Dexterity content type image field
+* fix invalidation on contexts that do not implement dublin core; Notably
+  portlet assignments. Fallback is bobo_modification_time. Maybe portlet
+  assignments should implement modified() instead?
+  [tmog]
+
+* Fixed handling of TTW Dexterity content type image field
   data when image data is large and stored as
   zope.app.file.file.FileChunk in ZODB instead of raw string data.
   Issue appearated after Plone 4.3 migration [miohtama]
