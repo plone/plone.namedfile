@@ -7,6 +7,7 @@ from zope.component import queryUtility
 from zope.interface import implements
 from zope.traversing.interfaces import ITraversable, TraversalError
 from zope.publisher.interfaces import IPublishTraverse, NotFound
+from zope.app.file.file import FileChunk
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.storage import AnnotationStorage
 from plone.scale.scale import scaleImage
@@ -33,6 +34,7 @@ class ImageScale(BrowserView):
         self.__dict__.update(**info)
         if self.data is None:
             self.data = getattr(self.context, self.fieldname)
+
         url = self.context.absolute_url()
         extension = self.data.contentType.split('/')[-1].lower()
         if 'uid' in info:
@@ -182,6 +184,7 @@ class ImageScaling(BrowserView):
         orig_value = getattr(self.context, fieldname)
         if orig_value is None:
             return
+
         if height is None and width is None:
             _, format = orig_value.contentType.split('/', 1)
             return None, format, (orig_value._width, orig_value._height)
@@ -191,6 +194,13 @@ class ImageScaling(BrowserView):
             orig_data = getattr(aq_base(orig_value), 'data', orig_value)
         if not orig_data:
             return
+
+        # Handle cases where large image data is stored in FileChunks instead of plain string
+        if isinstance(orig_data, FileChunk):
+            # Convert data to 8-bit string
+            # (FileChunk does not provide read() access)
+            orig_data = str(orig_data)
+
         try:
             result = scaleImage(orig_data, direction=direction, height=height, width=width, **parameters)
         except (ConflictError, KeyboardInterrupt):
@@ -211,7 +221,6 @@ class ImageScaling(BrowserView):
             items, so stored image scales can be invalidated """
         return self.context.modified().millis()
 
-
     def scale(self, fieldname=None, scale=None, height=None, width=None, direction='thumbnail', **parameters):
         if fieldname is None:
             fieldname = IPrimaryFieldInfo(self.context).fieldname
@@ -221,8 +230,10 @@ class ImageScaling(BrowserView):
                 return None
             width, height = available[scale]
         storage = AnnotationStorage(self.context, self.modified)
+
         info = storage.scale(factory=self.create,
             fieldname=fieldname, height=height, width=width, direction=direction, **parameters)
+
         if info is not None:
             info['fieldname'] = fieldname
             scale_view = ImageScale(self.context, self.request, **info)
