@@ -3,7 +3,6 @@ from xml.sax.saxutils import quoteattr
 from Acquisition import aq_base
 from AccessControl.ZopeGuards import guarded_getattr
 from ZODB.POSException import ConflictError
-from zope.app.component.hooks import getSite
 from zope.component import queryUtility
 from zope.interface import implements
 from zope.traversing.interfaces import ITraversable, TraversalError
