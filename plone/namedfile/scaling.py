@@ -23,7 +23,8 @@ _marker = object()
 class ImageScale(BrowserView):
     """ view used for rendering image scales """
 
-    # Grant full access to this view even if the object being viewed is protected
+    # Grant full access to this view even if the object being viewed is
+    # protected
     # (it's okay because we explicitly validate access to the image attribute
     # when we retrieve it)
     __roles__ = ('Anonymous',)
@@ -69,7 +70,7 @@ class ImageScale(BrowserView):
             ('height', height),
             ('width', width),
             ('class', css_class),
-            ]
+        ]
         values.extend(kwargs.items())
 
         parts = ['<img']
@@ -86,7 +87,8 @@ class ImageScale(BrowserView):
         return u' '.join(parts)
 
     def validate_access(self):
-        fieldname = getattr(self.data, 'fieldname', getattr(self, 'fieldname', None))
+        fieldname = getattr(self.data, 'fieldname',
+                            getattr(self, 'fieldname', None))
         guarded_getattr(self.context, fieldname)
 
     def index_html(self):
@@ -99,15 +101,16 @@ class ImageScale(BrowserView):
         # avoid the need to prefix with nocall: in TAL
         return self
 
-    def HEAD(self, REQUEST, RESPONSE = None):
-        """ Obtain metainformation about the image implied by the request without
-            transfer of the image itself
+    def HEAD(self, REQUEST, RESPONSE=None):
+        """ Obtain metainformation about the image implied by the request
+            without transfer of the image itself
         """
         self.validate_access()
         set_headers(self.data, REQUEST.response)
         return ''
 
     HEAD.__roles__ = ('Anonymous',)
+
 
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
@@ -135,7 +138,8 @@ class ImageScaling(BrowserView):
             if '.' in name:
                 name, ext = name.rsplit('.', 1)
             value = getattr(self.context, name)
-            scale_view = ImageScale(self.context, self.request, data=value, fieldname=name)
+            scale_view = ImageScale(
+                self.context, self.request, data=value, fieldname=name)
             return scale_view.__of__(self.context)
         if image is not None:
             return image
@@ -146,7 +150,8 @@ class ImageScaling(BrowserView):
         # validate access
         value = self.guarded_orig_image(name)
         if not furtherPath:
-            image = ImageScale(self.context, self.request, data=value, fieldname=name)
+            image = ImageScale(
+                self.context, self.request, data=value, fieldname=name)
         else:
             image = self.scale(name, furtherPath.pop())
         if image is not None:
@@ -187,7 +192,12 @@ class ImageScaling(BrowserView):
             return None
         return getScaledImageQuality()
 
-    def create(self, fieldname, direction='thumbnail', height=None, width=None, **parameters):
+    def create(self,
+               fieldname,
+               direction='thumbnail',
+               height=None,
+               width=None,
+               **parameters):
         """ factory for image scales, see `IImageScaleStorage.scale` """
         orig_value = getattr(self.context, fieldname)
         if orig_value is None:
@@ -203,7 +213,8 @@ class ImageScaling(BrowserView):
         if not orig_data:
             return
 
-        # Handle cases where large image data is stored in FileChunks instead of plain string
+        # Handle cases where large image data is stored in FileChunks instead
+        # of plain string
         if isinstance(orig_data, FileChunk):
             # Convert data to 8-bit string
             # (FileChunk does not provide read() access)
@@ -215,17 +226,22 @@ class ImageScaling(BrowserView):
                 parameters['quality'] = quality
 
         try:
-            result = scaleImage(orig_data, direction=direction, height=height, width=width, **parameters)
+            result = scaleImage(orig_data,
+                                direction=direction,
+                                height=height,
+                                width=width,
+                                **parameters)
         except (ConflictError, KeyboardInterrupt):
             raise
         except Exception:
             exception('could not scale "%r" of %r',
-                orig_value, self.context.absolute_url())
+                      orig_value, self.context.absolute_url())
             return
         if result is not None:
             data, format, dimensions = result
             mimetype = 'image/%s' % format.lower()
-            value = orig_value.__class__(data, contentType=mimetype, filename=orig_value.filename)
+            value = orig_value.__class__(
+                data, contentType=mimetype, filename=orig_value.filename)
             value.fieldname = fieldname
             return value, format, dimensions
 
@@ -236,14 +252,20 @@ class ImageScaling(BrowserView):
         date = None
         try:
             if hasattr(context, 'modified') and callable(context.modified):
-                date =  context.modified()
+                date = context.modified()
             else:
                 date = context.bobobase_modification_time()
         except AttributeError:
             date = self.context.modified().millis()
         return date.millis()
 
-    def scale(self, fieldname=None, scale=None, height=None, width=None, direction='thumbnail', **parameters):
+    def scale(self,
+              fieldname=None,
+              scale=None,
+              height=None,
+              width=None,
+              direction='thumbnail',
+              **parameters):
         if fieldname is None:
             fieldname = IPrimaryFieldInfo(self.context).fieldname
         if scale is not None:
@@ -254,13 +276,23 @@ class ImageScaling(BrowserView):
         storage = AnnotationStorage(self.context, self.modified)
 
         info = storage.scale(factory=self.create,
-            fieldname=fieldname, height=height, width=width, direction=direction, **parameters)
+                             fieldname=fieldname,
+                             height=height,
+                             width=width,
+                             direction=direction,
+                             **parameters)
 
         if info is not None:
             info['fieldname'] = fieldname
             scale_view = ImageScale(self.context, self.request, **info)
             return scale_view.__of__(self.context)
 
-    def tag(self, fieldname=None, scale=None, height=None, width=None, direction='thumbnail', **kwargs):
+    def tag(self,
+            fieldname=None,
+            scale=None,
+            height=None,
+            width=None,
+            direction='thumbnail',
+            **kwargs):
         scale = self.scale(fieldname, scale, height, width, direction)
         return scale.tag(**kwargs)
