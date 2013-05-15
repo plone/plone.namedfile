@@ -8,10 +8,8 @@ from plone.namedfile.tests.base import NamedFileFunctionalTestCase
 
 from zope.annotation import IAttributeAnnotatable
 from zope.component import getSiteManager
-from zope.component import getGlobalSiteManager
 from zope.interface import implements
-from plone.namedfile.interfaces import IImageScaleTraversable, \
-    IAvailableSizes, IScaledImageQuality
+from plone.namedfile.interfaces import IImageScaleTraversable, IAvailableSizes
 from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
 from plone.namedfile.scaling import ImageScaling
@@ -31,11 +29,6 @@ class DummyContent(SimpleItem):
     def Title(self):
         return self.title
 
-class DummyQualitySupplier(object):
-    """ fake utility for plone.app.imaging's scaling quality """
-    implements(IScaledImageQuality)
-    def getQuality(self):
-        return 1  # as bad as it gets
 
 class ImageScalingTests(NamedFileTestCase):
 
@@ -159,19 +152,6 @@ class ImageScalingTests(NamedFileTestCase):
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
         self.assertTrue(re.match(expected, tag).groups())
 
-    def testScaledImageQuality(self):
-        # scale an image, record its size
-        foo = self.scaling.scale('image', width=100, height=80)
-        size_foo = foo.data.getSize()
-        # let's pretend p.a.imaging set the scaling quality to "really sloppy"
-        gsm = getGlobalSiteManager()
-        qualitySupplier = DummyQualitySupplier()
-        gsm.registerUtility(qualitySupplier.getQuality, IScaledImageQuality)
-        # now scale again
-        bar = self.scaling.scale('image', width=100, height=80)
-        size_bar = bar.data.getSize()
-        # first one should be bigger
-        self.assertGreater(size_foo, size_bar)
 
 class ImageTraverseTests(NamedFileTestCase):
 
@@ -343,6 +323,7 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         response = self.publish('/item/@@images/image/foo', basic=credentials)
         self.assertEqual(response.getStatus(), 401)
         self.item.__allow_access_to_unprotected_subobjects__ = 1
+
 
 def test_suite():
     from unittest import defaultTestLoader
