@@ -4,6 +4,10 @@ Changelog
 2.0.2 (unreleased)
 ------------------
 
+* Use plone.app.imaging's (>=1.0.8) quality setting if it exists.
+  https://dev.plone.org/ticket/13337
+  [khink]
+
 * fix invalidation on contexts that do not implement dublin core; Notably
   portlet assignments. Fallback is bobo_modification_time. Maybe portlet
   assignments should implement modified() instead?

@@ -183,6 +183,19 @@ class ImageScaling(BrowserView):
     def guarded_orig_image(self, fieldname):
         return guarded_getattr(self.context, fieldname)
 
+    def getQuality(self):
+        """Get plone.app.imaging's quality setting"""
+        # Avoid dependening on version where interface first
+        # appeared.
+        try:
+            from plone.scale.interfaces import IScaledImageQuality
+        except ImportError:
+            return None
+        getScaledImageQuality = queryUtility(IScaledImageQuality)
+        if getScaledImageQuality is None:
+            return None
+        return getScaledImageQuality()
+
     def create(self,
                fieldname,
                direction='thumbnail',
@@ -210,6 +223,13 @@ class ImageScaling(BrowserView):
             # Convert data to 8-bit string
             # (FileChunk does not provide read() access)
             orig_data = str(orig_data)
+
+        # If quality wasn't in the parameters, try the site's default scaling
+        # quality if it exists.
+        if 'quality' not in parameters:
+            quality = self.getQuality()
+            if quality:
+                parameters['quality'] = quality
 
         try:
             result = scaleImage(orig_data,
