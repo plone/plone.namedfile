@@ -6,7 +6,7 @@ version = '2.0.2.dev0'
 setup(name='plone.namedfile',
       version=version,
       description="File types and fields for images, files and blob files with filenames",
-      long_description=open("README.txt").read() + "\n" +
+      long_description=open("README.rst").read() + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read() + "\n" + 
                        open(os.path.join("plone", "namedfile", "usage.txt")).read(),
       classifiers=[
