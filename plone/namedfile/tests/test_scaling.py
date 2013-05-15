@@ -6,9 +6,10 @@ from plone.namedfile.file import NamedImage
 from plone.namedfile.tests.base import NamedFileTestCase, getFile
 from plone.namedfile.tests.base import NamedFileFunctionalTestCase
 from plone.namedfile.scaling import ImageScaling
+from plone.scale.interfaces import IScaledImageQuality
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
-from zope.component import getSiteManager
+from zope.component import getSiteManager, getGlobalSiteManager
 from zope.interface import implements
 
 
@@ -28,6 +29,14 @@ class DummyContent(SimpleItem):
 
     def Title(self):
         return self.title
+
+
+class DummyQualitySupplier(object):
+    """ fake utility for plone.app.imaging's scaling quality """
+    implements(IScaledImageQuality)
+
+    def getQuality(self):
+        return 1  # as bad as it gets
 
 
 class ImageScalingTests(NamedFileTestCase):
@@ -154,6 +163,20 @@ class ImageScalingTests(NamedFileTestCase):
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
         self.assertTrue(re.match(expected, tag).groups())
+
+    def testScaledImageQuality(self):
+        # scale an image, record its size
+        foo = self.scaling.scale('image', width=100, height=80)
+        size_foo = foo.data.getSize()
+        # let's pretend p.a.imaging set the scaling quality to "really sloppy"
+        gsm = getGlobalSiteManager()
+        qualitySupplier = DummyQualitySupplier()
+        gsm.registerUtility(qualitySupplier.getQuality, IScaledImageQuality)
+        # now scale again
+        bar = self.scaling.scale('image', width=100, height=80)
+        size_bar = bar.data.getSize()
+        # first one should be bigger
+        self.assertGreater(size_foo, size_bar)
 
 
 class ImageTraverseTests(NamedFileTestCase):
