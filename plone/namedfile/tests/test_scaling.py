@@ -1,18 +1,18 @@
-import re
 from DateTime import DateTime
 from OFS.SimpleItem import SimpleItem
-from zExceptions import Unauthorized
-
-from plone.namedfile.tests.base import NamedFileTestCase, getFile
-from plone.namedfile.tests.base import NamedFileFunctionalTestCase
-
-from zope.annotation import IAttributeAnnotatable
-from zope.component import getSiteManager
-from zope.interface import implements
 from plone.namedfile.interfaces import IImageScaleTraversable, IAvailableSizes
 from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
+from plone.namedfile.tests.base import NamedFileTestCase, getFile
+from plone.namedfile.tests.base import NamedFileFunctionalTestCase
 from plone.namedfile.scaling import ImageScaling
+from zExceptions import Unauthorized
+from zope.annotation import IAttributeAnnotatable
+from zope.component import getSiteManager
+from zope.interface import implements
+
+
+import re
 
 
 class IHasImage(IImageScaleTraversable):
@@ -62,7 +62,8 @@ class ImageScalingTests(NamedFileTestCase):
         self.assertEqual(foo.width, 60)
         self.assertEqual(foo.height, 60)
         self.assertImage(foo.data.data, 'JPEG', (60, 60))
-        expected_url = re.compile(r'http://nohost/item/@@images/[-a-z0-9]{36}\.jpeg')
+        expected_url = re.compile(
+            r'http://nohost/item/@@images/[-a-z0-9]{36}\.jpeg')
         self.failUnless(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
 
@@ -108,7 +109,8 @@ class ImageScalingTests(NamedFileTestCase):
         def custom_available_sizes():
             return {'bar': (10, 10)}
         sm = getSiteManager()
-        sm.registerUtility(component=custom_available_sizes, provided=IAvailableSizes)
+        sm.registerUtility(component=custom_available_sizes,
+                           provided=IAvailableSizes)
         self.assertEqual(self.scaling.available_sizes, {'bar': (10, 10)})
         sm.unregisterUtility(provided=IAvailableSizes)
         # for testing purposes, the sizes may also be set directly on
@@ -119,7 +121,8 @@ class ImageScalingTests(NamedFileTestCase):
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
         self.item.__allow_access_to_unprotected_subobjects__ = 0
-        self.assertRaises(Unauthorized, self.scaling.guarded_orig_image, 'image')
+        self.assertRaises(Unauthorized,
+                          self.scaling.guarded_orig_image, 'image')
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 
     def testGetAvailableSizes(self):
@@ -256,7 +259,9 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         scale = self.view.scale('image', width=64, height=64)
         # make sure the referenced image scale is available
         url = scale.url.replace('http://nohost', '')
-        response = self.publish(url, basic=self.getCredentials(), request_method = 'HEAD')
+        response = self.publish(url,
+                                basic=self.getCredentials(),
+                                request_method='HEAD')
         self.assertEqual(response.getStatus(), 200)
         self.assertEqual(response.getHeader('Content-Type'), 'image/jpeg')
         self.assertEqual(response.getHeader('Content-Length'), '312')
@@ -293,7 +298,8 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertEqual(response.getBody(), getFile('image.gif').read())
         self.assertEqual(response.getHeader('Content-Type'), 'image/gif')
         # and last a scaled version
-        response = self.publish('/item/@@images/image/thumb', basic=credentials)
+        response = self.publish('/item/@@images/image/thumb',
+                                basic=credentials)
         self.assertEqual(response.getStatus(), 200)
         self.assertEqual(response.getHeader('Content-Type'), 'image/jpeg')
         self.assertImage(response.getBody(), 'JPEG', (128, 128))
