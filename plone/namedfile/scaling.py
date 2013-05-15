@@ -1,6 +1,8 @@
 from Acquisition import aq_base
 from AccessControl.ZopeGuards import guarded_getattr
 from logging import exception
+from plone.namedfile.interfaces import IAvailableSizes
+from plone.namedfile.utils import set_headers, stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.storage import AnnotationStorage
 from plone.scale.scale import scaleImage
@@ -12,8 +14,6 @@ from zope.interface import implements
 from zope.traversing.interfaces import ITraversable, TraversalError
 from zope.publisher.interfaces import IPublishTraverse, NotFound
 from zope.app.file.file import FileChunk
-from plone.namedfile.interfaces import IAvailableSizes
-from plone.namedfile.utils import set_headers, stream_data
 
 _marker = object()
 
