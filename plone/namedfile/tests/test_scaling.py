@@ -176,7 +176,7 @@ class ImageScalingTests(NamedFileTestCase):
         bar = self.scaling.scale('image', width=100, height=80)
         size_bar = bar.data.getSize()
         # first one should be bigger
-        self.assertGreater(size_foo, size_bar)
+        self.assertTrue(size_foo > size_bar)
 
 
 class ImageTraverseTests(NamedFileTestCase):
