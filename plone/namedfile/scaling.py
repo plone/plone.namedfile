@@ -110,6 +110,22 @@ class ImageScale(BrowserView):
     HEAD.__roles__ = ('Anonymous',)
 
 
+class ImmutableTraverser(object):
+    implements(ITraversable)
+
+    def __init__(self, scale):
+        self.scale = scale
+
+    def traverse(self, name, furtherPath):
+        if furtherPath:
+            raise TraversalError("Do not know how to handle further path")
+        else:
+            if self.scale:
+                return self.scale.tag()
+            else:
+                raise TraversalError(name)
+
+
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
     implements(ITraversable, IPublishTraverse)
@@ -151,7 +167,8 @@ class ImageScaling(BrowserView):
             image = ImageScale(
                 self.context, self.request, data=value, fieldname=name)
         else:
-            image = self.scale(name, furtherPath.pop())
+            return ImmutableTraverser(self.scale(name, furtherPath[-1]))
+
         if image is not None:
             return image.tag()
         raise TraversalError(self, name)

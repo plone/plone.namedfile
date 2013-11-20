@@ -4,7 +4,9 @@ Changelog
 2.0.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Scaling Traverser now does not try to traverse two steps in one.
+  This is impossible in chameleon.
+  [do3cc]
 
 
 2.0.2 (2013-05-23)

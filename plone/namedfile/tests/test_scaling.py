@@ -196,7 +196,9 @@ class ImageTraverseTests(NamedFileTestCase):
         view = self.item.unrestrictedTraverse('@@images')
         stack = path.split('/')
         name = stack.pop(0)
-        tag = view.traverse(name, stack)
+        static_traverser = view.traverse(name, stack)
+        scale = stack.pop(0)
+        tag = static_traverser.traverse(scale, stack)
         base = self.item.absolute_url()
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
