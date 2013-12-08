@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.0.3 (unreleased)
+2.0.3 (2013-12-07)
 ------------------
 
 - Scaling Traverser now does not try to traverse two steps in one.
