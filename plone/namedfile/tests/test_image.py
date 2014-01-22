@@ -65,3 +65,32 @@ class TestImage(unittest.TestCase):
         self.assertEqual(get_contenttype(NamedImage(getFile('image.gif').read(),
                                                     filename=u'image.gif')),
                          'image/gif')
+        self.assertEqual(get_contenttype(
+                                     NamedImage(getFile('notimage.doc').read(),
+                                                filename=u'notimage.doc')),
+                         'application/msword')
+
+    def testImageValidation(self):
+        from plone.namedfile.field import InvalidImageFile,\
+            validate_image_field
+
+        class FakeField(object):
+            __name__ = 'logo'
+
+        # field is empty
+        validate_image_field(FakeField(), None)
+
+        # field has an empty file
+        image = self._makeImage()
+        with self.assertRaises(InvalidImageFile):
+            validate_image_field(FakeField(), image)
+
+        # field has an image file
+        image._setData(zptlogo)
+        validate_image_field(FakeField(), image)
+
+        notimage = NamedImage(getFile('notimage.doc').read(),
+                              filename=u'notimage.doc')
+        with self.assertRaises(InvalidImageFile):
+            validate_image_field(FakeField(), notimage)
+

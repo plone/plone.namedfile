@@ -4,6 +4,9 @@ Changelog
 2.0.4 (unreleased)
 ------------------
 
+- Validate image field : check if content is actually an image using mimetype.
+  [thomasdesvenain]
+
 - Fix: get_contenttype works when empty string is given as contentType.
   [thomasdesvenain]
 
