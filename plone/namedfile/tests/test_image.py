@@ -4,6 +4,8 @@ import unittest
 from zope.interface.verify import verifyClass
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
+from plone.namedfile.tests.base import getFile
+from plone.namedfile.utils import get_contenttype
 
 
 zptlogo = (
@@ -32,14 +34,14 @@ class TestImage(unittest.TestCase):
         return NamedImage(*args, **kw)
 
     def testEmpty(self):
-        file = self._makeImage()
-        self.assertEqual(file.contentType, '')
-        self.assertEqual(file.data, '')
+        file_img = self._makeImage()
+        self.assertEqual(file_img.contentType, '')
+        self.assertEqual(file_img.data, '')
 
     def testConstructor(self):
-        file = self._makeImage('Data')
-        self.assertEqual(file.contentType, '')
-        self.assertEqual(file.data, 'Data')
+        file_img = self._makeImage('Data')
+        self.assertEqual(file_img.contentType, '')
+        self.assertEqual(file_img.data, 'Data')
 
     def testMutators(self):
         image = self._makeImage()
@@ -55,3 +57,11 @@ class TestImage(unittest.TestCase):
     def testInterface(self):
         self.failUnless(INamedImage.implementedBy(NamedImage))
         self.failUnless(verifyClass(INamedImage, NamedImage))
+
+    def test_get_contenttype(self):
+        self.assertEqual(get_contenttype(NamedImage(getFile('image.gif').read(),
+                                                    contentType='image/gif')),
+                         'image/gif')
+        self.assertEqual(get_contenttype(NamedImage(getFile('image.gif').read(),
+                                                    filename=u'image.gif')),
+                         'image/gif')

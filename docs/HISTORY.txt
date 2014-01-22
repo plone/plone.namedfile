@@ -4,7 +4,8 @@ Changelog
 2.0.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fix: get_contenttype works when empty string is given as contentType.
+  [thomasdesvenain]
 
 
 2.0.3 (2013-12-07)
