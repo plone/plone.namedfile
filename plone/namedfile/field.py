@@ -24,17 +24,10 @@ class InvalidImageFile(ValidationError):
 
 
 def validate_image_field(field, value):
-    try:
-        validate_image_file(value)
-    except InvalidImageFile, error:
-        raise InvalidImageFile([error], field.__name__)
-
-
-def validate_image_file(namedfile):
-    if namedfile is not None:
-        mimetype = get_contenttype(namedfile)
+    if value is not None:
+        mimetype = get_contenttype(value)
         if mimetype.split('/')[0] != 'image':
-            raise InvalidImageFile(mimetype)
+            raise InvalidImageFile(mimetype, field.__name__)
 
 
 class NamedFile(Object):
@@ -66,7 +59,7 @@ class NamedImage(Object):
 
     def _validate(self, value):
         super(NamedImage, self)._validate(value)
-        validate_image_file(self, value)
+        validate_image_field(self, value)
 
 
 class NamedBlobFile(Object):
@@ -98,5 +91,5 @@ class NamedBlobImage(Object):
 
     def _validate(self, value):
         super(NamedBlobImage, self)._validate(value)
-        validate_image_file(self, value)
+        validate_image_field(self, value)
 
