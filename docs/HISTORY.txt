@@ -4,7 +4,15 @@ Changelog
 2.0.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Backward compatibility of NamedFile with zope.app.file FileChunk.
+  Avoids NamedFile validation unexpected failures.
+  [thomasdesvenain]
+
+- Validate image field : check if content is actually an image using mimetype.
+  [thomasdesvenain]
+
+- Fix: get_contenttype works when empty string is given as contentType.
+  [thomasdesvenain]
 
 
 2.0.3 (2013-12-07)
