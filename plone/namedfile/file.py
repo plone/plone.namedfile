@@ -24,6 +24,43 @@ IMAGE_INFO_BYTES = 1024
 MAX_INFO_BYTES = 1 << 16
 
 
+class FileChunk(Persistent):
+    """Wrapper for possibly large data"""
+
+    next = None
+
+    def __init__(self, data):
+        self._data = data
+
+    def __getslice__(self, i, j):
+        return self._data[i:j]
+
+    def __len__(self):
+        data = str(self)
+        return len(data)
+
+    def __str__(self):
+        next = self.next
+        if next is None:
+            return self._data
+
+        result = [self._data]
+        while next is not None:
+            self = next
+            result.append(self._data)
+            next = self.next
+
+        return ''.join(result)
+
+
+FILECHUNK_CLASSES = [FileChunk]
+try:
+    from zope.app.file.file import FileChunk as zafFileChunk
+    FILECHUNK_CLASSES.append(zafFileChunk)
+except:
+    pass
+
+
 class NamedFile(Persistent):
     """A non-BLOB file that stores a filename
 
@@ -125,7 +162,7 @@ class NamedFile(Persistent):
         self.filename = filename
 
     def _getData(self):
-        if isinstance(self._data, FileChunk):
+        if isinstance(self._data, tuple(FILECHUNK_CLASSES)):
             return str(self._data)
         else:
             return self._data
@@ -145,7 +182,7 @@ class NamedFile(Persistent):
             raise TypeError('Cannot set None data on a file.')
 
         # Handle case when data is already a FileChunk
-        if isinstance(data, FileChunk):
+        if isinstance(data, tuple(FILECHUNK_CLASSES)):
             size = len(data)
             self._data, self._size = data, size
             return
@@ -217,35 +254,6 @@ class NamedFile(Persistent):
 
     # See IFile.
     data = property(_getData, _setData)
-
-
-class FileChunk(Persistent):
-    """Wrapper for possibly large data"""
-
-    next = None
-
-    def __init__(self, data):
-        self._data = data
-
-    def __getslice__(self, i, j):
-        return self._data[i:j]
-
-    def __len__(self):
-        data = str(self)
-        return len(data)
-
-    def __str__(self):
-        next = self.next
-        if next is None:
-            return self._data
-
-        result = [self._data]
-        while next is not None:
-            self = next
-            result.append(self._data)
-            next = self.next
-
-        return ''.join(result)
 
 
 class NamedImage(NamedFile):

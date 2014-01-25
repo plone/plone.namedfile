@@ -4,7 +4,9 @@ Changelog
 2.0.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Backward compatibility of NamedFile with zope.app.file FileChunk.
+  Avoids NamedFile validation unexpected failures.
+  [thomasdesvenain]
 
 
 2.0.3 (2013-12-07)
