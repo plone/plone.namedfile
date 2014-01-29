@@ -57,7 +57,7 @@ FILECHUNK_CLASSES = [FileChunk]
 try:
     from zope.app.file.file import FileChunk as zafFileChunk
     FILECHUNK_CLASSES.append(zafFileChunk)
-except:
+except ImportError:
     pass
 
 
