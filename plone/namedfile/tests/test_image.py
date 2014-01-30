@@ -91,6 +91,4 @@ class TestImage(unittest.TestCase):
 
         notimage = NamedImage(getFile('notimage.doc').read(),
                               filename=u'notimage.doc')
-        with self.assertRaises(InvalidImageFile):
-            validate_image_field(FakeField(), notimage)
-
+        self.assertRaises(InvalidImageFile, validate_image_field, FakeField(), notimage)
