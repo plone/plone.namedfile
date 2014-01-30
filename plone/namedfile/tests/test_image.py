@@ -82,7 +82,7 @@ class TestImage(unittest.TestCase):
 
         # field has an empty file
         image = self._makeImage()
-        self.assertRaises(InvalidImageFile, FakeField(), image)
+        self.assertRaises(InvalidImageFile, validate_image_field, FakeField(), image)
 
         # field has an image file
         image._setData(zptlogo)
