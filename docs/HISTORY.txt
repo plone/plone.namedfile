@@ -4,6 +4,9 @@ Changelog
 2.0.6 (unreleased)
 ------------------
 
+- Internationalize field factory label.
+  [thomasdesvenain]
+
 - Cache image scales using the plone.stableResource ruleset
   when they are accessed via UID-based URLs.
   [davisagli]
