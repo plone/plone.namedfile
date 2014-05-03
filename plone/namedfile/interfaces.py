@@ -47,6 +47,13 @@ class IAvailableSizes(Interface):
     """A callable returning a dictionary of scale name => (width, height)
     """
 
+class IStableImageScale(Interface):
+    """ Marker for image scales when accessed with a UID-based URL.
+
+    These can be cached forever using the plone.stableResource ruleset.
+    """
+
+
 # Values
 
 class INamed(Interface):
