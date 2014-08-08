@@ -7,37 +7,9 @@ Changelog
 - Internationalize field factory label.
   [thomasdesvenain]
 
-
-3.0.0 (2014-04-13)
-------------------
-
-- Disable CSRF protection when creating a scale so we can write to the database
-  [vangheem]
-
-
-2.0.5 (2014-02-19)
-------------------
-
-- Ensure zope.app.file.file module alias is created before its use in
-  file package.
-  [thomasdesvenain]
-
-
-2.0.4 (2014-01-27)
-------------------
-
-- Disable CSRF protection when creating a scale so we can write to the database
-  [vangheem]
-
-- Validate image field : check if content is actually an image using mimetype.
-  [thomasdesvenain]
-
-- Fix: get_contenttype works when empty string is given as contentType.
-
 - Backward compatibility of NamedFile with zope.app.file FileChunk.
   Avoids NamedFile validation unexpected failures.
   [thomasdesvenain]
->>>>>>> 570fe48... Internationalize field factory label.
 
 
 2.0.5 (2014-02-19)
