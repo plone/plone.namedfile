@@ -7,10 +7,6 @@ Changelog
 - Internationalize field factory label.
   [thomasdesvenain]
 
-- Cache image scales using the plone.stableResource ruleset
-  when they are accessed via UID-based URLs.
-  [davisagli]
-
 
 3.0.0 (2014-04-13)
 ------------------

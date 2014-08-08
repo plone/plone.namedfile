@@ -2,7 +2,6 @@ from Acquisition import aq_base
 from AccessControl.ZopeGuards import guarded_getattr
 from logging import exception
 from plone.namedfile.interfaces import IAvailableSizes
-from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.utils import set_headers, stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.storage import AnnotationStorage
@@ -11,7 +10,6 @@ from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from ZODB.POSException import ConflictError
 from zope.component import queryUtility
-from zope.interface import alsoProvides
 from zope.interface import implements
 from zope.traversing.interfaces import ITraversable, TraversalError
 from zope.publisher.interfaces import IPublishTraverse, NotFound
@@ -148,7 +146,6 @@ class ImageScaling(BrowserView):
             info = storage.get(name)
             if info is not None:
                 scale_view = ImageScale(self.context, self.request, **info)
-                alsoProvides(scale_view, IStableImageScale)
                 return scale_view.__of__(self.context)
         else:
             # otherwise `name` must refer to a field...
