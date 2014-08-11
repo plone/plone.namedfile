@@ -4,7 +4,10 @@ Changelog
 2.0.8 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Cache image scales using the plone.stableResource ruleset
+  when they are accessed via UID-based URLs.
+  (Requires plone.app.imaging >= 1.1.0)
+  [davisagli]
 
 
 2.0.7 (2014-10-20)
