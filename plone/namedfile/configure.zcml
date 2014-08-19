@@ -2,7 +2,6 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:zcml="http://namespaces.zope.org/zcml"
     xmlns:browser="http://namespaces.zope.org/browser"
-    xmlns:cache="http://namespaces.zope.org/cache"
     i18n_domain="plone.namedfile">
 
     <browser:page
@@ -24,14 +23,5 @@
     <include zcml:condition="installed plone.rfc822" file="marshaler.zcml" />
     <include zcml:condition="installed plone.schemaeditor" file="editor.zcml" />
     <include zcml:condition="installed plone.scale" file="scaling.zcml" />
-
-    <configure zcml:condition="installed z3c.caching">
-        <include package="z3c.caching" file="meta.zcml" />
-        <include package="z3c.caching" />
-        <cache:ruleset
-            for=".interfaces.IStableImageScale"
-            ruleset="plone.stableResource"
-            />
-    </configure>
 
 </configure>

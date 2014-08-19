@@ -7,9 +7,9 @@ Changelog
 - Internationalize field factory label.
   [thomasdesvenain]
 
-- Cache image scales using the plone.stableResource ruleset
-  when they are accessed via UID-based URLs.
-  [davisagli]
+- Backward compatibility of NamedFile with zope.app.file FileChunk.
+  Avoids NamedFile validation unexpected failures.
+  [thomasdesvenain]
 
 
 2.0.5 (2014-02-19)
