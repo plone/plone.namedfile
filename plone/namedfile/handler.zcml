@@ -15,7 +15,7 @@
         component=".handler.NamedImageHandler"
         name="plone.namedfile.field.NamedImage"
         />
-        
+
     <utility
         component=".handler.NamedBlobFileHandler"
         name="plone.namedfile.field.NamedBlobFile"

@@ -74,7 +74,7 @@ class TestImage(unittest.TestCase):
         self.failUnless(INamedBlobFile.implementedBy(NamedBlobImage))
         self.failUnless(INamedBlobImage.implementedBy(NamedBlobImage))
         self.failUnless(verifyClass(INamedBlobFile, NamedBlobImage))
-    
+
     def testDataMutatorWithLargeHeader(self):
         from plone.namedfile.file import IMAGE_INFO_BYTES
         bogus_header_length = struct.pack('>H', IMAGE_INFO_BYTES * 2)
@@ -98,4 +98,3 @@ class TestImage(unittest.TestCase):
 
         image_copy = copy(image)
         self.assertEqual(image_copy.data, image.data)
-    

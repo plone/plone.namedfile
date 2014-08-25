@@ -10,12 +10,12 @@ First, we wire up the handlers
     ... <configure
     ...      xmlns="http://namespaces.zope.org/zope"
     ...      i18n_domain="plone.namedfile">
-    ...      
+    ...
     ...     <include package="zope.component" file="meta.zcml" />
     ...     <include package="zope.security" file="meta.zcml" />
-    ...     
+    ...
     ...     <include package="plone.namedfile" file="handler.zcml" />
-    ...     
+    ...
     ... </configure>
     ... """
 
@@ -38,7 +38,7 @@ unsupported.
 Named file
 -----------
 
-    >>> field = NamedFile(__name__="dummy", title=u"Test", 
+    >>> field = NamedFile(__name__="dummy", title=u"Test",
     ...     description=u"Test desc", required=False, readonly=True)
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
@@ -60,7 +60,7 @@ Named file
     ...   <title>Test</title>
     ... </field>
     ... """)
-    
+
     >>> reciprocal = handler.read(element)
     >>> reciprocal.__class__
     <class 'plone.namedfile.field.NamedFile'>
@@ -78,7 +78,7 @@ Named file
 Named image
 -----------
 
-    >>> field = NamedImage(__name__="dummy", title=u"Test", 
+    >>> field = NamedImage(__name__="dummy", title=u"Test",
     ...     description=u"Test desc", required=False, readonly=True)
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
@@ -100,7 +100,7 @@ Named image
     ...   <title>Test</title>
     ... </field>
     ... """)
-    
+
     >>> reciprocal = handler.read(element)
     >>> reciprocal.__class__
     <class 'plone.namedfile.field.NamedImage'>
@@ -118,7 +118,7 @@ Named image
 Named blob file
 ---------------
 
-    >>> field = NamedBlobFile(__name__="dummy", title=u"Test", 
+    >>> field = NamedBlobFile(__name__="dummy", title=u"Test",
     ...     description=u"Test desc", required=False, readonly=True)
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
@@ -140,7 +140,7 @@ Named blob file
     ...   <title>Test</title>
     ... </field>
     ... """)
-    
+
     >>> reciprocal = handler.read(element)
     >>> reciprocal.__class__
     <class 'plone.namedfile.field.NamedBlobFile'>
@@ -158,7 +158,7 @@ Named blob file
 Named blob image
 ----------------
 
-    >>> field = NamedBlobImage(__name__="dummy", title=u"Test", 
+    >>> field = NamedBlobImage(__name__="dummy", title=u"Test",
     ...     description=u"Test desc", required=False, readonly=True)
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
@@ -180,7 +180,7 @@ Named blob image
     ...   <title>Test</title>
     ... </field>
     ... """)
-    
+
     >>> reciprocal = handler.read(element)
     >>> reciprocal.__class__
     <class 'plone.namedfile.field.NamedBlobImage'>

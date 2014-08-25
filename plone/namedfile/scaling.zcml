@@ -2,9 +2,9 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:zcml="http://namespaces.zope.org/zcml">
-  
+
   <include package="zope.annotation"/>
-  
+
   <browser:page
     name="images"
     for=".interfaces.IImageScaleTraversable"

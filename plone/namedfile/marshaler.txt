@@ -10,14 +10,14 @@ To test this, we must first load some configuration:
     ... <configure
     ...      xmlns="http://namespaces.zope.org/zope"
     ...      i18n_domain="plone.namedfile.tests">
-    ...      
+    ...
     ...     <include package="zope.component" file="meta.zcml" />
     ...     <include package="zope.security" file="meta.zcml" />
-    ...     
+    ...
     ...     <include package="plone.rfc822" />
-    ...     
+    ...
     ...     <include package="plone.namedfile" file="marshaler.zcml" />
-    ...     
+    ...
     ... </configure>
     ... """
 
@@ -83,7 +83,7 @@ binary data into a UTF-8 string in a header.
     Traceback (most recent call last):
     ...
     ValueError: File fields can only be marshaled as primary fields
-    
+
     >>> marshaler.getContentType()
     'text/plain'
     >>> marshaler.ascii
@@ -94,7 +94,7 @@ binary data into a UTF-8 string in a header.
     Traceback (most recent call last):
     ...
     ValueError: File fields can only be marshaled as primary fields
-    
+
     >>> marshaler.getContentType()
     'image/gif'
     >>> marshaler.ascii
@@ -105,7 +105,7 @@ Let's try it with primary fields:
     >>> marshaler = getMultiAdapter((t, ITestContent['_file']), IFieldMarshaler)
     >>> marshaler.marshal(primary=True)
     'dummy test data'
-    
+
     >>> marshaler.getContentType()
     'text/plain'
     >>> marshaler.getCharset('utf-8') is None
@@ -140,7 +140,7 @@ refuses to encode non-primary fields.
 
     >>> from zope.interface import alsoProvides
     >>> alsoProvides(ITestContent['_file'], IPrimaryField)
-    
+
     >>> message = constructMessageFromSchema(t, ITestContent)
     >>> messageBody = renderMessage(message)
     >>> print messageBody

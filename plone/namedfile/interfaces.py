@@ -52,7 +52,7 @@ class IAvailableSizes(Interface):
 class INamed(Interface):
     """An item with a filename
     """
-    
+
     filename = schema.TextLine(title=u"Filename", required=False, default=None)
 
 class INamedFile(INamed, IFile):
@@ -105,7 +105,7 @@ class INamedBlobFile(INamedFile, IBlobby):
 class INamedBlobImage(INamedImage, IBlobby):
     """A BLOB image with a filename
     """
-    
+
 # Fields
 
 class INamedBlobFileField(INamedFileField):

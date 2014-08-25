@@ -26,7 +26,7 @@ MAXCHUNKSIZE = 1 << 16
 
 class StringStorable(object):
     implements(IStorage)
-     
+
     def store(self, data, blob):
         if not isinstance(data, str):
             raise NotStorable("Could not store data (not of 'str' type).")
@@ -38,7 +38,7 @@ class StringStorable(object):
 
 class UnicodeStorable(StringStorable):
     implements(IStorage)
-    
+
     def store(self, data, blob):
         if not isinstance(data, unicode):
             raise NotStorable("Could not store data (not of 'unicode' "
@@ -50,7 +50,7 @@ class UnicodeStorable(StringStorable):
 
 class FileChunkStorable(object):
     implements(IStorage)
-     
+
     def store(self, data, blob):
         if not isinstance(data, FileChunk):
             raise NotStorable("Could not store data (not a of 'FileChunk' "
@@ -66,7 +66,7 @@ class FileChunkStorable(object):
 
 class FileDescriptorStorable(object):
     implements(IStorage)
-     
+
     def store(self, data, blob):
         if not isinstance(data, file):
             raise NotStorable("Could not store data (not of 'file').")
@@ -79,7 +79,7 @@ class FileDescriptorStorable(object):
 
 class FileUploadStorable(object):
     implements(IStorage)
-     
+
     def store(self, data, blob):
         if not isinstance(data, FileUpload):
             raise NotStorable("Could not store data (not of 'FileUpload').")

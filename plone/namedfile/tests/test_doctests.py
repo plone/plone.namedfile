@@ -9,19 +9,19 @@ def test_suite():
         doctest.DocFileSuite(
             'usage.txt', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
-        
+
         doctest.DocFileSuite(
             'handler.txt', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
-        
+
         doctest.DocFileSuite(
             'marshaler.txt', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
-        
+
         doctest.DocFileSuite(
             'utils.txt', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
-        
+
         doctest.DocTestSuite('plone.namedfile.file'),
 
         ])

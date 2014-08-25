@@ -12,9 +12,9 @@ We must first load the package's ZCML.
     ... <configure
     ...      xmlns="http://namespaces.zope.org/zope"
     ...      i18n_domain="plone.namedfile.tests">
-    ...      
+    ...
     ...     <include package="plone.namedfile" />
-    ...     
+    ...
     ... </configure>
     ... """
 
@@ -37,7 +37,7 @@ test the BLOB versions of the fields if z3c.blobfile is installed.
     ...     blob = field.NamedBlobFile(title=u"Named blob file")
     ...     blobimage = field.NamedBlobImage(title=u"Named blob image file")
 
-These store data with the following types. 
+These store data with the following types.
 
     >>> from zope.interface import implements
     >>> from plone import namedfile
@@ -73,7 +73,7 @@ The FileContainer class creates empty objects to start with.
     ''
     >>> container.image.filename is None
     True
-    
+
     >>> container.blob.data
     ''
     >>> container.blob.contentType
@@ -86,7 +86,7 @@ The FileContainer class creates empty objects to start with.
     ''
     >>> container.blobimage.filename is None
     True
-    
+
 Let's now set some actual data in these files. Notice how the constructor
 will attempt to guess the filename from the file extension.
 
@@ -105,7 +105,7 @@ will attempt to guess the filename from the file extension.
     'text/plain'
     >>> container.blob.filename
     u'test.txt'
-    
+
 Let's also try to read a GIF, courtesy of the zope.app.file tests:
 
     >>> zptlogo = (
@@ -172,8 +172,8 @@ The filename must be set to a unicode string, not a bytestring:
 Download view
 -------------
 
-This package also comes with a view that can be used to download files. This 
-will set Content-Disposition to ensure the browser downloads the file rather 
+This package also comes with a view that can be used to download files. This
+will set Content-Disposition to ensure the browser downloads the file rather
 than displaying it. To use it, link to ../context-object/@@download/fieldname,
 where `fieldname` is the name of the attribute on the context-object where the
 named file is stored.
@@ -212,7 +212,7 @@ We will test this with a dummy request, faking traversal.
     >>> download = Download(container, request).publishTraverse(request, 'image')
     >>> download() == zptlogo
     True
-    
+
     >>> request.response.getHeader('Content-Length')
     '341'
     >>> request.response.getHeader('Content-Type')
@@ -238,7 +238,7 @@ Display-file view
 -----------------
 
 This package also comes with a view that can be used to display files in the
-browser. To use it, link to ../context-object/@@display-file/fieldname, where 
+browser. To use it, link to ../context-object/@@display-file/fieldname, where
 `fieldname` is the name of the attribute on the context-object where the named
 file is stored.
 
@@ -274,7 +274,7 @@ We will test this with a dummy request, faking traversal.
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'image')
     >>> display_file() == zptlogo
     True
-    
+
     >>> request.response.getHeader('Content-Length')
     '341'
     >>> request.response.getHeader('Content-Type')
