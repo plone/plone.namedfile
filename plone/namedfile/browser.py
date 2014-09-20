@@ -1,11 +1,11 @@
+# -*- coding: utf-8 -*-
+from AccessControl.ZopeGuards import guarded_getattr
+from Products.Five.browser import BrowserView
+from plone.namedfile.utils import set_headers, stream_data
+from plone.rfc822.interfaces import IPrimaryFieldInfo
 from zope.interface import implements
 from zope.publisher.interfaces import IPublishTraverse, NotFound
 
-from plone.rfc822.interfaces import IPrimaryFieldInfo
-from plone.namedfile.utils import set_headers, stream_data
-
-from AccessControl.ZopeGuards import guarded_getattr
-from Products.Five.browser import BrowserView
 
 class Download(BrowserView):
     """Download a file, via ../context/@@download/fieldname/filename
@@ -32,7 +32,7 @@ class Download(BrowserView):
 
         if self.fieldname is None:  # ../@@download/fieldname
             self.fieldname = name
-        elif self.filename is None: # ../@@download/fieldname/filename
+        elif self.filename is None:  # ../@@download/fieldname/filename
             self.filename = name
         else:
             raise NotFound(self, name, request)
@@ -56,6 +56,11 @@ class Download(BrowserView):
                 # Ensure that we have at least a filedname
                 raise NotFound(self, '', self.request)
             self.fieldname = info.fieldname
+
+            # respect field level security as defined in plone.autoform
+            # check if attribute access would be allowed!
+            guarded_getattr(self.context, self.fieldname, None)
+
             file = info.value
         else:
             context = getattr(self.context, 'aq_explicit', self.context)
@@ -65,6 +70,7 @@ class Download(BrowserView):
             raise NotFound(self, self.fieldname, self.request)
 
         return file
+
 
 class DisplayFile(Download):
     """Display a file, via ../context/@@display-file/fieldname/filename

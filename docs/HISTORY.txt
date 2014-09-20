@@ -4,6 +4,10 @@ Changelog
 3.0.1 (unreleased)
 ------------------
 
+- respect field level security as possible with dexterity in download view
+  also for primary fields.
+  [jensens]
+
 - Internationalize field factory label.
   [thomasdesvenain]
 
