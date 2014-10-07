@@ -4,6 +4,9 @@ Changelog
 3.0.1 (unreleased)
 ------------------
 
+- Fixed inserting filename in Content-Disposition header.
+  [kroman0]
+
 - Respect field level security in download views also for primary fields.
   [jensens]
 
