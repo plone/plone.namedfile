@@ -192,7 +192,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Type')
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
-    'attachment; filename="test.txt"'
+    "attachment; filename*=UTF-8''test.txt"
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blob')
@@ -206,7 +206,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Type')
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
-    'attachment; filename="test.txt"'
+    "attachment; filename*=UTF-8''test.txt"
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'image')
@@ -218,7 +218,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Type')
     'image/foo'
     >>> request.response.getHeader('Content-Disposition')
-    'attachment; filename="zpt.gif"'
+    "attachment; filename*=UTF-8''zpt.gif"
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blobimage')
@@ -232,7 +232,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Type')
     'image/foo'
     >>> request.response.getHeader('Content-Disposition')
-    'attachment; filename="zpt.gif"'
+    "attachment; filename*=UTF-8''zpt.gif"
 
 Display-file view
 -----------------
@@ -327,7 +327,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Type')
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
-    'attachment; filename="test.txt"'
+    "attachment; filename*=UTF-8''test.txt"
 
 Image scales
 ------------
