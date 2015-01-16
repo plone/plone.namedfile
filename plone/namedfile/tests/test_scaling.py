@@ -357,7 +357,3 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertEqual(response.getStatus(), 401)
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 
-
-def test_suite():
-    from unittest import defaultTestLoader
-    return defaultTestLoader.loadTestsFromName(__name__)
