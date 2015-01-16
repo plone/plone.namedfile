@@ -178,6 +178,10 @@ class ImageScalingTests(NamedFileTestCase):
         # first one should be bigger
         self.assertTrue(size_foo > size_bar)
 
+    def testScaleTagWithDimensions(self):
+        tag = self.scaling.tag('image', width=42, height=23)
+        self.assertIn('height="23"', tag)
+        self.assertIn('width="42"', tag)
 
 class ImageTraverseTests(NamedFileTestCase):
 

@@ -326,4 +326,8 @@ class ImageScaling(BrowserView):
             direction='thumbnail',
             **kwargs):
         scale = self.scale(fieldname, scale, height, width, direction)
+        if height is not None:
+            kwargs['height'] = height
+        if width is not None:
+            kwargs['width'] = width
         return scale.tag(**kwargs)
