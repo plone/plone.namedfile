@@ -53,7 +53,7 @@ class Download(BrowserView):
         if not self.fieldname:
             info = IPrimaryFieldInfo(self.context, None)
             if info is None:
-                # Ensure that we have at least a filedname
+                # Ensure that we have at least a fieldname
                 raise NotFound(self, '', self.request)
             self.fieldname = info.fieldname
 
