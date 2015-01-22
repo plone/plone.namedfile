@@ -178,6 +178,10 @@ class ImageScalingTests(NamedFileTestCase):
         # first one should be bigger
         self.assertTrue(size_foo > size_bar)
 
+    def testScaleTagWithDimensions(self):
+        tag = self.scaling.tag('image', width=42, height=23)
+        self.assertIn('height="23"', tag)
+        self.assertIn('width="42"', tag)
 
 class ImageTraverseTests(NamedFileTestCase):
 
@@ -357,7 +361,3 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertEqual(response.getStatus(), 401)
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 
-
-def test_suite():
-    from unittest import defaultTestLoader
-    return defaultTestLoader.loadTestsFromName(__name__)
