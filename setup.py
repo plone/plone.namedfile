@@ -37,7 +37,7 @@ setup(name='plone.namedfile',
         'editor': ['plone.schemaeditor'],
         'supermodel': ['plone.supermodel'],
         'marshaler': [], # for BBB, we now depend on this
-        'scales': ['plone.scale[storage] >=1.1dev'],
+        'scales': ['plone.scale[storage] >=1.1'],
         'test': ['lxml', 'plone.scale'],
       },
       )
