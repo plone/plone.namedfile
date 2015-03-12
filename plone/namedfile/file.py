@@ -19,6 +19,8 @@ from ZODB.blob import Blob
 from plone.namedfile.interfaces import INamedBlobFile, INamedBlobImage
 from plone.namedfile.interfaces import IStorage
 
+from PIL import Image
+
 MAXCHUNKSIZE = 1 << 16
 IMAGE_INFO_BYTES = 1024
 MAX_INFO_BYTES = 1 << 16
@@ -455,4 +457,10 @@ class NamedBlobImage(NamedBlobFile):
 
     def getImageSize(self):
         """See interface `IImage`"""
-        return (self._width, self._height)
+        if (self._width, self._height) == (-1, -1):
+            stream = StringIO(self.data)
+            im = Image.open(stream)
+            w, h = im.size
+            return (w, h)
+        else:
+            return (self._width, self._height)
