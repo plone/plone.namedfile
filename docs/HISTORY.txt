@@ -1,6 +1,14 @@
 Changelog
 =========
 
+2.0.9 (unreleased)
+------------------
+
+- Workarround for method getImageSize.
+  Prevent returning (-1, -1) as the size of the image.
+  [andreesg]
+
+
 2.0.8 (unreleased)
 ------------------
 
