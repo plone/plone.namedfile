@@ -7,7 +7,7 @@ setup(name='plone.namedfile',
       version=version,
       description="File types and fields for images, files and blob files with filenames",
       long_description=open("README.rst").read() + "\n" +
-                       open(os.path.join("docs", "HISTORY.txt")).read() + "\n" +
+                       open(os.path.join("CHANGES.rst")).read() + "\n" +
                        open(os.path.join("plone", "namedfile", "usage.txt")).read(),
       classifiers=[
         "Framework :: Plone",
@@ -32,12 +32,12 @@ setup(name='plone.namedfile',
           'zope.traversing',
           'plone.rfc822>=1.0b2',
       ],
-      extras_require = {
-        'blobs':  [], # BBB
+      extras_require={
+        'blobs':  [],  # BBB
         'editor': ['plone.schemaeditor'],
         'supermodel': ['plone.supermodel'],
-        'marshaler': [], # for BBB, we now depend on this
+        'marshaler': [],  # for BBB, we now depend on this
         'scales': ['plone.scale[storage] >=1.1'],
         'test': ['lxml', 'plone.scale'],
       },
-      )
+)

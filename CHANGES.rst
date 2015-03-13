@@ -4,9 +4,8 @@ Changelog
 3.0.2 (unreleased)
 ------------------
 
-- Cache image scales using the plone.stableResource ruleset
-  when they are accessed via UID-based URLs.
-  (Requires plone.app.imaging >= 1.1.0)
+- Cache image scales using the plone.stableResource ruleset when they are
+  accessed via UID-based URLs. (Requires plone.app.imaging >= 1.1.0)
   [davisagli]
 
 
