@@ -455,4 +455,9 @@ class NamedBlobImage(NamedBlobFile):
 
     def getImageSize(self):
         """See interface `IImage`"""
-        return (self._width, self._height)
+        if (self._width, self._height) == (-1, -1):
+            res = getImageInfo(self.data)
+            contentType, self._width, self._height = res
+            return (self._width, self._height)
+        else:
+            return (self._width, self._height)
