@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.0.8 (unreleased)
+2.0.8 (2015-04-29)
 ------------------
 
 - Cache image scales using the plone.stableResource ruleset
