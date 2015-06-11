@@ -4,7 +4,9 @@ Changelog
 3.0.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Don't fail, when accessing the ``tag`` method of the ``@@images`` view, if
+  ``scale`` returns ``None``.
+  [thet]
 
 
 3.0.2 (2015-03-13)
