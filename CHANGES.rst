@@ -1,7 +1,7 @@
 Changelog
 =========
 
-3.0.3 (unreleased)
+3.0.3 (2015-08-14)
 ------------------
 
 - Don't fail, when accessing the ``tag`` method of the ``@@images`` view, if
