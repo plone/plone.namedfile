@@ -29,6 +29,7 @@ setup(name='plone.namedfile',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
+          'exifread',
           'setuptools',
           'zope.browserpage',
           'zope.component',
