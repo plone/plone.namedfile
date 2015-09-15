@@ -4,7 +4,9 @@ Changelog
 2.0.10 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Add automatic image rotation based on EXIF data for dexterity images.
+  Uses exifread library and code modified from Products.ATContentTypes
+  [ezvirtual]
 
 
 2.0.9 (2015-08-13)
