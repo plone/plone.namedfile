@@ -18,6 +18,7 @@
         permission="zope2.View"
         />
 
+    <include file="subscribers.zcml" />
     <include file="z3c-blobfile.zcml" />
     <include zcml:condition="installed plone.supermodel" file="handler.zcml" />
     <include zcml:condition="installed plone.rfc822" file="marshaler.zcml" />
