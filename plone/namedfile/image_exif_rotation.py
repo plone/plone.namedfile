@@ -39,20 +39,20 @@ ROTATION = {'Horizontal (normal)': 1,
             'Rotated 90 CCW': 8}
 
 
-def exif_rotation(self, event):
-    if self.portal_type == 'Image':
-        if self.image:
+def exif_rotation(obj, event):
+    if obj.portal_type == 'Image':
+        if obj.image:
 
-            mirror, rotation = get_exif_orientation(self)
+            mirror, rotation = get_exif_orientation(obj)
             transform = None
             if rotation:
                 transform = AUTO_ROTATE_MAP.get(rotation, None)
                 if transform is not None:
-                    transform_image(self, transform)
+                    transform_image(obj, transform)
 
 
-def get_exif(self):
-    exif_data = exif.process_file(StringIO(self.image.data), debug=False)
+def get_exif(obj):
+    exif_data = exif.process_file(StringIO(obj.image.data), debug=False)
     # remove some unwanted elements like thumbnails
     for key in ('JPEGThumbnail', 'TIFFThumbnail', 'MakerNote JPEGThumbnail'):
         if key in exif_data:
@@ -60,13 +60,13 @@ def get_exif(self):
     return exif_data
 
 
-def get_exif_orientation(self):
+def get_exif_orientation(obj):
     """Get the rotation and mirror orientation from the EXIF data
 
     Some cameras are storing the informations about rotation and mirror in
     the exif data. It can be used for autorotation.
     """
-    exif = get_exif(self)
+    exif = get_exif(obj)
 
     mirror = 0
     rotation = 0
@@ -96,7 +96,7 @@ def get_exif_orientation(self):
     return (mirror, rotation)
 
 
-def transform_image(self, method, REQUEST=None):
+def transform_image(obj, method, REQUEST=None):
     """
     Transform an Image:
         FLIP_LEFT_RIGHT
@@ -106,18 +106,16 @@ def transform_image(self, method, REQUEST=None):
         ROTATE_270 (rotate clockwise)
     """
 
-    image = self.image.data
+    image = obj.image.data
     image2 = StringIO()
 
     if image is not None:
         method = int(method)
 
-        img = PIL.Image.open(StringIO(self.image.data))
+        img = PIL.Image.open(StringIO(obj.image.data))
         del image
         fmt = img.format
         img = img.transpose(method)
         img.save(image2, fmt, quality=88)
 
-        self.image.data = image2.getvalue()
-
-        self.reindexObject()
+        obj.image._setData(image2.getvalue())
