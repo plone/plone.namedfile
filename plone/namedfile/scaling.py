@@ -1,5 +1,6 @@
 from Acquisition import aq_base
 from AccessControl.ZopeGuards import guarded_getattr
+from DateTime import DateTime
 from logging import exception
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
@@ -17,7 +18,6 @@ from zope.traversing.interfaces import ITraversable, TraversalError
 from zope.publisher.interfaces import IPublishTraverse, NotFound
 from zope.app.file.file import FileChunk
 from plone.protect.interfaces import IDisableCSRFProtection
-from zope.interface import alsoProvides
 
 _marker = object()
 
@@ -282,7 +282,7 @@ class ImageScaling(BrowserView):
             if hasattr(context, 'modified') and callable(context.modified):
                 date = context.modified()
             else:
-                date = context.bobobase_modification_time()
+                date = DateTime(context._p_mtime)
         except AttributeError:
             date = self.context.modified().millis()
         return date.millis()
