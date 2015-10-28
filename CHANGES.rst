@@ -4,6 +4,8 @@ Changelog
 3.0.4 (unreleased)
 ------------------
 
+Fixes:
+
 - No longer rely on deprecated ``bobobase_modification_time`` from
   ``Persistence.Persistent``.
   [thet]
@@ -301,4 +303,3 @@ Changelog
 ------------------
 
 * Initial release
-
