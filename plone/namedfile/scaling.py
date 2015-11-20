@@ -97,6 +97,14 @@ class ImageScale(BrowserView):
         set_headers(self.data, self.request.response)
         return stream_data(self.data)
 
+    def manage_DAVget(self):
+        """Get scale via webdav."""
+        return self.manage_FTPget()
+
+    def manage_FTPget(self):
+        """Get scale via ftp."""
+        return self.index_html()
+
     def __call__(self):
         # avoid the need to prefix with nocall: in TAL
         return self
@@ -131,12 +139,15 @@ class ImmutableTraverser(object):
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
     implements(ITraversable, IPublishTraverse)
+    # Ignore some stacks to help with accessing via webdav, otherwise you get a
+    # 404 NotFound error.
+    _ignored_stacks = ('manage_DAVget', 'manage_FTPget')
 
     def publishTraverse(self, request, name):
         """ used for traversal via publisher, i.e. when using as a url """
         stack = request.get('TraversalRequestNameStack')
         image = None
-        if stack:
+        if stack and stack[-1] not in self._ignored_stacks:
             # field and scale name were given...
             scale = stack.pop()
             image = self.scale(name, scale)             # this is aq-wrapped
@@ -196,12 +207,14 @@ class ImageScaling(BrowserView):
     def getImageSize(self, fieldname=None):
         if fieldname is not None:
             value = self.guarded_orig_image(fieldname)
+            if value is None:
+                return (0, 0)
             return value.getImageSize()
         value = IPrimaryFieldInfo(self.context).value
         return value.getImageSize()
 
     def guarded_orig_image(self, fieldname):
-        return guarded_getattr(self.context, fieldname)
+        return guarded_getattr(self.context, fieldname, None)
 
     def getQuality(self):
         """Get plone.app.imaging's quality setting"""

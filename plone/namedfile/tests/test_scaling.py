@@ -280,6 +280,33 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertEqual(response.getHeader('Content-Type'), 'image/jpeg')
         self.assertImage(response.getBody(), 'JPEG', (64, 64))
 
+    def testPublishWebDavScaleViaUID(self):
+        scale = self.view.scale('image', width=64, height=64)
+        # make sure the referenced image scale is available
+        url = scale.url.replace('http://nohost', '') + '/manage_DAVget'
+        response = self.publish(url, basic=self.getCredentials())
+        self.assertEqual(response.getStatus(), 200)
+        # In plone.app.imaging we get a very different response, which in the
+        # end works out.  It is a bit unclear which of the two responses is
+        # wanted.
+        # self.assertEqual(response.getHeader('Content-Type'),
+        #                  'text/plain; charset=iso-8859-15')
+        # self.assertImage(response.getBody(), 'JPEG', (64, 64))
+        self.assertEqual(response.getStatus(), 200)
+        self.assertEqual(response.getHeader('Content-Type'), 'image/jpeg')
+        self.assertImage(response.getBody(), 'JPEG', (64, 64))
+
+    def testPublishFTPScaleViaUID(self):
+        scale = self.view.scale('image', width=64, height=64)
+        # make sure the referenced image scale is available
+        url = scale.url.replace('http://nohost', '') + '/manage_FTPget'
+        response = self.publish(url, basic=self.getCredentials())
+        self.assertEqual(response.getStatus(), 200)
+        # Same remark as in testPublishWebDavScaleViaUID is valid here.
+        self.assertEqual(response.getStatus(), 200)
+        self.assertEqual(response.getHeader('Content-Type'), 'image/jpeg')
+        self.assertImage(response.getBody(), 'JPEG', (64, 64))
+
     def testHeadRequestMethod(self):
         scale = self.view.scale('image', width=64, height=64)
         # make sure the referenced image scale is available
@@ -347,6 +374,16 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         url = url.replace('.jpeg', 'x.jpeg')
         response = self.publish(url, basic=self.getCredentials())
         self.assertEqual(response.getStatus(), 404)
+
+    def testPublishScaleWithInvalidScale(self):
+        scale = self.view.scale('image', 'no-such-scale')
+        self.assertEqual(scale, None)
+
+    def test_getAvailableSizesWithInvalidScale(self):
+        self.assertEqual(self.view.getAvailableSizes('no-such-scale'), {})
+
+    def test_getImageSizeWithInvalidScale(self):
+        self.assertEqual(self.view.getImageSize('no-such-scale'), (0, 0))
 
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
