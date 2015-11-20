@@ -6,7 +6,9 @@ Changelog
 
 New:
 
-- *add item here*
+- Added webdav support to image scales.
+  https://github.com/plone/Products.CMFPlone/issues/1251
+  [maurits]
 
 Fixes:
 
