@@ -10,10 +10,6 @@ New:
   https://github.com/plone/Products.CMFPlone/issues/1251
   [maurits]
 
-Fixes:
-
-- *add item here*
-
 
 3.0.4 (2015-10-28)
 ------------------
