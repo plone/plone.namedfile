@@ -4,6 +4,8 @@ Changelog
 2.0.10 (unreleased)
 -------------------
 
+New:
+
 - Added webdav support to image scales.
   https://github.com/plone/Products.CMFPlone/issues/1251
   [maurits]
