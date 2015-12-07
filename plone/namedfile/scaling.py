@@ -288,7 +288,6 @@ class ImageScaling(BrowserView):
         """ provide a callable to return the modification time of content
             items, so stored image scales can be invalidated """
         context = aq_base(self.context)
-        date = None
         try:
             if hasattr(context, 'modified') and callable(context.modified):
                 date = context.modified()
