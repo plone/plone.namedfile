@@ -1,3 +1,4 @@
+import time
 from DateTime import DateTime
 from OFS.SimpleItem import SimpleItem
 from plone.namedfile.interfaces import IImageScaleTraversable, IAvailableSizes
@@ -12,8 +13,13 @@ from zope.annotation import IAttributeAnnotatable
 from zope.component import getSiteManager, getGlobalSiteManager
 from zope.interface import implements
 
-
 import re
+
+
+def wait_to_ensure_modified():
+    # modified is measured in milliseconds
+    # wait 5ms to ensure modified will have changed
+    time.sleep(0.005)
 
 
 class IHasImage(IImageScaleTraversable):
@@ -91,6 +97,7 @@ class ImageScalingTests(NamedFileTestCase):
         # first get the scale of the original image
         self.scaling.available_sizes = {'foo': (23, 23)}
         foo1 = self.scaling.scale('image', scale='foo')
+        wait_to_ensure_modified()
         # now upload a new one and make sure the scale has changed
         data = getFile('image.jpg').read()
         self.item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
@@ -172,6 +179,7 @@ class ImageScalingTests(NamedFileTestCase):
         gsm = getGlobalSiteManager()
         qualitySupplier = DummyQualitySupplier()
         gsm.registerUtility(qualitySupplier.getQuality, IScaledImageQuality)
+        wait_to_ensure_modified()
         # now scale again
         bar = self.scaling.scale('image', width=100, height=80)
         size_bar = bar.data.getSize()
@@ -225,6 +233,7 @@ class ImageTraverseTests(NamedFileTestCase):
         # first view the thumbnail of the original image
         ImageScaling._sizes = {'thumb': (128, 128)}
         uid1, ext, width1, height1 = self.traverse('image/thumb')
+        wait_to_ensure_modified()
         # now upload a new one and make sure the thumbnail has changed
         data = getFile('image.jpg').read()
         self.item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
