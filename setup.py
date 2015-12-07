@@ -34,8 +34,10 @@ setup(name='plone.namedfile',
       zip_safe=False,
       install_requires=[
           'setuptools',
+          'zope.app.file',
           'zope.browserpage',
           'zope.component',
+          'zope.copy',
           'zope.security',
           'zope.traversing',
           'plone.rfc822>=1.0b2',
@@ -46,6 +48,6 @@ setup(name='plone.namedfile',
           'supermodel': ['plone.supermodel'],
           'marshaler': [],  # for BBB, we now depend on this
           'scales': ['plone.scale[storage] >=1.1dev'],
-          'test': ['lxml', 'plone.scale'],
+          'test': ['plone.namedfile[supermodel, scales]', 'lxml', 'Pillow', 'Zope2', ],
       },
       )
