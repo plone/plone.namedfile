@@ -4,7 +4,7 @@ import PIL.Image
 from Testing import ZopeTestCase as ztc
 from zope.component import testing
 from zope.configuration import xmlconfig
-from Products.Five.testbrowser import Browser
+from Testing.testbrowser import Browser
 
 def getFile(filename):
     """ return contents of the file with the given name """
