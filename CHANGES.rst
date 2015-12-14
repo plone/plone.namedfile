@@ -10,7 +10,9 @@ New:
 
 Fixes:
 
-- *add item here*
+- Workarround for method getImageSize.
+  Prevent returning (-1, -1) as the size of the image.
+  [andreesg]
 
 
 3.0.5 (2015-11-26)
