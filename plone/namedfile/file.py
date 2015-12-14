@@ -1,23 +1,21 @@
+# -*- coding: utf-8 -*-
 # The implementations in this file are largely borrowed
 # from zope.app.file and z3c.blobfile
 # and are licensed under the ZPL.
-
-import struct
 from cStringIO import StringIO
-
 from persistent import Persistent
-import transaction
-
-from zope.component import getUtility
-from zope.interface import implements
-from zope.schema.fieldproperty import FieldProperty
-
-from plone.namedfile.interfaces import INamedFile, INamedImage
-from plone.namedfile.utils import get_contenttype
-
-from ZODB.blob import Blob
-from plone.namedfile.interfaces import INamedBlobFile, INamedBlobImage
+from plone.namedfile.interfaces import INamedBlobFile
+from plone.namedfile.interfaces import INamedBlobImage
+from plone.namedfile.interfaces import INamedFile
+from plone.namedfile.interfaces import INamedImage
 from plone.namedfile.interfaces import IStorage
+from plone.namedfile.utils import get_contenttype
+from ZODB.blob import Blob
+from zope.component import getUtility
+from zope.interface import implementer
+from zope.schema.fieldproperty import FieldProperty
+import struct
+import transaction
 
 MAXCHUNKSIZE = 1 << 16
 IMAGE_INFO_BYTES = 1024
@@ -61,6 +59,7 @@ except ImportError:
     pass
 
 
+@implementer(INamedFile)
 class NamedFile(Persistent):
     """A non-BLOB file that stores a filename
 
@@ -150,12 +149,14 @@ class NamedFile(Persistent):
     >>> verifyClass(INamedFile, NamedFile)
     True
     """
-    implements(INamedFile)
 
     filename = FieldProperty(INamedFile['filename'])
 
     def __init__(self, data='', contentType='', filename=None):
-        if filename is not None and contentType in ('', 'application/octet-stream'):
+        if (
+            filename is not None and
+            contentType in ('', 'application/octet-stream')
+        ):
             contentType = get_contenttype(filename=filename)
         self.data = data
         self.contentType = contentType
@@ -167,7 +168,7 @@ class NamedFile(Persistent):
         else:
             return self._data
 
-    def _setData(self, data) :
+    def _setData(self, data):
 
         # Handle case when data is a string
         if isinstance(data, unicode):
@@ -222,7 +223,7 @@ class NamedFile(Persistent):
         while end > 0:
             pos = end - MAXCHUNKSIZE
             if pos < MAXCHUNKSIZE:
-                pos = 0 # we always want at least MAXCHUNKSIZE bytes
+                pos = 0  # we always want at least MAXCHUNKSIZE bytes
             seek(pos)
             data = FileChunk(read(end - pos))
 
@@ -256,10 +257,10 @@ class NamedFile(Persistent):
     data = property(_getData, _setData)
 
 
+@implementer(INamedImage)
 class NamedImage(NamedFile):
     """An non-BLOB image with a filename
     """
-    implements(INamedImage)
     filename = FieldProperty(INamedFile['filename'])
 
     def __init__(self, data='', contentType='', filename=None):
@@ -303,8 +304,10 @@ def getImageInfo(data):
     # See PNG 2. Edition spec (http://www.w3.org/TR/PNG/)
     # Bytes 0-7 are below, 4-byte chunk length, then 'IHDR'
     # and finally the 4-byte width, height
-    elif ((size >= 24) and data.startswith('\211PNG\r\n\032\n')
-          and (data[12:16] == 'IHDR')):
+    elif (
+        (size >= 24) and data.startswith('\211PNG\r\n\032\n') and
+        (data[12:16] == 'IHDR')
+    ):
         content_type = 'image/png'
         w, h = struct.unpack(">LL", data[16:24])
         width = int(w)
@@ -328,8 +331,10 @@ def getImageInfo(data):
             w = -1
             h = -1
             while (b and ord(b) != 0xDA):
-                while (ord(b) != 0xFF): b = jpeg.read(1)
-                while (ord(b) == 0xFF): b = jpeg.read(1)
+                while (ord(b) != 0xFF):
+                    b = jpeg.read(1)
+                while (ord(b) == 0xFF):
+                    b = jpeg.read(1)
                 if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
                     jpeg.read(3)
                     h, w = struct.unpack(">HH", jpeg.read(4))
@@ -349,21 +354,24 @@ def getImageInfo(data):
     # handle BMPs
     elif (size >= 30) and data.startswith('BM'):
         kind = struct.unpack("<H", data[14:16])[0]
-        if kind == 40: # Windows 3.x bitmap
+        if kind == 40:  # Windows 3.x bitmap
             content_type = 'image/x-ms-bmp'
             width, height = struct.unpack("<LL", data[18:26])
 
     return content_type, width, height
 
 
+@implementer(INamedBlobFile)
 class NamedBlobFile(Persistent):
     """A file stored in a ZODB BLOB, with a filename"""
-    implements(INamedBlobFile)
 
     filename = FieldProperty(INamedFile['filename'])
 
     def __init__(self, data='', contentType='', filename=None):
-        if filename is not None and contentType in ('', 'application/octet-stream'):
+        if (
+            filename is not None and
+            contentType in ('', 'application/octet-stream')
+        ):
             contentType = get_contenttype(filename=filename)
         self.contentType = contentType
         self._blob = Blob()
@@ -404,7 +412,7 @@ class NamedBlobFile(Persistent):
         if 'size' in self.__dict__:
             return self.__dict__['size']
         reader = self._blob.open()
-        reader.seek(0,2)
+        reader.seek(0, 2)
         size = int(reader.tell())
         reader.close()
         self.__dict__['size'] = size
@@ -414,10 +422,10 @@ class NamedBlobFile(Persistent):
         return self.size
 
 
+@implementer(INamedBlobImage)
 class NamedBlobImage(NamedBlobFile):
     """An image stored in a ZODB BLOB with a filename
     """
-    implements(INamedBlobImage)
 
     def __init__(self, data='', contentType='', filename=None):
         super(NamedBlobImage, self).__init__(data, filename=filename)
