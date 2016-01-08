@@ -4,13 +4,9 @@ Changelog
 3.0.6 (unreleased)
 ------------------
 
-New:
-
-- *add item here*
-
 Fixes:
 
-- *add item here*
+- Stabilised tests.  [gotcha]
 
 
 3.0.5 (2015-11-26)
