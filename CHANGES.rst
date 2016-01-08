@@ -10,8 +10,9 @@ New:
 
 Fixes:
 
-- *add item here*
-
+- Make plone.protect a soft dependency. This allows to use this package in
+  setups without the Plone stack. Fixes plone/Products.CMFPlone#1311
+  [thet]
 
 3.0.6 (2016-01-08)
 ------------------

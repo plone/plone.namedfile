@@ -38,7 +38,6 @@ setup(name='plone.namedfile',
           'zope.copy',
           'zope.security',
           'zope.traversing',
-          'plone.protect',
           'plone.rfc822>=1.0b2',
       ],
       extras_require={
