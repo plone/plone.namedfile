@@ -4,13 +4,9 @@ Changelog
 2.0.11 (unreleased)
 -------------------
 
-New:
-
-- *add item here*
-
 Fixes:
 
-- *add item here*
+- Stabilised tests.  [gotcha]
 
 
 2.0.10 (2015-11-26)
