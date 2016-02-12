@@ -4,10 +4,6 @@ Changelog
 3.0.7 (unreleased)
 ------------------
 
-New:
-
-- *add item here*
-
 Fixes:
 
 - Make plone.protect a soft dependency. This allows to use this package in
