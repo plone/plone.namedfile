@@ -4,7 +4,7 @@ plone.rfc822 marshaler
 This package includes a field marshaler for ``plone.rfc822``, which will be
 installed if that package is installed.
 
-To test this, we must first load some configuration:
+To test this, we must first load some configuration::
 
     >>> configuration = """\
     ... <configure
@@ -25,7 +25,7 @@ To test this, we must first load some configuration:
     >>> from zope.configuration import xmlconfig
     >>> xmlconfig.xmlconfig(StringIO(configuration))
 
-Next, we will create a schema with which to test the marshaler
+Next, we will create a schema with which to test the marshaler::
 
     >>> from zope.interface import Interface
     >>> from plone.namedfile import field
@@ -34,7 +34,7 @@ Next, we will create a schema with which to test the marshaler
     ...     _file = field.NamedFile()
     ...     _image = field.NamedImage()
 
-We'll create an instance with some data, too.
+We'll create an instance with some data, too::
 
     >>> from plone.namedfile import NamedFile, NamedImage
     >>> fileValue = NamedFile('dummy test data', 'text/plain', filename=u"test.txt")
@@ -59,9 +59,9 @@ We'll create an instance with some data, too.
     ...     )
     >>> imageValue = NamedImage(zptlogo, 'image/gif', filename=u'zptl\xf8go.gif')
 
-    >>> from zope.interface import implements
-    >>> class TestContent(object):
-    ...     implements(ITestContent)
+    >>> from zope.interface import implementer
+    >>> @implementer(ITestContent)
+    ... class TestContent(object):
     ...     _file = None
     ...     _image = None
 
@@ -69,14 +69,14 @@ We'll create an instance with some data, too.
     >>> t._file = fileValue
     >>> t._image = imageValue
 
-We can now look up and test the marshaler.
+We can now look up and test the marshaler::
 
     >>> from zope.component import getMultiAdapter
     >>> from plone.rfc822.interfaces import IFieldMarshaler
 
 For the moment, fields are not marked as primary. Our marshaller will refuse
 to marshal a non-primary field, as it does not make much sense to encode
-binary data into a UTF-8 string in a header.
+binary data into a UTF-8 string in a header::
 
     >>> marshaler = getMultiAdapter((t, ITestContent['_file']), IFieldMarshaler)
     >>> marshaler.marshal()
@@ -100,7 +100,7 @@ binary data into a UTF-8 string in a header.
     >>> marshaler.ascii
     False
 
-Let's try it with primary fields:
+Let's try it with primary fields::
 
     >>> marshaler = getMultiAdapter((t, ITestContent['_file']), IFieldMarshaler)
     >>> marshaler.marshal(primary=True)
@@ -132,7 +132,7 @@ a full message and look at the output.
 
 First, we need to mark one of the fields as primary. In this case, we will
 use the file field. The image will will now be ignored, since our marshaler
-refuses to encode non-primary fields.
+refuses to encode non-primary fields::
 
     >>> from plone.rfc822.interfaces import IPrimaryField
     >>> from plone.rfc822 import constructMessageFromSchema
@@ -153,7 +153,7 @@ refuses to encode non-primary fields.
 
 You can see here that we have a transfer encoding and a content disposition.
 
-Let's now use this message to construct a new object.
+Let's now use this message to construct a new object::
 
     >>> from email import message_from_string
     >>> inputMessage = message_from_string(messageBody)
@@ -172,7 +172,7 @@ Let's now use this message to construct a new object.
     >>> newContent._image is None
     True
 
-If we have two primary fields, they will be encoded as a multipart message.
+If we have two primary fields, they will be encoded as a multipart message::
 
     >>> alsoProvides(ITestContent['_image'], IPrimaryField)
 
@@ -203,7 +203,7 @@ If we have two primary fields, they will be encoded as a multipart message.
     hX02FxsgJIMAhhkdISUpjIY2IycrLoxhYBxgKCwvMZRCNRkeIiYqLTAyNKxOcbq7uGi+YgBBADs=
     --===============...==--...
 
-Of course, we will also be able to load this data from a message.
+Of course, we will also be able to load this data from a message::
 
     >>> inputMessage = message_from_string(messageBody)
     >>> newContent = TestContent()

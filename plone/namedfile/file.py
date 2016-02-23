@@ -14,8 +14,10 @@ from ZODB.blob import Blob
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.fieldproperty import FieldProperty
+
 import struct
 import transaction
+
 
 MAXCHUNKSIZE = 1 << 16
 IMAGE_INFO_BYTES = 1024
@@ -195,7 +197,7 @@ class NamedFile(Persistent):
         seek(0, 2)
         size = end = data.tell()
 
-        if size <= 2*MAXCHUNKSIZE:
+        if size <= 2 * MAXCHUNKSIZE:
             seek(0)
             if size < MAXCHUNKSIZE:
                 self._data, self._size = read(size), size
@@ -297,7 +299,7 @@ def getImageInfo(data):
     if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
         # Check to see if content_type is correct
         content_type = 'image/gif'
-        w, h = struct.unpack("<HH", data[6:10])
+        w, h = struct.unpack('<HH', data[6:10])
         width = int(w)
         height = int(h)
 
@@ -309,7 +311,7 @@ def getImageInfo(data):
         (data[12:16] == 'IHDR')
     ):
         content_type = 'image/png'
-        w, h = struct.unpack(">LL", data[16:24])
+        w, h = struct.unpack('>LL', data[16:24])
         width = int(w)
         height = int(h)
 
@@ -317,7 +319,7 @@ def getImageInfo(data):
     elif (size >= 16) and data.startswith('\211PNG\r\n\032\n'):
         # Check to see if we have the right content type
         content_type = 'image/png'
-        w, h = struct.unpack(">LL", data[8:16])
+        w, h = struct.unpack('>LL', data[8:16])
         width = int(w)
         height = int(h)
 
@@ -337,10 +339,10 @@ def getImageInfo(data):
                     b = jpeg.read(1)
                 if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
                     jpeg.read(3)
-                    h, w = struct.unpack(">HH", jpeg.read(4))
+                    h, w = struct.unpack('>HH', jpeg.read(4))
                     break
                 else:
-                    jpeg.read(int(struct.unpack(">H", jpeg.read(2))[0])-2)
+                    jpeg.read(int(struct.unpack('>H', jpeg.read(2))[0]) - 2)
                 b = jpeg.read(1)
             width = int(w)
             height = int(h)
@@ -353,10 +355,10 @@ def getImageInfo(data):
 
     # handle BMPs
     elif (size >= 30) and data.startswith('BM'):
-        kind = struct.unpack("<H", data[14:16])[0]
+        kind = struct.unpack('<H', data[14:16])[0]
         if kind == 40:  # Windows 3.x bitmap
             content_type = 'image/x-ms-bmp'
-            width, height = struct.unpack("<LL", data[18:26])
+            width, height = struct.unpack('<LL', data[18:26])
 
     return content_type, width, height
 
@@ -393,7 +395,7 @@ class NamedBlobFile(Persistent):
         if 'size' in self.__dict__:
             del self.__dict__['size']
         # Search for a storable that is able to store the data
-        dottedName = ".".join((data.__class__.__module__,
+        dottedName = '.'.join((data.__class__.__module__,
                                data.__class__.__name__))
         storable = getUtility(IStorage, name=dottedName)
         storable.store(data, self._blob)

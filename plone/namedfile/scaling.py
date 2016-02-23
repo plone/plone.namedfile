@@ -1,23 +1,29 @@
-from Acquisition import aq_base
+# -*- coding: utf-8 -*-
 from AccessControl.ZopeGuards import guarded_getattr
+from Acquisition import aq_base
 from DateTime import DateTime
 from logging import exception
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
-from plone.namedfile.utils import set_headers, stream_data
+from plone.namedfile.utils import set_headers
+from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
-from plone.scale.storage import AnnotationStorage
 from plone.scale.scale import scaleImage
+from plone.scale.storage import AnnotationStorage
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from ZODB.POSException import ConflictError
+from zope.app.file.file import FileChunk
 from zope.component import queryUtility
 from zope.interface import alsoProvides
-from zope.interface import implements
-from zope.traversing.interfaces import ITraversable, TraversalError
-from zope.publisher.interfaces import IPublishTraverse, NotFound
-from zope.app.file.file import FileChunk
+from zope.interface import implementer
+from zope.publisher.interfaces import IPublishTraverse
+from zope.publisher.interfaces import NotFound
+from zope.traversing.interfaces import ITraversable
+from zope.traversing.interfaces import TraversalError
+
 import pkg_resources
+
 
 try:
     pkg_resources.get_distribution('plone.protect>=3.0')
@@ -53,8 +59,8 @@ class ImageScale(BrowserView):
             name = info['uid']
         else:
             name = info['fieldname']
-        self.__name__ = '%s.%s' % (name, extension)
-        self.url = '%s/@@images/%s' % (url, self.__name__)
+        self.__name__ = u'{0}.{1}'.format(name, extension)
+        self.url = u'{0}/@@images/{1}'.format(url, self.__name__)
 
     def absolute_url(self):
         return self.url
@@ -91,7 +97,7 @@ class ImageScale(BrowserView):
                 v = str(v)
             elif isinstance(v, str):
                 v = unicode(v, 'utf8')
-            parts.append("%s=%s" % (k, quoteattr(v)))
+            parts.append(u'{0}={1}'.format(k, quoteattr(v)))
         parts.append('/>')
 
         return u' '.join(parts)
@@ -130,15 +136,15 @@ class ImageScale(BrowserView):
     HEAD.__roles__ = ('Anonymous',)
 
 
+@implementer(ITraversable)
 class ImmutableTraverser(object):
-    implements(ITraversable)
 
     def __init__(self, scale):
         self.scale = scale
 
     def traverse(self, name, furtherPath):
         if furtherPath:
-            raise TraversalError("Do not know how to handle further path")
+            raise TraversalError('Do not know how to handle further path')
         else:
             if self.scale:
                 return self.scale.tag()
@@ -146,9 +152,9 @@ class ImmutableTraverser(object):
                 raise TraversalError(name)
 
 
+@implementer(ITraversable, IPublishTraverse)
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
-    implements(ITraversable, IPublishTraverse)
     # Ignore some stacks to help with accessing via webdav, otherwise you get a
     # 404 NotFound error.
     _ignored_stacks = ('manage_DAVget', 'manage_FTPget')
@@ -245,17 +251,19 @@ class ImageScaling(BrowserView):
                height=None,
                width=None,
                **parameters):
-        """ factory for image scales, see `IImageScaleStorage.scale` """
+        """Factory for image scales, see `IImageScaleStorage.scale`.
+        """
         orig_value = getattr(self.context, fieldname)
         if orig_value is None:
             return
 
         if height is None and width is None:
-            _, format = orig_value.contentType.split('/', 1)
-            return None, format, (orig_value._width, orig_value._height)
-        if hasattr(aq_base(orig_value), 'open'):
+            _, format_ = orig_value.contentType.split('/', 1)
+            return None, format_, (orig_value._width, orig_value._height)
+        orig_data = None
+        try:
             orig_data = orig_value.open()
-        else:
+        except AttributeError:
             orig_data = getattr(aq_base(orig_value), 'data', orig_value)
         if not orig_data:
             return
@@ -287,24 +295,19 @@ class ImageScaling(BrowserView):
                       orig_value, self.context.absolute_url())
             return
         if result is not None:
-            data, format, dimensions = result
-            mimetype = 'image/%s' % format.lower()
+            data, format_, dimensions = result
+            mimetype = u'image/{0}'.format(format_.lower())
             value = orig_value.__class__(
                 data, contentType=mimetype, filename=orig_value.filename)
             value.fieldname = fieldname
-            return value, format, dimensions
+            return value, format_, dimensions
 
     def modified(self):
-        """ provide a callable to return the modification time of content
-            items, so stored image scales can be invalidated """
+        """Provide a callable to return the modification time of content
+        items, so stored image scales can be invalidated.
+        """
         context = aq_base(self.context)
-        try:
-            if hasattr(context, 'modified') and callable(context.modified):
-                date = context.modified()
-            else:
-                date = DateTime(context._p_mtime)
-        except AttributeError:
-            date = self.context.modified().millis()
+        date = DateTime(context._p_mtime)
         return date.millis()
 
     def scale(self,

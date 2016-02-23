@@ -1,11 +1,13 @@
+# -*- coding: utf-8 -*-
 # This file is borrowed from zope.app.file and licensed ZPL.
 
-import unittest
-from zope.interface.verify import verifyClass
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
 from plone.namedfile.tests.base import getFile
 from plone.namedfile.utils import get_contenttype
+from zope.interface.verify import verifyClass
+
+import unittest
 
 
 zptlogo = (
@@ -26,7 +28,8 @@ zptlogo = (
     '\x006}m\x13\x16\x1a\x1f\x83\x85}6\x17\x1b $\x83\x00\x86\x19\x1d!%)\x8c'
     '\x866#\'+.\x8ca`\x1c`(,/1\x94B5\x19\x1e"&*-024\xacNq\xba\xbb\xb8h\xbeb'
     '\x00A\x00;'
-    )
+)
+
 
 class TestImage(unittest.TestCase):
 
@@ -55,20 +58,26 @@ class TestImage(unittest.TestCase):
         self.assertEqual(image.getImageSize(), (16, 16))
 
     def testInterface(self):
-        self.failUnless(INamedImage.implementedBy(NamedImage))
-        self.failUnless(verifyClass(INamedImage, NamedImage))
+        self.assertTrue(INamedImage.implementedBy(NamedImage))
+        self.assertTrue(verifyClass(INamedImage, NamedImage))
 
     def test_get_contenttype(self):
-        self.assertEqual(get_contenttype(NamedImage(getFile('image.gif').read(),
-                                                    contentType='image/gif')),
-                         'image/gif')
-        self.assertEqual(get_contenttype(NamedImage(getFile('image.gif').read(),
-                                                    filename=u'image.gif')),
-                         'image/gif')
+        self.assertEqual(
+            get_contenttype(
+                NamedImage(
+                    getFile('image.gif').read(),
+                    contentType='image/gif')),
+            'image/gif')
+        self.assertEqual(
+            get_contenttype(
+                NamedImage(
+                    getFile('image.gif').read(),
+                    filename=u'image.gif')),
+            'image/gif')
         self.assertEqual(get_contenttype(
-                                     NamedImage(getFile('notimage.doc').read(),
-                                                filename=u'notimage.doc')),
-                         'application/msword')
+            NamedImage(getFile('notimage.doc').read(),
+                       filename=u'notimage.doc')),
+            'application/msword')
 
     def testImageValidation(self):
         from plone.namedfile.field import InvalidImageFile,\
@@ -82,7 +91,11 @@ class TestImage(unittest.TestCase):
 
         # field has an empty file
         image = self._makeImage()
-        self.assertRaises(InvalidImageFile, validate_image_field, FakeField(), image)
+        self.assertRaises(
+            InvalidImageFile,
+            validate_image_field,
+            FakeField(),
+            image)
 
         # field has an image file
         image._setData(zptlogo)
@@ -90,4 +103,8 @@ class TestImage(unittest.TestCase):
 
         notimage = NamedImage(getFile('notimage.doc').read(),
                               filename=u'notimage.doc')
-        self.assertRaises(InvalidImageFile, validate_image_field, FakeField(), notimage)
+        self.assertRaises(
+            InvalidImageFile,
+            validate_image_field,
+            FakeField(),
+            notimage)

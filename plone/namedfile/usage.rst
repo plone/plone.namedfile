@@ -3,10 +3,11 @@ Usage
 
 This demonstrates how to use the package.
 
+
 Test setup
 ----------
 
-We must first load the package's ZCML.
+We must first load the package's ZCML::
 
     >>> configuration = """\
     ... <configure
@@ -22,11 +23,12 @@ We must first load the package's ZCML.
     >>> from zope.configuration import xmlconfig
     >>> xmlconfig.xmlconfig(StringIO(configuration))
 
+
 Schema fields
 -------------
 
 The following schema fields can be used to describe file data. We'll only
-test the BLOB versions of the fields if z3c.blobfile is installed.
+test the BLOB versions of the fields if z3c.blobfile is installed::
 
     >>> from zope.interface import Interface
     >>> from plone.namedfile import field
@@ -37,13 +39,14 @@ test the BLOB versions of the fields if z3c.blobfile is installed.
     ...     blob = field.NamedBlobFile(title=u"Named blob file")
     ...     blobimage = field.NamedBlobImage(title=u"Named blob image file")
 
-These store data with the following types.
+These store data with the following types::
 
-    >>> from zope.interface import implements
+    >>> from zope.interface import implementer
     >>> from plone import namedfile
 
-    >>> class FileContainer(object):
-    ...     implements(IFileContainer)
+    
+    >>> @implementer(IFileContainer)
+    ... class FileContainer(object):
     ...     __allow_access_to_unprotected_subobjects__ = 1
     ...     def __init__(self):
     ...         self.simple = namedfile.NamedFile()
@@ -51,12 +54,13 @@ These store data with the following types.
     ...         self.blob = namedfile.NamedBlobFile()
     ...         self.blobimage = namedfile.NamedBlobImage()
 
+
 File data and content type
 --------------------------
 
 Let's now show how to get and set file data.
 
-The FileContainer class creates empty objects to start with.
+The FileContainer class creates empty objects to start with::
 
     >>> container = FileContainer()
 
@@ -88,7 +92,7 @@ The FileContainer class creates empty objects to start with.
     True
 
 Let's now set some actual data in these files. Notice how the constructor
-will attempt to guess the filename from the file extension.
+will attempt to guess the filename from the file extension::
 
     >>> container.simple = namedfile.NamedFile('dummy test data', filename=u"test.txt")
     >>> container.simple.data
@@ -106,7 +110,7 @@ will attempt to guess the filename from the file extension.
     >>> container.blob.filename
     u'test.txt'
 
-Let's also try to read a GIF, courtesy of the zope.app.file tests:
+Let's also try to read a GIF, courtesy of the zope.app.file tests::
 
     >>> zptlogo = (
     ...     'GIF89a\x10\x00\x10\x00\xd5\x00\x00\xff\xff\xff\xff\xff\xfe\xfc\xfd\xfd'
@@ -144,7 +148,7 @@ Let's also try to read a GIF, courtesy of the zope.app.file tests:
     >>> container.blobimage.filename
     u'zpt.gif'
 
-Note that is possible for force the mimetype:
+Note that is possible for force the mimetype::
 
     >>> container.image = namedfile.NamedImage(zptlogo, contentType='image/foo', filename=u"zpt.gif")
     >>> container.image.data == zptlogo
@@ -162,12 +166,13 @@ Note that is possible for force the mimetype:
     >>> container.blobimage.filename
     u'zpt.gif'
 
-The filename must be set to a unicode string, not a bytestring:
+The filename must be set to a unicode string, not a bytestring::
 
     >>> container.image.filename = 'foo'
     Traceback (most recent call last):
     ...
     WrongType: ('foo', <type 'unicode'>, 'filename')
+
 
 Download view
 -------------
@@ -178,7 +183,7 @@ than displaying it. To use it, link to ../context-object/@@download/fieldname,
 where `fieldname` is the name of the attribute on the context-object where the
 named file is stored.
 
-We will test this with a dummy request, faking traversal.
+We will test this with a dummy request, faking traversal::
 
     >>> from plone.namedfile.browser import Download
     >>> from zope.publisher.browser import TestRequest
@@ -234,6 +239,7 @@ We will test this with a dummy request, faking traversal.
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''zpt.gif"
 
+
 Display-file view
 -----------------
 
@@ -242,7 +248,7 @@ browser. To use it, link to ../context-object/@@display-file/fieldname, where
 `fieldname` is the name of the attribute on the context-object where the named
 file is stored.
 
-We will test this with a dummy request, faking traversal.
+We will test this with a dummy request, faking traversal::
 
     >>> from plone.namedfile.browser import DisplayFile
     >>> from zope.publisher.browser import TestRequest
@@ -294,19 +300,20 @@ We will test this with a dummy request, faking traversal.
     'image/foo'
     >>> request.response.getHeader('Content-Disposition')
 
+
 Specifying the primary field
 ----------------------------
 
 To use the @@download view without specifying the field in the URL, the
 primary field information must be registered with an adapter. (Frameworks such
-as plone.dexterity may already have done this for you.)
+as plone.dexterity may already have done this for you.)::
 
     >>> from plone.rfc822.interfaces import IPrimaryFieldInfo
-    >>> from zope.component import adapts
+    >>> from zope.component import adapter
 
-    >>> class FieldContainerPrimaryFieldInfo(object):
-    ...     implements(IPrimaryFieldInfo)
-    ...     adapts(IFileContainer)
+    >>> @implementer(IPrimaryFieldInfo)
+    ... @adapter(IFileContainer)
+    ... class FieldContainerPrimaryFieldInfo(object):
     ...     fieldname = 'simple'
     ...     field = IFileContainer['simple']
     ...     def __init__(self, context):
@@ -316,7 +323,7 @@ as plone.dexterity may already have done this for you.)
     >>> components = getSiteManager()
     >>> components.registerAdapter(FieldContainerPrimaryFieldInfo)
 
-We will test this with a dummy request, faking traversal.
+We will test this with a dummy request, faking traversal::
 
     >>> request = TestRequest()
     >>> download = Download(container, request)
@@ -328,6 +335,7 @@ We will test this with a dummy request, faking traversal.
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''test.txt"
+
 
 Image scales
 ------------

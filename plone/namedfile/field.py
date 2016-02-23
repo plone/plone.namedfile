@@ -1,22 +1,25 @@
-from zope.interface import implements
-from zope.schema import Object, ValidationError
-from zope.i18nmessageid import MessageFactory
-
-from plone.namedfile.interfaces import INamedFileField, INamedImageField
-
-from plone.namedfile.interfaces import INamedFile, INamedImage
-from plone.namedfile.file import NamedFile as FileValueType
-from plone.namedfile.file import NamedImage as ImageValueType
-
-from plone.namedfile.interfaces import INamedBlobFileField, INamedBlobImageField
-from plone.namedfile.interfaces import INamedBlobFile, INamedBlobImage
-
+# -*- coding: utf-8 -*-
 from plone.namedfile.file import NamedBlobFile as BlobFileValueType
 from plone.namedfile.file import NamedBlobImage as BlobImageValueType
+from plone.namedfile.file import NamedFile as FileValueType
+from plone.namedfile.file import NamedImage as ImageValueType
+from plone.namedfile.interfaces import INamedBlobFile
+from plone.namedfile.interfaces import INamedBlobFileField
+from plone.namedfile.interfaces import INamedBlobImage
+from plone.namedfile.interfaces import INamedBlobImageField
+from plone.namedfile.interfaces import INamedFile
+from plone.namedfile.interfaces import INamedFileField
+from plone.namedfile.interfaces import INamedImage
+from plone.namedfile.interfaces import INamedImageField
 from plone.namedfile.utils import get_contenttype
+from zope.i18nmessageid import MessageFactory
+from zope.interface import implementer
+from zope.schema import Object
+from zope.schema import ValidationError
 
 
 _ = MessageFactory('plone')
+
 
 class InvalidImageFile(ValidationError):
     """Exception for invalid image file"""
@@ -30,10 +33,10 @@ def validate_image_field(field, value):
             raise InvalidImageFile(mimetype, field.__name__)
 
 
+@implementer(INamedFileField)
 class NamedFile(Object):
     """A NamedFile field
     """
-    implements(INamedFileField)
 
     _type = FileValueType
     schema = INamedFile
@@ -44,10 +47,10 @@ class NamedFile(Object):
         super(NamedFile, self).__init__(schema=self.schema, **kw)
 
 
+@implementer(INamedImageField)
 class NamedImage(Object):
     """A NamedImage field
     """
-    implements(INamedImageField)
 
     _type = ImageValueType
     schema = INamedImage
@@ -62,10 +65,10 @@ class NamedImage(Object):
         validate_image_field(self, value)
 
 
+@implementer(INamedBlobFileField)
 class NamedBlobFile(Object):
     """A NamedBlobFile field
     """
-    implements(INamedBlobFileField)
 
     _type = BlobFileValueType
     schema = INamedBlobFile
@@ -76,10 +79,10 @@ class NamedBlobFile(Object):
         super(NamedBlobFile, self).__init__(schema=self.schema, **kw)
 
 
+@implementer(INamedBlobImageField)
 class NamedBlobImage(Object):
     """A NamedBlobImage field
     """
-    implements(INamedBlobImageField)
 
     _type = BlobImageValueType
     schema = INamedBlobImage
@@ -92,4 +95,3 @@ class NamedBlobImage(Object):
     def _validate(self, value):
         super(NamedBlobImage, self)._validate(value)
         validate_image_field(self, value)
-

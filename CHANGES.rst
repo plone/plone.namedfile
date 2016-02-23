@@ -10,6 +10,9 @@ New:
 
 Fixes:
 
+- PEP 8, UTF-8 headers, implements/adapts to decorators, doctest formating.
+  [thet, jensens]
+
 - Workarround for method getImageSize.
   Prevent returning (-1, -1) as the size of the image.
   [andreesg]

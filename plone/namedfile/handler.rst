@@ -4,7 +4,7 @@ plone.supermodel handler
 If plone.supermodel is installed, this package will register a handler
 for the RichText field.
 
-First, we wire up the handlers
+First, we wire up the handlers::
 
     >>> configuration = """\
     ... <configure
@@ -24,7 +24,7 @@ First, we wire up the handlers
     >>> xmlconfig.xmlconfig(StringIO(configuration))
 
 Then, let's test the fields. Note that 'default' and 'missing_value' are
-unsupported.
+unsupported::
 
     >>> from zope.component import getUtility
     >>> from plone.namedfile.field import NamedFile, NamedImage, NamedBlobFile, NamedBlobImage
@@ -35,8 +35,11 @@ unsupported.
 
     >>> from lxml import etree
 
+
 Named file
------------
+----------
+
+::
 
     >>> field = NamedFile(__name__="dummy", title=u"Test",
     ...     description=u"Test desc", required=False, readonly=True)
@@ -75,8 +78,11 @@ Named file
     >>> reciprocal.readonly
     True
 
+
 Named image
 -----------
+
+::
 
     >>> field = NamedImage(__name__="dummy", title=u"Test",
     ...     description=u"Test desc", required=False, readonly=True)
@@ -115,8 +121,11 @@ Named image
     >>> reciprocal.readonly
     True
 
+
 Named blob file
 ---------------
+
+::
 
     >>> field = NamedBlobFile(__name__="dummy", title=u"Test",
     ...     description=u"Test desc", required=False, readonly=True)
@@ -155,8 +164,11 @@ Named blob file
     >>> reciprocal.readonly
     True
 
+
 Named blob image
 ----------------
+
+::
 
     >>> field = NamedBlobImage(__name__="dummy", title=u"Test",
     ...     description=u"Test desc", required=False, readonly=True)

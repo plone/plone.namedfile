@@ -1,19 +1,23 @@
-import time
+# -*- coding: utf-8 -*-
 from DateTime import DateTime
 from OFS.SimpleItem import SimpleItem
-from plone.namedfile.interfaces import IImageScaleTraversable, IAvailableSizes
 from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
-from plone.namedfile.tests.base import NamedFileTestCase, getFile
-from plone.namedfile.tests.base import NamedFileFunctionalTestCase
+from plone.namedfile.interfaces import IAvailableSizes
+from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.scaling import ImageScaling
+from plone.namedfile.tests.base import getFile
+from plone.namedfile.tests.base import NamedFileFunctionalTestCase
+from plone.namedfile.tests.base import NamedFileTestCase
 from plone.scale.interfaces import IScaledImageQuality
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
-from zope.component import getSiteManager, getGlobalSiteManager
-from zope.interface import implements
+from zope.component import getGlobalSiteManager
+from zope.component import getSiteManager
+from zope.interface import implementer
 
 import re
+import time
 
 
 def wait_to_ensure_modified():
@@ -26,8 +30,8 @@ class IHasImage(IImageScaleTraversable):
     image = NamedImageField()
 
 
+@implementer(IAttributeAnnotatable, IHasImage)
 class DummyContent(SimpleItem):
-    implements(IAttributeAnnotatable, IHasImage)
     image = None
     modified = DateTime
     id = __name__ = 'item'
@@ -37,9 +41,9 @@ class DummyContent(SimpleItem):
         return self.title
 
 
+@implementer(IScaledImageQuality)
 class DummyQualitySupplier(object):
     """ fake utility for plone.app.imaging's scaling quality """
-    implements(IScaledImageQuality)
 
     def getQuality(self):
         return 1  # as bad as it gets
@@ -57,7 +61,7 @@ class ImageScalingTests(NamedFileTestCase):
 
     def testCreateScale(self):
         foo = self.scaling.scale('image', width=100, height=80)
-        self.failUnless(foo.uid)
+        self.assertTrue(foo.uid)
         self.assertEqual(foo.mimetype, 'image/jpeg')
         self.assertEqual(foo.width, 80)
         self.assertEqual(foo.height, 80)
@@ -72,14 +76,14 @@ class ImageScalingTests(NamedFileTestCase):
     def testGetScaleByName(self):
         self.scaling.available_sizes = {'foo': (60, 60)}
         foo = self.scaling.scale('image', scale='foo')
-        self.failUnless(foo.uid)
+        self.assertTrue(foo.uid)
         self.assertEqual(foo.mimetype, 'image/jpeg')
         self.assertEqual(foo.width, 60)
         self.assertEqual(foo.height, 60)
         self.assertImage(foo.data.data, 'JPEG', (60, 60))
         expected_url = re.compile(
             r'http://nohost/item/@@images/[-a-z0-9]{36}\.jpeg')
-        self.failUnless(expected_url.match(foo.absolute_url()))
+        self.assertTrue(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
 
         tag = foo.tag()
@@ -87,7 +91,7 @@ class ImageScalingTests(NamedFileTestCase):
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
         groups = re.match(expected, tag).groups()
-        self.failUnless(groups, tag)
+        self.assertTrue(groups, tag)
 
     def testGetUnknownScale(self):
         foo = self.scaling.scale('image', scale='foo?')
@@ -211,7 +215,7 @@ class ImageTraverseTests(NamedFileTestCase):
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
         groups = re.match(expected, tag).groups()
-        self.failUnless(groups, tag)
+        self.assertTrue(groups, tag)
         uid, ext, height, width = groups
         return uid, ext, int(width), int(height)
 
@@ -327,7 +331,9 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertEqual(response.getStatus(), 200)
         self.assertEqual(response.getHeader('Content-Type'), 'image/jpeg')
         self.assertEqual(
-            response.getHeader('Content-Length'), str(len(get_response.getBody())))
+            response.getHeader('Content-Length'),
+            str(len(get_response.getBody()))
+        )
         self.assertEqual(response.getBody(), '')
 
     def testPublishThumbViaUID(self):

@@ -1,21 +1,19 @@
-<configure
-    xmlns="http://namespaces.zope.org/zope"
-    xmlns:zcml="http://namespaces.zope.org/zcml">
+<configure xmlns="http://namespaces.zope.org/zope">
 
   <class class=".field.NamedBlobFile">
     <implements interface=".editor.INamedBlobFileField" />
   </class>
   <utility
-     name="plone.namedfile.field.NamedBlobFile"
-     component=".editor.NamedBlobFileFactory"
-     />
+      name="plone.namedfile.field.NamedBlobFile"
+      component=".editor.NamedBlobFileFactory"
+      />
 
   <class class=".field.NamedBlobImage">
     <implements interface=".editor.INamedBlobImageField" />
   </class>
   <utility
-     name="plone.namedfile.field.NamedBlobImage"
-     component=".editor.NamedBlobImageFactory"
-     />
+      name="plone.namedfile.field.NamedBlobImage"
+      component=".editor.NamedBlobImageFactory"
+      />
 
 </configure>

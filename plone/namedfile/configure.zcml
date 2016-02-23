@@ -1,27 +1,26 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:zcml="http://namespaces.zope.org/zcml"
-    xmlns:browser="http://namespaces.zope.org/browser"
-    i18n_domain="plone.namedfile">
+    xmlns:browser="http://namespaces.zope.org/browser">
 
-    <browser:page
-        name="download"
-        for="*"
-        class=".browser.Download"
-        permission="zope2.View"
-        />
+  <browser:page
+      name="download"
+      for="*"
+      class=".browser.Download"
+      permission="zope2.View"
+      />
 
-    <browser:page
-        name="display-file"
-        for="*"
-        class=".browser.DisplayFile"
-        permission="zope2.View"
-        />
+  <browser:page
+      name="display-file"
+      for="*"
+      class=".browser.DisplayFile"
+      permission="zope2.View"
+      />
 
-    <include file="z3c-blobfile.zcml" />
-    <include zcml:condition="installed plone.supermodel" file="handler.zcml" />
-    <include zcml:condition="installed plone.rfc822" file="marshaler.zcml" />
-    <include zcml:condition="installed plone.schemaeditor" file="editor.zcml" />
-    <include zcml:condition="installed plone.scale" file="scaling.zcml" />
+  <include file="z3c-blobfile.zcml" />
+  <include zcml:condition="installed plone.supermodel" file="handler.zcml" />
+  <include zcml:condition="installed plone.rfc822" file="marshaler.zcml" />
+  <include zcml:condition="installed plone.schemaeditor" file="editor.zcml" />
+  <include zcml:condition="installed plone.scale" file="scaling.zcml" />
 
 </configure>

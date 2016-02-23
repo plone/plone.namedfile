@@ -1,30 +1,33 @@
-import doctest
-import unittest
+# -*- coding: utf-8 -*-
 from plone.namedfile.tests.base import setUp
 from zope.component.testing import tearDown
+
+import doctest
+import unittest
+
 
 def test_suite():
     return unittest.TestSuite([
 
         doctest.DocFileSuite(
-            'usage.txt', package='plone.namedfile',
+            'usage.rst', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
 
         doctest.DocFileSuite(
-            'handler.txt', package='plone.namedfile',
+            'handler.rst', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
 
         doctest.DocFileSuite(
-            'marshaler.txt', package='plone.namedfile',
+            'marshaler.rst', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
 
         doctest.DocFileSuite(
-            'utils.txt', package='plone.namedfile',
+            'utils.rst', package='plone.namedfile',
             setUp=setUp, tearDown=tearDown),
 
         doctest.DocTestSuite('plone.namedfile.file'),
 
-        ])
+    ])
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

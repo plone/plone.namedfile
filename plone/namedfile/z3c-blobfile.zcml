@@ -1,6 +1,4 @@
-<configure
-    xmlns="http://namespaces.zope.org/zope"
-    i18n_domain='zope'>
+<configure xmlns="http://namespaces.zope.org/zope">
 
   <utility
       name="__builtin__.str"

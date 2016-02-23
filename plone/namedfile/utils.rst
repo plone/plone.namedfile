@@ -4,9 +4,11 @@ Utility functions
 safe_basename
 -------------
 
+::
+
     >>> from plone.namedfile.utils import safe_basename
 
-Used in the widget itself to strip off any path, regardless of platform.
+Used in the widget itself to strip off any path, regardless of platform::
 
     >>> safe_basename('/farmyard/cows/daisy')
     'daisy'
