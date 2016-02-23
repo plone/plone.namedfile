@@ -3,6 +3,7 @@ from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
 from logging import exception
+from plone.namedfile.file import FileChunk
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.utils import set_headers
@@ -13,7 +14,6 @@ from plone.scale.storage import AnnotationStorage
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from ZODB.POSException import ConflictError
-from zope.app.file.file import FileChunk
 from zope.component import queryUtility
 from zope.interface import alsoProvides
 from zope.interface import implementer

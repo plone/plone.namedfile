@@ -10,6 +10,10 @@ New:
 
 Fixes:
 
+- Remove dependency on ``zope.app.file``, which was only used to import the ``FileChunk`` class, where we have already the same implementation in here.
+  ``zope.app.file`` isn't used in any other Plone core package.
+  [thet]
+
 - PEP 8, UTF-8 headers, implements/adapts to decorators, doctest formating.
   [thet, jensens]
 
@@ -109,31 +113,10 @@ Fixes:
   [thomasdesvenain]
 
 - Fix: get_contenttype works when empty string is given as contentType.
+  [thomasdesvenain]
 
 - Backward compatibility of NamedFile with zope.app.file FileChunk.
   Avoids NamedFile validation unexpected failures.
-  [thomasdesvenain]
-
-
-2.0.5 (2014-02-19)
-------------------
-
-- Ensure zope.app.file.file module alias is created before its use in
-  file package.
-  [thomasdesvenain]
-
-
-2.0.4 (2014-01-27)
-------------------
-
-- Backward compatibility of NamedFile with zope.app.file FileChunk.
-  Avoids NamedFile validation unexpected failures.
-  [thomasdesvenain]
-
-- Validate image field : check if content is actually an image using mimetype.
-  [thomasdesvenain]
-
-- Fix: get_contenttype works when empty string is given as contentType.
   [thomasdesvenain]
 
 

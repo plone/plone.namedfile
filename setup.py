@@ -38,7 +38,6 @@ setup(
     install_requires=[
         'setuptools',
         'plone.rfc822>=1.0b2',
-        'zope.app.file',
         'zope.browserpage',
         'zope.component',
         'zope.copy',

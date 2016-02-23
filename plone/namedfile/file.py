@@ -53,14 +53,6 @@ class FileChunk(Persistent):
         return ''.join(result)
 
 
-FILECHUNK_CLASSES = [FileChunk]
-try:
-    from zope.app.file.file import FileChunk as zafFileChunk
-    FILECHUNK_CLASSES.append(zafFileChunk)
-except ImportError:
-    pass
-
-
 @implementer(INamedFile)
 class NamedFile(Persistent):
     """A non-BLOB file that stores a filename
@@ -165,7 +157,7 @@ class NamedFile(Persistent):
         self.filename = filename
 
     def _getData(self):
-        if isinstance(self._data, tuple(FILECHUNK_CLASSES)):
+        if isinstance(self._data, FileChunk):
             return str(self._data)
         else:
             return self._data
@@ -185,7 +177,7 @@ class NamedFile(Persistent):
             raise TypeError('Cannot set None data on a file.')
 
         # Handle case when data is already a FileChunk
-        if isinstance(data, tuple(FILECHUNK_CLASSES)):
+        if isinstance(data, FileChunk):
             size = len(data)
             self._data, self._size = data, size
             return
