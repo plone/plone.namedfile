@@ -71,11 +71,11 @@ class TestImage(unittest.TestCase):
         self.assertEqual(image.getImageSize(), (16, 16))
 
     def testInterface(self):
-        self.failUnless(INamedBlobImage.implementedBy(NamedBlobImage))
-        self.failUnless(verifyClass(INamedBlobImage, NamedBlobImage))
-        self.failUnless(INamedBlobFile.implementedBy(NamedBlobImage))
-        self.failUnless(INamedBlobImage.implementedBy(NamedBlobImage))
-        self.failUnless(verifyClass(INamedBlobFile, NamedBlobImage))
+        self.assertTrue(INamedBlobImage.implementedBy(NamedBlobImage))
+        self.assertTrue(verifyClass(INamedBlobImage, NamedBlobImage))
+        self.assertTrue(INamedBlobFile.implementedBy(NamedBlobImage))
+        self.assertTrue(INamedBlobImage.implementedBy(NamedBlobImage))
+        self.assertTrue(verifyClass(INamedBlobFile, NamedBlobImage))
 
     def testDataMutatorWithLargeHeader(self):
         from plone.namedfile.file import IMAGE_INFO_BYTES

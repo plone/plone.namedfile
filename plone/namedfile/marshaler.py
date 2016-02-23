@@ -32,7 +32,7 @@ if HAVE_MARSHALER:
             # never in a header
             if not primary:
                 raise ValueError(
-                    "File fields can only be marshaled as primary fields")
+                    'File fields can only be marshaled as primary fields')
             if value is None:
                 return None
             return value.data

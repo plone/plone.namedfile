@@ -34,9 +34,9 @@ else:
 
 class ImageTestMixin(object):
 
-    def assertImage(self, data, format, size):
+    def assertImage(self, data, format_, size):
         image = PIL.Image.open(StringIO(data))
-        self.assertEqual(image.format, format)
+        self.assertEqual(image.format, format_)
         self.assertEqual(image.size, size)
 
 
@@ -51,12 +51,12 @@ class NamedFileFunctionalTestCase(
     layer = NamedFileLayer
 
     def getCredentials(self):
-        return '%s:%s' % (ztc.user_name, ztc.user_password)
+        return u'{0}:{0}'.format(ztc.user_name, ztc.user_password)
 
     def getBrowser(self, loggedIn=True):
         """ instantiate and return a testbrowser for convenience """
         browser = Browser()
         if loggedIn:
-            auth = 'Basic %s' % self.getCredentials()
+            auth = u'Basic {0}'.format(self.getCredentials())
             browser.addHeader('Authorization', auth)
         return browser

@@ -59,8 +59,8 @@ class ImageScale(BrowserView):
             name = info['uid']
         else:
             name = info['fieldname']
-        self.__name__ = '%s.%s' % (name, extension)
-        self.url = '%s/@@images/%s' % (url, self.__name__)
+        self.__name__ = u'{0}.{1}'.format(name, extension)
+        self.url = u'{0}/@@images/{1}'.format(url, self.__name__)
 
     def absolute_url(self):
         return self.url
@@ -97,7 +97,7 @@ class ImageScale(BrowserView):
                 v = str(v)
             elif isinstance(v, str):
                 v = unicode(v, 'utf8')
-            parts.append("%s=%s" % (k, quoteattr(v)))
+            parts.append(u'{0}={1}'.format(k, quoteattr(v)))
         parts.append('/>')
 
         return u' '.join(parts)
@@ -144,7 +144,7 @@ class ImmutableTraverser(object):
 
     def traverse(self, name, furtherPath):
         if furtherPath:
-            raise TraversalError("Do not know how to handle further path")
+            raise TraversalError('Do not know how to handle further path')
         else:
             if self.scale:
                 return self.scale.tag()
@@ -251,17 +251,19 @@ class ImageScaling(BrowserView):
                height=None,
                width=None,
                **parameters):
-        """ factory for image scales, see `IImageScaleStorage.scale` """
+        """Factory for image scales, see `IImageScaleStorage.scale`.
+        """
         orig_value = getattr(self.context, fieldname)
         if orig_value is None:
             return
 
         if height is None and width is None:
-            _, format = orig_value.contentType.split('/', 1)
-            return None, format, (orig_value._width, orig_value._height)
-        if hasattr(aq_base(orig_value), 'open'):
+            _, format_ = orig_value.contentType.split('/', 1)
+            return None, format_, (orig_value._width, orig_value._height)
+        orig_data = None
+        try:
             orig_data = orig_value.open()
-        else:
+        except AttributeError:
             orig_data = getattr(aq_base(orig_value), 'data', orig_value)
         if not orig_data:
             return
@@ -293,24 +295,19 @@ class ImageScaling(BrowserView):
                       orig_value, self.context.absolute_url())
             return
         if result is not None:
-            data, format, dimensions = result
-            mimetype = 'image/%s' % format.lower()
+            data, format_, dimensions = result
+            mimetype = u'image/{0}'.format(format_.lower())
             value = orig_value.__class__(
                 data, contentType=mimetype, filename=orig_value.filename)
             value.fieldname = fieldname
-            return value, format, dimensions
+            return value, format_, dimensions
 
     def modified(self):
-        """ provide a callable to return the modification time of content
-            items, so stored image scales can be invalidated """
+        """Provide a callable to return the modification time of content
+        items, so stored image scales can be invalidated.
+        """
         context = aq_base(self.context)
-        try:
-            if hasattr(context, 'modified') and callable(context.modified):
-                date = context.modified()
-            else:
-                date = DateTime(context._p_mtime)
-        except AttributeError:
-            date = self.context.modified().millis()
+        date = DateTime(context._p_mtime)
         return date.millis()
 
     def scale(self,

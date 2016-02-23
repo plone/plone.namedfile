@@ -61,7 +61,7 @@ class ImageScalingTests(NamedFileTestCase):
 
     def testCreateScale(self):
         foo = self.scaling.scale('image', width=100, height=80)
-        self.failUnless(foo.uid)
+        self.assertTrue(foo.uid)
         self.assertEqual(foo.mimetype, 'image/jpeg')
         self.assertEqual(foo.width, 80)
         self.assertEqual(foo.height, 80)
@@ -76,14 +76,14 @@ class ImageScalingTests(NamedFileTestCase):
     def testGetScaleByName(self):
         self.scaling.available_sizes = {'foo': (60, 60)}
         foo = self.scaling.scale('image', scale='foo')
-        self.failUnless(foo.uid)
+        self.assertTrue(foo.uid)
         self.assertEqual(foo.mimetype, 'image/jpeg')
         self.assertEqual(foo.width, 60)
         self.assertEqual(foo.height, 60)
         self.assertImage(foo.data.data, 'JPEG', (60, 60))
         expected_url = re.compile(
             r'http://nohost/item/@@images/[-a-z0-9]{36}\.jpeg')
-        self.failUnless(expected_url.match(foo.absolute_url()))
+        self.assertTrue(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
 
         tag = foo.tag()
@@ -91,7 +91,7 @@ class ImageScalingTests(NamedFileTestCase):
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
         groups = re.match(expected, tag).groups()
-        self.failUnless(groups, tag)
+        self.assertTrue(groups, tag)
 
     def testGetUnknownScale(self):
         foo = self.scaling.scale('image', scale='foo?')
@@ -215,7 +215,7 @@ class ImageTraverseTests(NamedFileTestCase):
         expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
         groups = re.match(expected, tag).groups()
-        self.failUnless(groups, tag)
+        self.assertTrue(groups, tag)
         uid, ext, height, width = groups
         return uid, ext, int(width), int(height)
 

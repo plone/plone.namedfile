@@ -58,8 +58,8 @@ class TestImage(unittest.TestCase):
         self.assertEqual(image.getImageSize(), (16, 16))
 
     def testInterface(self):
-        self.failUnless(INamedImage.implementedBy(NamedImage))
-        self.failUnless(verifyClass(INamedImage, NamedImage))
+        self.assertTrue(INamedImage.implementedBy(NamedImage))
+        self.assertTrue(verifyClass(INamedImage, NamedImage))
 
     def test_get_contenttype(self):
         self.assertEqual(

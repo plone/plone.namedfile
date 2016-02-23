@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from plone.namedfile.tests.base import setUp
 from zope.component.testing import tearDown
 

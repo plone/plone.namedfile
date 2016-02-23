@@ -51,17 +51,17 @@ def set_headers(file, response, filename=None):
 
     contenttype = get_contenttype(file)
 
-    response.setHeader("Content-Type", contenttype)
-    response.setHeader("Content-Length", file.getSize())
+    response.setHeader('Content-Type', contenttype)
+    response.setHeader('Content-Length', file.getSize())
 
     if filename is not None:
         if not isinstance(filename, unicode):
-            filename = unicode(filename, 'utf-8', errors="ignore")
-        filename = urllib.quote(filename.encode("utf8"))
+            filename = unicode(filename, 'utf-8', errors='ignore')
+        filename = urllib.quote(filename.encode('utf8'))
         response.setHeader(
-            "Content-Disposition",
-            "attachment; filename*=UTF-8''%s" %
-            filename)
+            'Content-Disposition',
+            'attachment; filename*=UTF-8\'\'{0}'.format(filename)
+        )
 
 
 def stream_data(file):
