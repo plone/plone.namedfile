@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file was borrowed from z3c.blobfile and is licensed under the terms of
 # the ZPL.
 
@@ -14,27 +15,28 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-import unittest
-import struct
-import transaction
 
-from zope.component import provideUtility
-from zope.interface.verify import verifyClass
+from plone.namedfile import storages
 from plone.namedfile.file import NamedBlobFile
 from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.interfaces import INamedBlobFile
 from plone.namedfile.interfaces import INamedBlobImage
 from plone.namedfile.interfaces import IStorage
-from plone.namedfile import storages
 from plone.namedfile.tests.base import NamedFileLayer
 from plone.namedfile.tests.test_image import zptlogo
+from zope.component import provideUtility
+from zope.interface.verify import verifyClass
+
+import struct
+import transaction
+import unittest
 
 
 def registerUtilities():
-     provideUtility(storages.StringStorable(), IStorage, name="__builtin__.str")
-     provideUtility(storages.UnicodeStorable(), IStorage, name="__builtin__.unicode")
-     provideUtility(storages.FileChunkStorable(), IStorage, name="plone.namedfile.file.FileChunk")
-     provideUtility(storages.FileDescriptorStorable(), IStorage, name="__builtin__.file")
+    provideUtility(storages.StringStorable(), IStorage, name="__builtin__.str")  # noqa
+    provideUtility(storages.UnicodeStorable(), IStorage, name="__builtin__.unicode")  # noqa
+    provideUtility(storages.FileChunkStorable(), IStorage, name="plone.namedfile.file.FileChunk")  # noqa
+    provideUtility(storages.FileDescriptorStorable(), IStorage, name="__builtin__.file")  # noqa
 
 
 class TestImage(unittest.TestCase):

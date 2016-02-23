@@ -1,23 +1,29 @@
-from Acquisition import aq_base
+# -*- coding: utf-8 -*-
 from AccessControl.ZopeGuards import guarded_getattr
+from Acquisition import aq_base
 from DateTime import DateTime
 from logging import exception
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
-from plone.namedfile.utils import set_headers, stream_data
+from plone.namedfile.utils import set_headers
+from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
-from plone.scale.storage import AnnotationStorage
 from plone.scale.scale import scaleImage
+from plone.scale.storage import AnnotationStorage
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from ZODB.POSException import ConflictError
+from zope.app.file.file import FileChunk
 from zope.component import queryUtility
 from zope.interface import alsoProvides
-from zope.interface import implements
-from zope.traversing.interfaces import ITraversable, TraversalError
-from zope.publisher.interfaces import IPublishTraverse, NotFound
-from zope.app.file.file import FileChunk
+from zope.interface import implementer
+from zope.publisher.interfaces import IPublishTraverse
+from zope.publisher.interfaces import NotFound
+from zope.traversing.interfaces import ITraversable
+from zope.traversing.interfaces import TraversalError
+
 import pkg_resources
+
 
 try:
     pkg_resources.get_distribution('plone.protect>=3.0')
@@ -130,8 +136,8 @@ class ImageScale(BrowserView):
     HEAD.__roles__ = ('Anonymous',)
 
 
+@implementer(ITraversable)
 class ImmutableTraverser(object):
-    implements(ITraversable)
 
     def __init__(self, scale):
         self.scale = scale
@@ -146,9 +152,9 @@ class ImmutableTraverser(object):
                 raise TraversalError(name)
 
 
+@implementer(ITraversable, IPublishTraverse)
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
-    implements(ITraversable, IPublishTraverse)
     # Ignore some stacks to help with accessing via webdav, otherwise you get a
     # 404 NotFound error.
     _ignored_stacks = ('manage_DAVget', 'manage_FTPget')

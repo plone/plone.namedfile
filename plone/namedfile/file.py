@@ -14,8 +14,10 @@ from ZODB.blob import Blob
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.fieldproperty import FieldProperty
+
 import struct
 import transaction
+
 
 MAXCHUNKSIZE = 1 << 16
 IMAGE_INFO_BYTES = 1024
@@ -195,7 +197,7 @@ class NamedFile(Persistent):
         seek(0, 2)
         size = end = data.tell()
 
-        if size <= 2*MAXCHUNKSIZE:
+        if size <= 2 * MAXCHUNKSIZE:
             seek(0)
             if size < MAXCHUNKSIZE:
                 self._data, self._size = read(size), size
@@ -340,7 +342,7 @@ def getImageInfo(data):
                     h, w = struct.unpack(">HH", jpeg.read(4))
                     break
                 else:
-                    jpeg.read(int(struct.unpack(">H", jpeg.read(2))[0])-2)
+                    jpeg.read(int(struct.unpack(">H", jpeg.read(2))[0]) - 2)
                 b = jpeg.read(1)
             width = int(w)
             height = int(h)

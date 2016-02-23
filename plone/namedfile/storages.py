@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file was borrowed from z3c.blobfile and is licensed under the terms of
 # the ZPL.
 
@@ -15,17 +16,18 @@
 #
 ##############################################################################
 
-from zope.interface import implements
 from plone.namedfile.file import FileChunk
-from zope.publisher.browser import FileUpload
 from plone.namedfile.interfaces import IStorage
 from plone.namedfile.interfaces import NotStorable
+from zope.interface import implementer
+from zope.publisher.browser import FileUpload
+
 
 MAXCHUNKSIZE = 1 << 16
 
 
+@implementer(IStorage)
 class StringStorable(object):
-    implements(IStorage)
 
     def store(self, data, blob):
         if not isinstance(data, str):
@@ -36,8 +38,8 @@ class StringStorable(object):
         fp.close()
 
 
+@implementer(IStorage)
 class UnicodeStorable(StringStorable):
-    implements(IStorage)
 
     def store(self, data, blob):
         if not isinstance(data, unicode):
@@ -48,8 +50,8 @@ class UnicodeStorable(StringStorable):
         StringStorable.store(self, data, blob)
 
 
+@implementer(IStorage)
 class FileChunkStorable(object):
-    implements(IStorage)
 
     def store(self, data, blob):
         if not isinstance(data, FileChunk):
@@ -64,8 +66,8 @@ class FileChunkStorable(object):
         fp.close()
 
 
+@implementer(IStorage)
 class FileDescriptorStorable(object):
-    implements(IStorage)
 
     def store(self, data, blob):
         if not isinstance(data, file):
@@ -77,8 +79,8 @@ class FileDescriptorStorable(object):
             return
 
 
+@implementer(IStorage)
 class FileUploadStorable(object):
-    implements(IStorage)
 
     def store(self, data, blob):
         if not isinstance(data, FileUpload):

@@ -1,7 +1,9 @@
-from zope.i18nmessageid.message import MessageFactory
-from plone.namedfile import interfaces
+# -*- coding: utf-8 -*-
 from plone.namedfile import field
+from plone.namedfile import interfaces
 from plone.schemaeditor.fields import FieldFactory
+from zope.i18nmessageid.message import MessageFactory
+
 
 _ = MessageFactory('plone')
 

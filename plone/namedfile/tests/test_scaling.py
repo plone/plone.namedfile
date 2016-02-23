@@ -1,19 +1,23 @@
-import time
+# -*- coding: utf-8 -*-
 from DateTime import DateTime
 from OFS.SimpleItem import SimpleItem
-from plone.namedfile.interfaces import IImageScaleTraversable, IAvailableSizes
 from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
-from plone.namedfile.tests.base import NamedFileTestCase, getFile
-from plone.namedfile.tests.base import NamedFileFunctionalTestCase
+from plone.namedfile.interfaces import IAvailableSizes
+from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.scaling import ImageScaling
+from plone.namedfile.tests.base import getFile
+from plone.namedfile.tests.base import NamedFileFunctionalTestCase
+from plone.namedfile.tests.base import NamedFileTestCase
 from plone.scale.interfaces import IScaledImageQuality
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
-from zope.component import getSiteManager, getGlobalSiteManager
-from zope.interface import implements
+from zope.component import getGlobalSiteManager
+from zope.component import getSiteManager
+from zope.interface import implementer
 
 import re
+import time
 
 
 def wait_to_ensure_modified():
@@ -26,8 +30,8 @@ class IHasImage(IImageScaleTraversable):
     image = NamedImageField()
 
 
+@implementer(IAttributeAnnotatable, IHasImage)
 class DummyContent(SimpleItem):
-    implements(IAttributeAnnotatable, IHasImage)
     image = None
     modified = DateTime
     id = __name__ = 'item'
@@ -37,9 +41,9 @@ class DummyContent(SimpleItem):
         return self.title
 
 
+@implementer(IScaledImageQuality)
 class DummyQualitySupplier(object):
     """ fake utility for plone.app.imaging's scaling quality """
-    implements(IScaledImageQuality)
 
     def getQuality(self):
         return 1  # as bad as it gets
@@ -327,7 +331,9 @@ class ImagePublisherTests(NamedFileFunctionalTestCase):
         self.assertEqual(response.getStatus(), 200)
         self.assertEqual(response.getHeader('Content-Type'), 'image/jpeg')
         self.assertEqual(
-            response.getHeader('Content-Length'), str(len(get_response.getBody())))
+            response.getHeader('Content-Length'),
+            str(len(get_response.getBody()))
+        )
         self.assertEqual(response.getBody(), '')
 
     def testPublishThumbViaUID(self):

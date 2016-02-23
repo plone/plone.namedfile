@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 from AccessControl.ZopeGuards import guarded_getattr
-from Products.Five.browser import BrowserView
-from plone.namedfile.utils import set_headers, stream_data
+from plone.namedfile.utils import set_headers
+from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
-from zope.interface import implements
-from zope.publisher.interfaces import IPublishTraverse, NotFound
+from Products.Five.browser import BrowserView
+from zope.interface import implementer
+from zope.publisher.interfaces import IPublishTraverse
+from zope.publisher.interfaces import NotFound
 
 
+@implementer(IPublishTraverse)
 class Download(BrowserView):
     """Download a file, via ../context/@@download/fieldname/filename
 
@@ -20,8 +23,6 @@ class Download(BrowserView):
     If no `fieldname` is supplied, then a default field is looked up through
     adaption to `plone.rfc822.interfaces.IPrimaryFieldInfo`.
     """
-
-    implements(IPublishTraverse)
 
     def __init__(self, context, request):
         super(Download, self).__init__(context, request)

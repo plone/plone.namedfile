@@ -1,8 +1,10 @@
-import os.path
+# -*- coding: utf-8 -*-
+from plone.namedfile.interfaces import IBlobby
+
 import mimetypes
+import os.path
 import urllib
 
-from plone.namedfile.interfaces import IBlobby
 
 try:
     # use this to stream data if we can
@@ -10,16 +12,23 @@ try:
 except ImportError:
     filestream_iterator = None
 
+
 def safe_basename(filename):
     """Get the basename of the given filename, regardless of which platform
     (Windows or Unix) it originated from.
     """
-    return filename[max(filename.rfind('/'),
-                        filename.rfind('\\'),
-                        filename.rfind(':'),
-                        )+1:]
+    fslice = max(
+        filename.rfind('/'),
+        filename.rfind('\\'),
+        filename.rfind(':'),
+    ) + 1
+    return filename[fslice:]
 
-def get_contenttype(file=None, filename=None, default='application/octet-stream'):
+
+def get_contenttype(
+        file=None,
+        filename=None,
+        default='application/octet-stream'):
     """Get the MIME content type of the given file and/or filename.
     """
 
@@ -33,6 +42,7 @@ def get_contenttype(file=None, filename=None, default='application/octet-stream'
         return mimetypes.types_map.get(extension, 'application/octet-stream')
 
     return default
+
 
 def set_headers(file, response, filename=None):
     """Set response headers for the given file. If filename is given, set
@@ -48,7 +58,11 @@ def set_headers(file, response, filename=None):
         if not isinstance(filename, unicode):
             filename = unicode(filename, 'utf-8', errors="ignore")
         filename = urllib.quote(filename.encode("utf8"))
-        response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''%s" % filename)
+        response.setHeader(
+            "Content-Disposition",
+            "attachment; filename*=UTF-8''%s" %
+            filename)
+
 
 def stream_data(file):
     """Return the given file as a stream if possible.
