@@ -4,7 +4,7 @@ from setuptools import setup
 import os
 
 
-version = '3.0.8'
+version = '3.0.9.dev0'
 description = "File types and fields for images, files and blob files with filenames"  # noqa
 long_description = ('\n\n'.join([
     open('README.rst').read(),
