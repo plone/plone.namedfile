@@ -4,10 +4,6 @@ Changelog
 3.0.8 (unreleased)
 ------------------
 
-New:
-
-- *add item here*
-
 Fixes:
 
 - PEP 8, UTF-8 headers, implements/adapts to decorators, doctest formating.
