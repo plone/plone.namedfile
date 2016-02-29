@@ -44,7 +44,7 @@ These store data with the following types::
     >>> from zope.interface import implementer
     >>> from plone import namedfile
 
-    
+
     >>> @implementer(IFileContainer)
     ... class FileContainer(object):
     ...     __allow_access_to_unprotected_subobjects__ = 1
