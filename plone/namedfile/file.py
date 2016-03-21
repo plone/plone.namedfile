@@ -3,6 +3,8 @@
 # from zope.app.file and z3c.blobfile
 # and are licensed under the ZPL.
 from cStringIO import StringIO
+from xml.sax import SAXParseException
+
 from persistent import Persistent
 from plone.namedfile.interfaces import INamedBlobFile
 from plone.namedfile.interfaces import INamedBlobImage
@@ -15,9 +17,9 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.fieldproperty import FieldProperty
 
+from xml.dom import pulldom
 import struct
 import transaction
-
 
 MAXCHUNKSIZE = 1 << 16
 IMAGE_INFO_BYTES = 1024
@@ -359,6 +361,16 @@ def getImageInfo(data):
         if kind == 40:  # Windows 3.x bitmap
             content_type = 'image/x-ms-bmp'
             width, height = struct.unpack('<LL', data[18:26])
+    elif '<svg' in data:
+        content_type = 'image/svg+xml'
+        svg = pulldom.parseString(data)
+        try:
+            next(svg)
+            svg = next(svg)
+            width = int(float(svg[1].attributes.get('width').value))
+            height = int(float(svg[1].attributes.get('height').value))
+        except SAXParseException:
+            pass
 
     return content_type, width, height
 
@@ -440,7 +452,7 @@ class NamedBlobImage(NamedBlobFile):
         super(NamedBlobImage, self)._setData(data)
         firstbytes = self.getFirstBytes()
         res = getImageInfo(firstbytes)
-        if res == ('image/jpeg', -1, -1):
+        if res == ('image/jpeg', -1, -1) or res == ('image/svg+xml', -1, -1):
             # header was longer than firstbytes
             start = len(firstbytes)
             length = max(0, MAX_INFO_BYTES - start)

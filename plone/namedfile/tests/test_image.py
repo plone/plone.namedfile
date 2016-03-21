@@ -30,6 +30,17 @@ zptlogo = (
     '\x00A\x00;'
 )
 
+svg_image = (
+    '<?xml version="1.0" encoding="utf-8"?>'
+    '<svg xmlns="http://www.w3.org/2000/svg"'
+    ' version="1.1" width="300" height="200">'
+    '<rect width="100" height="80" x="0" y="70" fill="green" />'
+    '<line x1="5" y1="5" x2="250" y2="95" stroke="red" />'
+    '<circle cx="90" cy="80" r="50" fill="blue" />'
+    '<text x="180" y="60">Un texte</text>'
+    '</svg>'
+)
+
 
 class TestImage(unittest.TestCase):
 
@@ -56,6 +67,12 @@ class TestImage(unittest.TestCase):
         self.assertEqual(image.data, zptlogo)
         self.assertEqual(image.contentType, 'image/gif')
         self.assertEqual(image.getImageSize(), (16, 16))
+
+    def testSvg(self):
+        image = self._makeImage(data=svg_image)
+        self.assertEqual(image.contentType, 'image/svg+xml')
+        self.assertEqual(image._width, 300)
+        self.assertEqual(image._height, 200)
 
     def testInterface(self):
         self.assertTrue(INamedImage.implementedBy(NamedImage))

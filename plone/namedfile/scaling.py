@@ -328,13 +328,17 @@ class ImageScaling(BrowserView):
         if IDisableCSRFProtection and self.request is not None:
             alsoProvides(self.request, IDisableCSRFProtection)
 
-        storage = AnnotationStorage(self.context, self.modified)
-        info = storage.scale(factory=self.create,
-                             fieldname=fieldname,
-                             height=height,
-                             width=width,
-                             direction=direction,
-                             **parameters)
+        image = getattr(self.context, fieldname)
+        if image is not None and getattr(image, 'contentType', '') == 'image/svg+xml':
+            info = {'data': None, 'width': width, 'height': height}
+        else:
+            storage = AnnotationStorage(self.context, self.modified)
+            info = storage.scale(factory=self.create,
+                                 fieldname=fieldname,
+                                 height=height,
+                                 width=width,
+                                 direction=direction,
+                                 **parameters)
 
         if info is not None:
             info['fieldname'] = fieldname
