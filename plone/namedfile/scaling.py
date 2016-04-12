@@ -4,6 +4,7 @@ from Acquisition import aq_base
 from DateTime import DateTime
 from logging import exception
 from plone.namedfile.interfaces import IAvailableSizes
+from plone.namedfile.interfaces import IScalingFactoryFetcher
 from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
@@ -329,7 +330,11 @@ class ImageScaling(BrowserView):
             alsoProvides(self.request, IDisableCSRFProtection)
 
         storage = AnnotationStorage(self.context, self.modified)
-        info = storage.scale(factory=self.create,
+        scaling_factory = self.create
+        scaling_factory_fetcher = IScalingFactoryFetcher(self.context, None)
+        if scaling_factory_fetcher:
+            scaling_factory = scaling_factory_fetcher(fieldname)
+        info = storage.scale(factory=scaling_factory,
                              fieldname=fieldname,
                              height=height,
                              width=width,

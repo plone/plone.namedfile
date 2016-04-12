@@ -137,3 +137,18 @@ class INamedBlobFileField(INamedFileField):
 class INamedBlobImageField(INamedImageField):
     """Field for storing INamedBlobImage objects.
     """
+
+
+class IScalingFactoryFetcher(Interface):
+    """Look up a factory to scale an image
+    """
+
+    def __call__(fieldname):
+        """returns factory callable which takes parameters:
+
+        - fieldname,
+        - direction,
+        - height=None,
+        - width=None,
+        - **parameters
+        """

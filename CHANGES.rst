@@ -1,7 +1,7 @@
 Changelog
 =========
 
-3.0.9 (unreleased)
+3.1.0 (unreleased)
 ------------------
 
 Incompatibilities:
@@ -10,7 +10,8 @@ Incompatibilities:
 
 New:
 
-- *add item here*
+- Use ZCA to fetch the scaling factory using ``IScalingFactoryFetcher``
+  [jensens]
 
 Fixes:
 
