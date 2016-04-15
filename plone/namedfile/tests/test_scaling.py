@@ -78,11 +78,27 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.height, 80)
         assertImage(self, foo.data.data, 'PNG', (80, 80))
 
+    def testCreateRetinaScale(self):
+        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+        foo = self.scaling.scale('image', width=100, height=80)
+        self.assertTrue(foo.srcset)
+        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
+        self.assertEqual(foo.srcset[0]['height'], 160)
+        self.assertEqual(foo.srcset[0]['width'], 160)
+        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (160, 160))
+
     def testCreateScaleWithoutData(self):
         item = DummyContent()
         scaling = ImageScaling(item, None)
         foo = scaling.scale('image', width=100, height=80)
         self.assertEqual(foo, None)
+
+    def testCreateRetinaScaleWithoutData(self):
+        item = DummyContent()
+        scaling = ImageScaling(item, None)
+        scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+        foo = scaling.scale('image', width=100, height=80)
+        self.assertFalse(hasattr(foo, 'srcset'))
 
     def testGetScaleByName(self):
         self.scaling.available_sizes = {'foo': (60, 60)}
@@ -104,6 +120,29 @@ class ImageScalingTests(unittest.TestCase):
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
                 base
             )
+        groups = re.match(expected, tag).groups()
+        self.assertTrue(groups, tag)
+
+    def testGetRetinaScaleByName(self):
+        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+        self.scaling.available_sizes = {'foo': (60, 60)}
+        foo = self.scaling.scale('image', scale='foo')
+        self.assertTrue(foo.srcset)
+        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
+        self.assertEqual(foo.srcset[0]['width'], 120)
+        self.assertEqual(foo.srcset[0]['height'], 120)
+        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+
+        tag = foo.tag()
+        base = self.item.absolute_url()
+        expected = (
+            r'<img src="{0}'.format(base) +
+            r'/@@images/([-0-9a-f]{36})'
+            r'.(jpeg|gif|png)" '
+            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
+            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
+            r'.(jpeg|gif|png)'
+            r' 2x" />')
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
@@ -204,7 +243,7 @@ class ImageScalingTests(unittest.TestCase):
         """
         data = getFile('image.jpg').read()
         item = DummyContent()
-        item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
+        item.image = NamedImage(data, 'image/png', u'image.jpg')
         scaling = ImageScaling(item, None)
 
         # scale an image, record its size
@@ -220,6 +259,16 @@ class ImageScalingTests(unittest.TestCase):
         size_bar = bar.data.getSize()
         # first one should be bigger
         self.assertTrue(size_foo > size_bar)
+
+    def testOversizedRetinaScale(self):
+        orig_size = max(self.scaling.getImageSize('image'))
+        scale_size = orig_size / 2
+        self.scaling.getRetinaScales = lambda: [
+            {'scale': 2, 'quality': 66},
+            {'scale': 3, 'quality': 66}]
+        foo = self.scaling.scale('image', width=scale_size, height=scale_size)
+        self.assertEqual(len(foo.srcset), 1)
+        self.assertEqual(foo.srcset[0]['scale'], 2)
 
 
 class ImageTraverseTests(unittest.TestCase):

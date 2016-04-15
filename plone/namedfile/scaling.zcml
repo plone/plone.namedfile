@@ -9,6 +9,12 @@
       name="images"
       permission="zope2.View"
   />
+  <browser:page
+      class=".scaling.NavigationRootScaling"
+      for="plone.app.layout.navigation.interfaces.INavigationRoot"
+      name="image_scale"
+      permission="zope2.View"
+  />
   <adapter
       factory=".scaling.DefaultImageScalingFactory"
       for="*"

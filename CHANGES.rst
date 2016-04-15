@@ -10,7 +10,8 @@ Breaking changes:
 
 New features:
 
-- *add item here*
+- Add retina image scales using srcset attribute.
+  [didrix]
 
 Bug fixes:
 
