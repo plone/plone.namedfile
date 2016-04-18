@@ -3,7 +3,6 @@
 # from zope.app.file and z3c.blobfile
 # and are licensed under the ZPL.
 from cStringIO import StringIO
-from logging import getLogger
 from persistent import Persistent
 from plone.namedfile.interfaces import INamedBlobFile
 from plone.namedfile.interfaces import INamedBlobImage
@@ -18,9 +17,6 @@ from zope.schema.fieldproperty import FieldProperty
 
 import struct
 import transaction
-
-
-log = getLogger(__name__)
 
 
 MAXCHUNKSIZE = 1 << 16
@@ -401,7 +397,6 @@ class NamedBlobFile(Persistent):
         # Search for a storable that is able to store the data
         dottedName = '.'.join((data.__class__.__module__,
                                data.__class__.__name__))
-        log.info("safe data as: %s", dottedName)
         storable = getUtility(IStorage, name=dottedName)
         storable.store(data, self._blob)
 
