@@ -47,6 +47,7 @@ setup(
         'zope.copy',
         'zope.security',
         'zope.traversing',
+        'piexif',
     ],
     extras_require={
         'test': [
