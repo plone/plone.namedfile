@@ -10,7 +10,8 @@ Incompatibilities:
 
 New:
 
-- *add item here*
+- Add SVG support.
+  [Gagaro]
 
 Fixes:
 
