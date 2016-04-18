@@ -1,9 +1,18 @@
 # -*- coding: utf-8 -*-
+
+from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
+from StringIO import StringIO
 
 import mimetypes
 import os.path
+import piexif
+import PIL.Image
+import struct
 import urllib
+
+
+log = getLogger(__name__)
 
 
 try:
@@ -77,3 +86,154 @@ def stream_data(file):
         return filestream_iterator(filename, 'rb')
 
     return file.data
+
+
+def getImageInfo(data):
+    data = str(data)
+    size = len(data)
+    height = -1
+    width = -1
+    content_type = ''
+
+    # handle GIFs
+    if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
+        # Check to see if content_type is correct
+        content_type = 'image/gif'
+        w, h = struct.unpack('<HH', data[6:10])
+        width = int(w)
+        height = int(h)
+
+    # See PNG 2. Edition spec (http://www.w3.org/TR/PNG/)
+    # Bytes 0-7 are below, 4-byte chunk length, then 'IHDR'
+    # and finally the 4-byte width, height
+    elif (
+        (size >= 24) and data.startswith('\211PNG\r\n\032\n') and
+        (data[12:16] == 'IHDR')
+    ):
+        content_type = 'image/png'
+        w, h = struct.unpack('>LL', data[16:24])
+        width = int(w)
+        height = int(h)
+
+    # Maybe this is for an older PNG version.
+    elif (size >= 16) and data.startswith('\211PNG\r\n\032\n'):
+        # Check to see if we have the right content type
+        content_type = 'image/png'
+        w, h = struct.unpack('>LL', data[8:16])
+        width = int(w)
+        height = int(h)
+
+    # handle JPEGs
+    elif (size >= 2) and data.startswith('\377\330'):
+        content_type = 'image/jpeg'
+        jpeg = StringIO(data)
+        jpeg.read(2)
+        b = jpeg.read(1)
+        try:
+            w = -1
+            h = -1
+            while (b and ord(b) != 0xDA):
+                while (ord(b) != 0xFF):
+                    b = jpeg.read(1)
+                while (ord(b) == 0xFF):
+                    b = jpeg.read(1)
+                if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
+                    jpeg.read(3)
+                    h, w = struct.unpack('>HH', jpeg.read(4))
+                    break
+                else:
+                    jpeg.read(int(struct.unpack('>H', jpeg.read(2))[0]) - 2)
+                b = jpeg.read(1)
+            width = int(w)
+            height = int(h)
+        except struct.error:
+            pass
+        except ValueError:
+            pass
+        except TypeError:
+            pass
+
+    # handle BMPs
+    elif (size >= 30) and data.startswith('BM'):
+        kind = struct.unpack('<H', data[14:16])[0]
+        if kind == 40:  # Windows 3.x bitmap
+            content_type = 'image/x-ms-bmp'
+            width, height = struct.unpack('<LL', data[18:26])
+
+    return content_type, width, height
+
+
+def get_exif(image):
+    if getattr(image, 'read', None):
+        exif_data = piexif.load(image.read())
+    else:
+        exif_data = piexif.load(image)
+    return exif_data
+
+
+def rotate_image(image_data, method=None, REQUEST=None):
+    if getattr(image_data, 'read', None):
+        img = PIL.Image.open(image_data)
+    else:
+        img = PIL.Image.open(StringIO(image_data))
+
+    if 'exif' in img.info:
+        exif_data = piexif.load(img.info['exif'])
+
+        if piexif.ImageIFD.Orientation in exif_data['0th']:
+            orientation = exif_data['0th'][piexif.ImageIFD.Orientation]
+    else:
+        width, height = im.size()
+        exif_data = {
+            '0th': {
+                piexif.ImageIFD.XResolution: (width, 1),
+                piexif.ImageIFD.YResolution: (height, 1),
+            }
+        }
+
+    if method is not None:
+        orientation = method
+
+    log.debug('Rotate image with input orientation: %s', orientation)
+
+    fmt = img.format
+    if orientation == 1:  # not transform necessary
+        #img = img
+        pass
+    elif orientation == 2:
+        img = img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+    elif orientation == 3:
+        #img = img.rotate(180)
+        img = img.transpose(PIL.Image.ROTATE_180)
+    elif orientation == 4:
+        #img = img.rotate(180).transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        img = img.transpose(PIL.Image.ROTATE_180).transpose(PIL.Image.FLIP_LEFT_RIGHT)
+    elif orientation == 5:
+        #img = img.rotate(-90).transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        img = img.transpose(PIL.Image.ROTATE_270).transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        #exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+    elif orientation == 6:
+        #img = img.rotate(-90)
+        img = img.transpose(PIL.Image.ROTATE_270)
+        #exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+    elif orientation == 7:
+        #img = img.rotate(90).transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        img = img.transpose(PIL.Image.ROTATE_90).transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        #exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+    elif orientation == 8:
+        #img = img.rotate(90)
+        img = img.transpose(PIL.Image.ROTATE_90)
+        #exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+
+    exif_data['0th'][piexif.ImageIFD.Orientation] = 1  # delete orientation
+    #del(exif_data['0th'][piexif.ImageIFD.Orientation])
+
+    try:
+        exif_bytes = piexif.dump(exif_data)
+    except:
+        del(exif_data['Exif'][41729])  # This Elemnt piexif.ExifIFD.SceneType cause error on dump
+        exif_bytes = piexif.dump(exif_data)
+    output_image_data = StringIO()
+    img.save(output_image_data, format=fmt, exif=exif_bytes)
+    width, height = img.size
+    return output_image_data.getvalue(), width, height, exif_data
