@@ -11,15 +11,12 @@ from plone.namedfile.interfaces import INamedFile
 from plone.namedfile.interfaces import INamedImage
 from plone.namedfile.interfaces import IStorage
 from plone.namedfile.utils import get_contenttype
-from plone.namedfile.utils import get_exif
-from plone.namedfile.utils import getImageInfo
-from plone.namedfile.utils import rotate_image
 from ZODB.blob import Blob
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.fieldproperty import FieldProperty
 
-import piexif
+import struct
 import transaction
 
 
@@ -273,20 +270,13 @@ class NamedImage(NamedFile):
     filename = FieldProperty(INamedFile['filename'])
 
     def __init__(self, data='', contentType='', filename=None):
+        self.contentType, self._width, self._height = getImageInfo(data)
+        self.data = data
         self.filename = filename
-        self._setData(data)
 
         # Allow override of the image sniffer
         if contentType:
             self.contentType = contentType
-
-        if contentType in ['image/jpeg', 'image/tiff']:
-            _exif_data = get_exif(data)
-            if _exif_data is not None:
-                orientation = _exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
-                if 1 < orientation <= 8:
-                    data = rotate_image(data)
-                self.exif_data = _exif_data
 
     def _setData(self, data):
         super(NamedImage, self)._setData(data)
@@ -300,6 +290,81 @@ class NamedImage(NamedFile):
         return (self._width, self._height)
 
     data = property(NamedFile._getData, _setData)
+
+
+def getImageInfo(data):
+    data = str(data)
+    size = len(data)
+    height = -1
+    width = -1
+    content_type = ''
+
+    # handle GIFs
+    if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
+        # Check to see if content_type is correct
+        content_type = 'image/gif'
+        w, h = struct.unpack('<HH', data[6:10])
+        width = int(w)
+        height = int(h)
+
+    # See PNG 2. Edition spec (http://www.w3.org/TR/PNG/)
+    # Bytes 0-7 are below, 4-byte chunk length, then 'IHDR'
+    # and finally the 4-byte width, height
+    elif (
+        (size >= 24) and data.startswith('\211PNG\r\n\032\n') and
+        (data[12:16] == 'IHDR')
+    ):
+        content_type = 'image/png'
+        w, h = struct.unpack('>LL', data[16:24])
+        width = int(w)
+        height = int(h)
+
+    # Maybe this is for an older PNG version.
+    elif (size >= 16) and data.startswith('\211PNG\r\n\032\n'):
+        # Check to see if we have the right content type
+        content_type = 'image/png'
+        w, h = struct.unpack('>LL', data[8:16])
+        width = int(w)
+        height = int(h)
+
+    # handle JPEGs
+    elif (size >= 2) and data.startswith('\377\330'):
+        content_type = 'image/jpeg'
+        jpeg = StringIO(data)
+        jpeg.read(2)
+        b = jpeg.read(1)
+        try:
+            w = -1
+            h = -1
+            while (b and ord(b) != 0xDA):
+                while (ord(b) != 0xFF):
+                    b = jpeg.read(1)
+                while (ord(b) == 0xFF):
+                    b = jpeg.read(1)
+                if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
+                    jpeg.read(3)
+                    h, w = struct.unpack('>HH', jpeg.read(4))
+                    break
+                else:
+                    jpeg.read(int(struct.unpack('>H', jpeg.read(2))[0]) - 2)
+                b = jpeg.read(1)
+            width = int(w)
+            height = int(h)
+        except struct.error:
+            pass
+        except ValueError:
+            pass
+        except TypeError:
+            pass
+
+    # handle BMPs
+    elif (size >= 30) and data.startswith('BM'):
+        kind = struct.unpack('<H', data[14:16])[0]
+        if kind == 40:  # Windows 3.x bitmap
+            content_type = 'image/x-ms-bmp'
+            width, height = struct.unpack('<LL', data[18:26])
+
+    return content_type, width, height
 
 
 @implementer(INamedBlobFile)
@@ -370,20 +435,11 @@ class NamedBlobImage(NamedBlobFile):
     """
 
     def __init__(self, data='', contentType='', filename=None):
-        super(NamedBlobImage, self).__init__(data, contentType=contentType, filename=filename)
+        super(NamedBlobImage, self).__init__(data, filename=filename)
 
         # Allow override of the image sniffer
         if contentType:
             self.contentType = contentType
-
-        if contentType in ['image/jpeg', 'image/tiff']:
-            exif_data = get_exif(self.data)
-            if exif_data is not None:
-                orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
-                if 1 < orientation <= 8:
-                    self.data, self._width, self._height, self.exif = rotate_image(self.data)
-                else:
-                    self.exif = exif_data
 
     def _setData(self, data):
         super(NamedBlobImage, self)._setData(data)
@@ -417,5 +473,6 @@ class NamedBlobImage(NamedBlobFile):
         if (self._width, self._height) != (-1, -1):
             return (self._width, self._height)
 
-        contentType, self._width, self._height = getImageInfo(self.data)
+        res = getImageInfo(self.data)
+        contentType, self._width, self._height = res
         return (self._width, self._height)
