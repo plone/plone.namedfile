@@ -280,13 +280,16 @@ class NamedImage(NamedFile):
         if contentType:
             self.contentType = contentType
 
-        if contentType in ['image/jpeg', 'image/tiff']:
-            _exif_data = get_exif(data)
-            if _exif_data is not None:
-                orientation = _exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
+        if self.contentType in ['image/jpeg', 'image/tiff']:
+            exif_data = get_exif(data)
+            if exif_data is not None:
+                log.debug('Image contains Exif Informations. '
+                          'Test for Image Orientation and Rotate if necessary.'
+                          'Exif Data: %s', exif_data)
+                orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
                 if 1 < orientation <= 8:
                     data = rotate_image(data)
-                self.exif_data = _exif_data
+                self.exif_data = exif_data
 
     def _setData(self, data):
         super(NamedImage, self)._setData(data)
@@ -336,7 +339,7 @@ class NamedBlobFile(Persistent):
         # Search for a storable that is able to store the data
         dottedName = '.'.join((data.__class__.__module__,
                                data.__class__.__name__))
-        log.info("safe data as: %s", dottedName)
+        log.debug('Storage selected for data: %s', dottedName)
         storable = getUtility(IStorage, name=dottedName)
         storable.store(data, self._blob)
 
@@ -375,10 +378,12 @@ class NamedBlobImage(NamedBlobFile):
         # Allow override of the image sniffer
         if contentType:
             self.contentType = contentType
-
-        if contentType in ['image/jpeg', 'image/tiff']:
-            exif_data = get_exif(self.data)
+        if self.contentType in ['image/jpeg', 'image/tiff']:
+            exif_data = get_exif(data)
             if exif_data is not None:
+                log.debug('Image contains Exif Informations. '
+                          'Test for Image Orientation and Rotate if necessary.'
+                          'Exif Data: %s', exif_data)
                 orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
                 if 1 < orientation <= 8:
                     self.data, self._width, self._height, self.exif = rotate_image(self.data)
