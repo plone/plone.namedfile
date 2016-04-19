@@ -172,6 +172,12 @@ def get_exif(image):
 
 
 def rotate_image(image_data, method=None, REQUEST=None):
+    """Rotate Image if it has Exif Orientation Informations other than 1.
+
+    Do not use PIL.Image.rotate function as this did not transpose the image,
+    rotate keeps the image width and height and rotates the image around a
+    central point. PIL.Image.transpose also changes Image Orientation.
+    """
     if getattr(image_data, 'read', None):
         img = PIL.Image.open(image_data)
     else:
@@ -203,27 +209,21 @@ def rotate_image(image_data, method=None, REQUEST=None):
     elif orientation == 2:
         img = img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
     elif orientation == 3:
-        #img = img.rotate(180)
         img = img.transpose(PIL.Image.ROTATE_180)
     elif orientation == 4:
-        #img = img.rotate(180).transpose(PIL.Image.FLIP_LEFT_RIGHT)
         img = img.transpose(PIL.Image.ROTATE_180).transpose(PIL.Image.FLIP_LEFT_RIGHT)
     elif orientation == 5:
-        #img = img.rotate(-90).transpose(PIL.Image.FLIP_LEFT_RIGHT)
         img = img.transpose(PIL.Image.ROTATE_270).transpose(PIL.Image.FLIP_LEFT_RIGHT)
-        #exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
     elif orientation == 6:
-        #img = img.rotate(-90)
         img = img.transpose(PIL.Image.ROTATE_270)
-        #exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
     elif orientation == 7:
-        #img = img.rotate(90).transpose(PIL.Image.FLIP_LEFT_RIGHT)
         img = img.transpose(PIL.Image.ROTATE_90).transpose(PIL.Image.FLIP_LEFT_RIGHT)
-        #exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
     elif orientation == 8:
-        #img = img.rotate(90)
         img = img.transpose(PIL.Image.ROTATE_90)
-        #exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
 
     exif_data['0th'][piexif.ImageIFD.Orientation] = 1  # delete orientation
     #del(exif_data['0th'][piexif.ImageIFD.Orientation])
@@ -231,7 +231,8 @@ def rotate_image(image_data, method=None, REQUEST=None):
     try:
         exif_bytes = piexif.dump(exif_data)
     except:
-        del(exif_data['Exif'][41729])  # This Elemnt piexif.ExifIFD.SceneType cause error on dump
+        del(exif_data['Exif'][41729])
+        # This Element piexif.ExifIFD.SceneType cause error on dump
         exif_bytes = piexif.dump(exif_data)
     output_image_data = StringIO()
     img.save(output_image_data, format=fmt, exif=exif_bytes)
