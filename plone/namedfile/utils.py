@@ -159,7 +159,44 @@ def getImageInfo(data):
             content_type = 'image/x-ms-bmp'
             width, height = struct.unpack('<LL', data[18:26])
 
-    # TODO: Tiff Images
+    # handle Tiff Images --> Doc http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
+    elif (size >= 4) and data[:4] in ['MM\x00*', 'II*\x00']:
+        # Image File Header (Page 13-14):
+        # First 2 Bytes: Determ Byte Order
+        # --> II (4949.H) --> little-endian
+        # --> MM (4D4D.H) --> big-endian
+        # next 2 Bytes always Number: 42
+        content_type = 'image/tiff'
+        # TODO: implement correct Image Length and Image Width lookup --> Page 14ff
+        # Page 18: Tags:
+        # ImageLength: Tag: 257 (101.H) Short or Long
+        # ImageWidth: Tag: 256 (100.H) Short or Long
+        tiff = StringIO(data)
+        tiff.read(4)
+        b = tiff.read(1)
+        try:
+            w = -1
+            h = -1
+            while (b and ord(b) != 0xDA):
+                while (ord(b) != 0xFF):
+                    b = tiff.read(1)
+                while (ord(b) == 0xFF):
+                    b = tiff.read(1)
+                if (ord(b) >= 0x100 and ord(b) <= 0x102):
+                    tiff.read(3)
+                    h, w = struct.unpack('>HH', tiff.read(4))
+                    break
+                else:
+                    tiff.read(int(struct.unpack('>H', tiff.read(2))[0]) - 2)
+                b = tiff.read(1)
+            width = int(w)
+            height = int(h)
+        except struct.error:
+            pass
+        except ValueError:
+            pass
+        except TypeError:
+            pass
 
     return content_type, width, height
 
@@ -175,31 +212,14 @@ def get_exif(image):
         # Only this two Image Types could have Exif informations
         # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
         try:
-            if getattr(image, 'read', None):
-                exif_data = piexif.load(image.read())
-            else:
-                exif_data = piexif.load(image)
-        except Error as e:
+            exif_data = piexif.load(data)
+        except Error as e:  # TODO: determ wich error really happens
             exif_data = exif_data = {
                 '0th': {
                     piexif.ImageIFD.XResolution: (width, 1),
                     piexif.ImageIFD.YResolution: (height, 1),
                 }
             }
-        # elif contenttype in ['image/tiff']:
-        #     try:
-        #         if getattr(image, 'read', None):
-        #             exif_data = exifread.process_file(image)
-        #             image.seek(0)
-        #         else:
-        #             exif_data = exifread.process_file(StringIO(image))
-        #     except Error as e:
-        #         exif_data = exif_data = {
-        #             '0th': {
-        #                 piexif.ImageIFD.XResolution: (width, 1),
-        #                 piexif.ImageIFD.YResolution: (height, 1),
-        #             }
-        #         }
         return exif_data
     return None
 
@@ -211,6 +231,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
     rotate keeps the image width and height and rotates the image around a
     central point. PIL.Image.transpose also changes Image Orientation.
     """
+    orientation = 1  # if not set assume correct orrinetation --> 1
     if getattr(image_data, 'read', None):
         img = PIL.Image.open(image_data)
     else:
