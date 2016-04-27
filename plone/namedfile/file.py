@@ -273,6 +273,7 @@ class NamedImage(NamedFile):
     filename = FieldProperty(INamedFile['filename'])
 
     def __init__(self, data='', contentType='', filename=None):
+        self.contentType, self._width, self._height = getImageInfo(data)
         self.filename = filename
         self._setData(data)
 
@@ -396,7 +397,7 @@ class NamedBlobImage(NamedBlobFile):
         super(NamedBlobImage, self)._setData(data)
         firstbytes = self.getFirstBytes()
         res = getImageInfo(firstbytes)
-        if res == ('image/jpeg', -1, -1):
+        if res == ('image/jpeg', -1, -1) or res == ('image/tiff', -1, -1):
             # header was longer than firstbytes
             start = len(firstbytes)
             length = max(0, MAX_INFO_BYTES - start)
