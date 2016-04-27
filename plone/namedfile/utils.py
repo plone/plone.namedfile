@@ -3,6 +3,7 @@
 from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
 from StringIO import StringIO
+from ZPublisher.HTTPRequest import FileUpload
 
 import mimetypes
 import os.path
@@ -158,15 +159,49 @@ def getImageInfo(data):
             content_type = 'image/x-ms-bmp'
             width, height = struct.unpack('<LL', data[18:26])
 
+    # TODO: Tiff Images
+
     return content_type, width, height
 
 
 def get_exif(image):
-    if getattr(image, 'read', None):
-        exif_data = piexif.load(image.read())
-    else:
-        exif_data = piexif.load(image)
-    return exif_data
+    contenttype = None
+    width = None
+    height = None
+    exif_data = None
+    data = str(image)
+    contenttype, width, height = getImageInfo(data)
+    if contenttype in ['image/jpeg', 'image/tiff']:
+        # Only this two Image Types could have Exif informations
+        # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
+        try:
+            if getattr(image, 'read', None):
+                exif_data = piexif.load(image.read())
+            else:
+                exif_data = piexif.load(image)
+        except Error as e:
+            exif_data = exif_data = {
+                '0th': {
+                    piexif.ImageIFD.XResolution: (width, 1),
+                    piexif.ImageIFD.YResolution: (height, 1),
+                }
+            }
+        # elif contenttype in ['image/tiff']:
+        #     try:
+        #         if getattr(image, 'read', None):
+        #             exif_data = exifread.process_file(image)
+        #             image.seek(0)
+        #         else:
+        #             exif_data = exifread.process_file(StringIO(image))
+        #     except Error as e:
+        #         exif_data = exif_data = {
+        #             '0th': {
+        #                 piexif.ImageIFD.XResolution: (width, 1),
+        #                 piexif.ImageIFD.YResolution: (height, 1),
+        #             }
+        #         }
+        return exif_data
+    return None
 
 
 def rotate_image(image_data, method=None, REQUEST=None):
@@ -187,7 +222,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
         if piexif.ImageIFD.Orientation in exif_data['0th']:
             orientation = exif_data['0th'][piexif.ImageIFD.Orientation]
     else:
-        width, height = im.size()
+        width, height = img.size
         exif_data = {
             '0th': {
                 piexif.ImageIFD.XResolution: (width, 1),
@@ -202,34 +237,34 @@ def rotate_image(image_data, method=None, REQUEST=None):
 
     fmt = img.format
     if orientation == 1:  # not transform necessary
-        #img = img
+        # img = img
         pass
     elif orientation == 2:
         img = img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
     elif orientation == 3:
         img = img.transpose(PIL.Image.ROTATE_180)
     elif orientation == 4:
-        img = img.transpose(PIL.Image.ROTATE_180).transpose(PIL.Image.FLIP_LEFT_RIGHT)
+        img = img.transpose(PIL.Image.ROTATE_180).transpose(PIL.Image.FLIP_LEFT_RIGHT)  # NOQA
     elif orientation == 5:
-        img = img.transpose(PIL.Image.ROTATE_270).transpose(PIL.Image.FLIP_LEFT_RIGHT)
-        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+        img = img.transpose(PIL.Image.ROTATE_270).transpose(PIL.Image.FLIP_LEFT_RIGHT)  # NOQA
+        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]  # NOQA
     elif orientation == 6:
         img = img.transpose(PIL.Image.ROTATE_270)
-        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]  # NOQA
     elif orientation == 7:
-        img = img.transpose(PIL.Image.ROTATE_90).transpose(PIL.Image.FLIP_LEFT_RIGHT)
-        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+        img = img.transpose(PIL.Image.ROTATE_90).transpose(PIL.Image.FLIP_LEFT_RIGHT)  # NOQA
+        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]  # NOQA
     elif orientation == 8:
         img = img.transpose(PIL.Image.ROTATE_90)
-        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]
+        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]  # NOQA
 
-    exif_data['0th'][piexif.ImageIFD.Orientation] = 1  # delete orientation
-    #del(exif_data['0th'][piexif.ImageIFD.Orientation])
+    # set orientation to normal
+    exif_data['0th'][piexif.ImageIFD.Orientation] = 1
 
     try:
         exif_bytes = piexif.dump(exif_data)
     except:
-        del(exif_data['Exif'][41729])
+        del(exif_data['Exif'][piexif.ExifIFD.SceneType])
         # This Element piexif.ExifIFD.SceneType cause error on dump
         exif_bytes = piexif.dump(exif_data)
     output_image_data = StringIO()

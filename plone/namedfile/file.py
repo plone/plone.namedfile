@@ -280,16 +280,16 @@ class NamedImage(NamedFile):
         if contentType:
             self.contentType = contentType
 
-        if self.contentType in ['image/jpeg', 'image/tiff']:
-            exif_data = get_exif(data)
-            if exif_data is not None:
-                log.debug('Image contains Exif Informations. '
-                          'Test for Image Orientation and Rotate if necessary.'
-                          'Exif Data: %s', exif_data)
-                orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
-                if 1 < orientation <= 8:
-                    data = rotate_image(data)
-                self.exif_data = exif_data
+        exif_data = get_exif(data)
+        if exif_data is not None:
+            log.debug('Image contains Exif Informations. '
+                      'Test for Image Orientation and Rotate if necessary.'
+                      'Exif Data: %s', exif_data)
+            orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
+            if 1 < orientation <= 8:
+                self.data, self._width, self._height, self.exif = rotate_image(
+                    self.data)
+            self.exif_data = exif_data
 
     def _setData(self, data):
         super(NamedImage, self)._setData(data)
@@ -373,22 +373,24 @@ class NamedBlobImage(NamedBlobFile):
     """
 
     def __init__(self, data='', contentType='', filename=None):
-        super(NamedBlobImage, self).__init__(data, contentType=contentType, filename=filename)
+        super(NamedBlobImage, self).__init__(data,
+                                             contentType=contentType,
+                                             filename=filename)
 
         # Allow override of the image sniffer
         if contentType:
             self.contentType = contentType
-        if self.contentType in ['image/jpeg', 'image/tiff']:
-            exif_data = get_exif(data)
-            if exif_data is not None:
-                log.debug('Image contains Exif Informations. '
-                          'Test for Image Orientation and Rotate if necessary.'
-                          'Exif Data: %s', exif_data)
-                orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
-                if 1 < orientation <= 8:
-                    self.data, self._width, self._height, self.exif = rotate_image(self.data)
-                else:
-                    self.exif = exif_data
+        exif_data = get_exif(data)
+        if exif_data is not None:
+            log.debug('Image contains Exif Informations. '
+                      'Test for Image Orientation and Rotate if necessary.'
+                      'Exif Data: %s', exif_data)
+            orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
+            if 1 < orientation <= 8:
+                self.data, self._width, self._height, self.exif = rotate_image(
+                    self.data)
+            else:
+                self.exif = exif_data
 
     def _setData(self, data):
         super(NamedBlobImage, self)._setData(data)
