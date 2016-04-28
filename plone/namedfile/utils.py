@@ -169,28 +169,49 @@ def getImageInfo(data):
         # --> MM (4D4D.H) --> big-endian
         # next 2 Bytes always Number: 42
         content_type = 'image/tiff'
+        w = -1
+        h = -1
+        # check for '42' as flag for tiff:
         # TODO: implement correct Image Length and Image Width lookup --> Page 14ff
         # Page 18: Tags:
         # ImageLength: Tag: 257 (101.H) Short or Long
         # ImageWidth: Tag: 256 (100.H) Short or Long
-        tiff = StringIO(data)
-        tiff.read(4)
-        b = tiff.read(1)
         try:
-            w = -1
-            h = -1
-            while (b and ord(b) != 0xDA):
-                while (ord(b) != 0xFF):
-                    b = tiff.read(1)
-                while (ord(b) == 0xFF):
-                    b = tiff.read(1)
-                if (ord(b) >= 0x100 and ord(b) <= 0x102):
-                    tiff.read(3)
-                    h, w = struct.unpack('>HH', tiff.read(4))
-                    break
-                else:
-                    tiff.read(int(struct.unpack('>H', tiff.read(2))[0]) - 2)
-                b = tiff.read(1)
+            if data[:2] == 'MM' and struct.unpack('>H', data[2:4])[0] == 42:
+                log.info("Tiff Image in big-endian encoding")
+                # big-endian encoding for the whole data stream
+                offset = 7 + struct.unpack('>HH', data[4:8])[0]
+                while offset < size and (w == -1 or h == -1):
+                    tag = struct.unpack('>H', data[offset:offset + 2])[0]
+                    stype = struct.unpack('>H', data[offset + 2:offset + 4])[0]
+                    value = struct.unpack('>HH', data[offset + 4:offset + 8])[0]
+                    new_offset = struct.unpack('>HH', data[offset + 8:offset + 12])[0]
+                    if tag == 256:  # tag 256: ImageWidth (100.H) Short or Long
+                        w = value
+                    elif tag == 257:  # tag 257: ImageLength (101.H) Short or Long
+                        h = value
+                    log.info("Found Tag: %s at Offset: %s; Type: %s; Value: %s; new Offset: %s",
+                             tag, offset, stype, value, new_offset)
+                    offset = offset + new_offset
+            elif data[:2] == 'II' and struct.unpack('<H', data[2:4])[0] == 42:
+                log.info("Tiff Image in little-endian encoding")
+                # litle-endian
+                offset = 7 + struct.unpack('<HH', data[4:8])[0]
+                while offset < size and (w == -1 or h == -1):
+                    tag = struct.unpack('<H', data[offset:offset + 2])[0]
+                    stype = struct.unpack('<H', data[offset + 2:offset + 4])[0]
+                    value = struct.unpack('<HH', data[offset + 4:offset + 8])[0]
+                    new_offset = struct.unpack('<HH', data[offset + 8:offset + 12])[0]
+                    if tag == 256:  # tag 256: ImageWidth (100.H) Short or Long
+                        w = value
+                    elif tag == 257:  # tag 257: ImageLength (101.H) Short or Long
+                        h = value
+                    log.info("Found Tag: %s at Offset: %s; Type: %s; Value: %s; new Offset: %s",
+                             tag, offset, stype, value, new_offset)
+                    offset = offset + new_offset
+            else:
+                # not a tiff image
+                pass
             width = int(w)
             height = int(h)
         except struct.error:
@@ -199,7 +220,12 @@ def getImageInfo(data):
             pass
         except TypeError:
             pass
-
+    # Use PIL / Pillow to determ Image Information
+    else:
+        img = PIL.Image.open(StringIO(data))
+        width, height = img.size
+        content_ytpe = img.format
+    log.info('Image Info (Type: %s, Width: %s, Height: %s)', content_type, width, height)
     return content_type, width, height
 
 
@@ -215,7 +241,7 @@ def get_exif(image):
         # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
         try:
             exif_data = piexif.load(data)
-        except Error as e:  # TODO: determ wich error really happens
+        except Exception as e:  # TODO: determ wich error really happens
             exif_data = exif_data = {
                 '0th': {
                     piexif.ImageIFD.XResolution: (width, 1),
@@ -239,10 +265,13 @@ def rotate_image(image_data, method=None, REQUEST=None):
     else:
         img = PIL.Image.open(StringIO(image_data))
 
+    exif_data = None
     if 'exif' in img.info:
-        exif_data = piexif.load(img.info['exif'])
-
-        if piexif.ImageIFD.Orientation in exif_data['0th']:
+        try:
+            exif_data = piexif.load(img.info['exif'])
+        except ValueError:
+            pass
+        if exif_data and piexif.ImageIFD.Orientation in exif_data['0th']:
             orientation = exif_data['0th'][piexif.ImageIFD.Orientation]
     else:
         width, height = img.size
