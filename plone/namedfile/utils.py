@@ -270,10 +270,11 @@ def rotate_image(image_data, method=None, REQUEST=None):
         try:
             exif_data = piexif.load(img.info['exif'])
         except ValueError:
+            log.info('Exif information currupt')
             pass
         if exif_data and piexif.ImageIFD.Orientation in exif_data['0th']:
             orientation = exif_data['0th'][piexif.ImageIFD.Orientation]
-    else:
+    if exif_data in None:
         width, height = img.size
         exif_data = {
             '0th': {
