@@ -1,15 +1,16 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser">
-
-  <include package="zope.annotation"/>
-
+  <include package="zope.annotation" />
   <browser:page
-      name="images"
-      for=".interfaces.IImageScaleTraversable"
-      class=".scaling.ImageScaling"
       allowed_attributes="scale"
+      class=".scaling.ImageScaling"
+      for=".interfaces.IImageScaleTraversable"
+      name="images"
       permission="zope2.View"
-      />
-
+  />
+  <adapter
+      factory=".scaling.DefaultImageScalingFactory"
+      for="*"
+  />
 </configure>

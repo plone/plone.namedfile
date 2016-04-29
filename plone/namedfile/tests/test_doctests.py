@@ -1,33 +1,32 @@
 # -*- coding: utf-8 -*-
-from plone.namedfile.tests.base import setUp
-from zope.component.testing import tearDown
+from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
+from plone.testing import layered
+
 
 import doctest
 import unittest
 
+TEST_FILES = [
+    'usage.rst',
+    'handler.rst',
+    'marshaler.rst',
+    'utils.rst',
+]
+
 
 def test_suite():
-    return unittest.TestSuite([
+    return unittest.TestSuite(
+        [
+            layered(
+                doctest.DocFileSuite(
+                    testfile,
+                    package='plone.namedfile',
+                ),
+                PLONE_NAMEDFILE_FUNCTIONAL_TESTING
+            ) for testfile in TEST_FILES
+        ]
 
-        doctest.DocFileSuite(
-            'usage.rst', package='plone.namedfile',
-            setUp=setUp, tearDown=tearDown),
-
-        doctest.DocFileSuite(
-            'handler.rst', package='plone.namedfile',
-            setUp=setUp, tearDown=tearDown),
-
-        doctest.DocFileSuite(
-            'marshaler.rst', package='plone.namedfile',
-            setUp=setUp, tearDown=tearDown),
-
-        doctest.DocFileSuite(
-            'utils.rst', package='plone.namedfile',
-            setUp=setUp, tearDown=tearDown),
-
-        doctest.DocTestSuite('plone.namedfile.file'),
-
-    ])
+    )
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')

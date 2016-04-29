@@ -1,7 +1,7 @@
 Changelog
 =========
 
-3.0.9 (unreleased)
+3.1.0 (unreleased)
 ------------------
 
 Incompatibilities:
@@ -10,11 +10,12 @@ Incompatibilities:
 
 New:
 
-- *add item here*
+- uses adapter as factory for scales as in plone.scale>=1.5
 
 Fixes:
 
-- *add item here*
+- Fixed test setup to use layers properly.
+  [jensens]
 
 
 3.0.8 (2016-02-26)
