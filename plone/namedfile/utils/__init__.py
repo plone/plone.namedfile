@@ -2,6 +2,9 @@
 
 from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
+from plone.namedfile.utils.jpeg_utils import process_jpeg
+from plone.namedfile.utils.png_utils import process_png
+from plone.namedfile.utils.tiff_utils import process_tiff
 from StringIO import StringIO
 from ZPublisher.HTTPRequest import FileUpload
 
@@ -137,7 +140,7 @@ def getImageInfo(data):
             # TODO: determ wich error really happens
             # Should happen if data is to short --> first_bytes
             log.error(e)
-            return 'image/jpeg', -1, -1
+            #return 'image/jpeg', -1, -1
 
     log.info('Image Info (Type: %s, Width: %s, Height: %s)',
              content_type, width, height)
@@ -147,15 +150,8 @@ def getImageInfo(data):
 def get_exif(image):
     #
     exif_data = None
+    image_data = _ensure_data(image)
 
-    #
-    if getattr(image, 'read', None):
-        image_date = image.read()
-        data.seek(0)
-    else:
-        image_data = image
-
-    image_data = str(image)
     content_type, width, height = getImageInfo(image_data)
     if content_type in ['image/jpeg', 'image/tiff']:
         # Only this two Image Types could have Exif informations
@@ -182,11 +178,8 @@ def rotate_image(image_data, method=None, REQUEST=None):
     central point. PIL.Image.transpose also changes Image Orientation.
     """
     orientation = 1  # if not set assume correct orrinetation --> 1
-    if getattr(image_data, 'read', None):
-        img = PIL.Image.open(image_data)
-        image_data.seek(0)
-    else:
-        img = PIL.Image.open(StringIO(image_data))
+    data = _ensure_data(image_data)
+    img = PIL.Image.open(StringIO(data))
 
     exif_data = None
     if 'exif' in img.info:
