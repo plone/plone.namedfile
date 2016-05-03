@@ -45,75 +45,17 @@ def process_tiff(data):
         while (b and ord(b) != 0xDA):
             field_tag = struct.unpack_from(endian + 'I', tiff)
             field_type = struct.unpack_from(endian + 'I', tiff)
-            if field_type == 1:
-                field_type = 'I'  # BYTE: 8-bit unsigned Integer
-            elif field_type == 2:
-                field_type = 'c' # 'b' 'B'
-                # ASCII: 8-bit byte that contains a 7-bit ASCII code
-            elif field_type == 3:
-                field_type = 'H'  # SHORT: 16-bit (2-byte) unsigned integer
-            elif field_type == 4:
-                field_type = 'L'  # LONG: 32-bit (4-byte) unsigned integer
-            elif field_type == '5':
-                field_type = ''
-                # RATIONAL, two LONGs: the first represents the numerator
-                # of a fraction; the second, the donominator
-            else:
-                log.error('Unallowed field type found')
+            field_type = _translate_field_type(field_type)
             field_value = struct.unpack_from(endian + field_type, tiff)
             if field_tag == '256':  # ImageWidth
                 w = field_value
+            elif field_tag == '257':  # ImageLength
+                h = field_value
+                # as fields has to appear in ascending order
+                # we could skip all other fields
+                break
             next_offset = struct.unpack_from(endian + 'I', tiff)
             b.read(next_offset)
-
-            while (ord(b) != 0xFF):
-                b = tiff.read(1)
-            while (ord(b) == 0xFF):
-                b = tiff.read(1)
-            if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
-                tiff.read(3)
-                h, w = struct.unpack('>HH', tiff.read(4))
-                break
-            else:
-                jpeg.read(int(struct.unpack('>H', jpeg.read(2))[0]) - 2)
-            b = jpeg.read(1)
-        width = int(w)
-        height = int(h)
-
-            offset = struct.unpack('>HH', data[4:8])[0]
-            while offset < size and (w == -1 or h == -1):
-                tag, typ, count, value = struct.unpack(">HHL4s", data[offset: offset + 12])
-                tag = struct.unpack('>H', data[offset:offset + 2])[0]
-                stype = struct.unpack('>H', data[offset + 2:offset + 4])[0]
-                value = struct.unpack('>HH', data[offset + 4:offset + 8])[0]
-                new_offset = struct.unpack('>HH', data[offset + 8:offset + 12])[0]
-                if tag == 256:  # tag 256: ImageWidth (100.H) Short or Long
-                    w = value
-                elif tag == 257:  # tag 257: ImageLength (101.H) Short or Long
-                    h = value
-                log.info("Found Tag: %s at Offset: %s; Type: %s; Value: %s; new Offset: %s",
-                         tag, offset, stype, value, new_offset)
-                offset = offset + new_offset
-        elif data[:2] == 'II' and struct.unpack('<H', data[2:4])[0] == 42:
-            fd = ImageFileDirectory_v2(prefix='MM')
-            # litle-endian
-            offset = struct.unpack('<HH', data[4:8])[0]
-            while offset < size and (w == -1 or h == -1):
-                tag, typ, count, value = struct.unpack("<HHL4s", data[offset: offset + 12])
-                tag = struct.unpack('<H', data[offset:offset + 2])[0]
-                stype = struct.unpack('<H', data[offset + 2:offset + 4])[0]
-                value = struct.unpack('<HH', data[offset + 4:offset + 8])[0]
-                new_offset = struct.unpack('<HH', data[offset + 8:offset + 12])[0]
-                if tag == 256:  # tag 256: ImageWidth (100.H) Short or Long
-                    w = value
-                elif tag == 257:  # tag 257: ImageLength (101.H) Short or Long
-                    h = value
-                log.info("Found Tag: %s at Offset: %s; Type: %s; Value: %s; new Offset: %s",
-                         tag, offset, stype, value, new_offset)
-                offset = offset + new_offset
-        else:
-            # not a tiff image
-            pass
         width = int(w)
         height = int(h)
     except struct.error:
@@ -122,3 +64,22 @@ def process_tiff(data):
         pass
     except TypeError:
         pass
+    return content_type, width, height
+
+
+def _translate_field_type(field_type):
+    if field_type == 1:
+        field_type = 'I'  # BYTE: 8-bit unsigned Integer
+    elif field_type == 2:
+        field_type = 'c'  # 'b' 'B'
+        # ASCII: 8-bit byte that contains a 7-bit ASCII code
+    elif field_type == 3:
+        field_type = 'H'  # SHORT: 16-bit (2-byte) unsigned integer
+    elif field_type == 4:
+        field_type = 'L'  # LONG: 32-bit (4-byte) unsigned integer
+    elif field_type == '5':
+        field_type = ''
+        # RATIONAL, two LONGs: the first represents the numerator
+        # of a fraction; the second, the donominator
+    else:
+        log.error('Unallowed field type found')
