@@ -17,6 +17,9 @@ Fixes:
 - Fixed test setup to use layers properly.
   [jensens]
 
+- Fixed test isolation problem in ``test_blobfile.py``.
+  [jensens]
+
 
 3.0.8 (2016-02-26)
 ------------------

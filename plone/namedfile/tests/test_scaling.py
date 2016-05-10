@@ -9,7 +9,6 @@ from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.scale.interfaces import IScaledImageQuality
-from plone.testing.z2 import Browser
 from StringIO import StringIO
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
@@ -24,11 +23,11 @@ import time
 import unittest
 
 
-
 def getFile(filename):
     """ return contents of the file with the given name """
     filename = os.path.join(os.path.dirname(__file__), filename)
     return open(filename, 'r')
+
 
 def wait_to_ensure_modified():
     # modified is measured in milliseconds
@@ -44,7 +43,6 @@ def assertImage(testcase, data, format_, size):
     image = PIL.Image.open(StringIO(data))
     testcase.assertEqual(image.format, format_)
     testcase.assertEqual(image.size, size)
-
 
 
 @implementer(IAttributeAnnotatable, IHasImage)
@@ -289,133 +287,6 @@ class ImageTraverseTests(unittest.TestCase):
         self.item.__allow_access_to_unprotected_subobjects__ = 0
         ImageScaling._sizes = {'foo': (42, 42)}
         self.assertRaises(Unauthorized, self.traverse, 'image/foo')
-        self.item.__allow_access_to_unprotected_subobjects__ = 1
-
-
-class ImagePublisherTests(unittest.TestCase):
-
-    layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
-
-    def setUp(self):
-        self.app = self.layer['app']
-        data = getFile('image.gif').read()
-        item = DummyContent()
-        item.image = NamedImage(data, 'image/gif', u'image.gif')
-        self.layer['app']._setOb('item', item)
-        self.item = self.app.item
-        self.view = self.item.unrestrictedTraverse('@@images')
-        self._orig_sizes = ImageScaling._sizes
-
-    def tearDown(self):
-        ImageScaling._sizes = self._orig_sizes
-
-    def testPublishScaleViaUID(self):
-        scale = self.view.scale('image', width=64, height=64)
-        # make sure the referenced image scale is available
-        browser = Browser(self.app)
-        browser.open(scale.url)
-        self.assertEqual('image/jpeg', browser.headers['content-type'])
-        assertImage(self, browser.contents, 'JPEG', (64, 64))
-
-    def testPublishWebDavScaleViaUID(self):
-        scale = self.view.scale('image', width=64, height=64)
-        # make sure the referenced image scale is available
-        browser = Browser(self.app)
-        browser.open(scale.url + '/manage_DAVget')
-        self.assertEqual('image/jpeg', browser.headers['content-type'])
-        assertImage(self, browser.contents, 'JPEG', (64, 64))
-
-    def testPublishFTPScaleViaUID(self):
-        scale = self.view.scale('image', width=64, height=64)
-        # make sure the referenced image scale is available
-        browser = Browser(self.app)
-        browser.open(scale.url + '/manage_FTPget')
-        self.assertEqual(response.getStatus(), 200)
-        # Same remark as in testPublishWebDavScaleViaUID is valid here.
-        self.assertEqual('image/jpeg', browser.headers['content-type'])
-        assertImage(self, browser.contents, 'JPEG', (64, 64))
-
-    def testHeadRequestMethod(self):
-        scale = self.view.scale('image', width=64, height=64)
-        # make sure the referenced image scale is available
-        browser = Browser(self.app)
-        browser.open(scale.url)
-        self.browser.open(scale.url)
-        GET_length = len(browser.contents)
-        response = self.browser.open(scale.url, method='HEAD')
-        self.assertEqual('image/jpeg', browser.headers['content-type'])
-        self.assertEqual(browser.headers('Content-Length'), str(GET_length))
-        self.assertEqual(browser.contents, '')
-
-    def testPublishThumbViaUID(self):
-        ImageScaling._sizes = {'thumb': (128, 128)}
-        scale = self.view.scale('image', 'thumb')
-        # make sure the referenced image scale is available
-        browser = Browser(self.app)
-        browser.open(scale.url)
-        self.assertEqual('image/jpeg', browser.headers['content-type'])
-        assertImage(self, browser.contents, 'JPEG', (64, 64))
-
-    def testPublishCustomSizeViaUID(self):
-        # set custom image sizes
-        ImageScaling._sizes = {'foo': (23, 23)}
-        scale = self.view.scale('image', 'foo')
-        # make sure the referenced image scale is available
-        browser = Browser(self.app)
-        browser.open(scale.url)
-        self.assertEqual('image/jpeg', browser.headers['content-type'])
-        assertImage(self, browser.contents, 'JPEG', (64, 64))
-
-    def testPublishThumbViaName(self):
-        ImageScaling._sizes = {'thumb': (128, 128)}
-        # make sure traversing works as is and with scaling
-        browser = Browser(self.app)
-        # first the field without a scale name
-        browser.open(self.app.absolute_url() + '/item/@@images/image')
-        self.assertEqual('image/gif', browser.headers['content-type'])
-        self.assertEqual(browser.contents, getFile('image.gif').read())
-
-        # and last a scaled version
-        browser.open(self.app.absolute_url() + '/item/@@images/image/thumb')
-        self.assertEqual('image/jpeg', browser.headers['content-type'])
-        assertImage(self, browser.contents, 'JPEG', (64, 64))
-
-    def testPublishCustomSizeViaName(self):
-        # set custom image sizes
-        ImageScaling._sizes = {'foo': (23, 23)}
-        # make sure traversing works as expected
-        browser = Browser(self.app)
-        browser.open(self.app.absolute_url() + '/item/@@images/image/foo')
-        assertImage(self, browser.contents, 'JPEG', (23, 23))
-
-    def testPublishScaleWithInvalidUID(self):
-        scale = self.view.scale('image', width=64, height=64)
-        # change the url so it's invalid...
-        browser = Browser(self.app)
-        browser.raiseHttpErrors = False
-        browser.open(scale.url.replace('.jpeg', 'x.jpeg'))
-        self.assertIn('404', browser.headers['status'])
-
-    def testPublishScaleWithInvalidScale(self):
-        scale = self.view.scale('image', 'no-such-scale')
-        self.assertEqual(scale, None)
-
-    def test_getAvailableSizesWithInvalidScale(self):
-        self.assertEqual(self.view.getAvailableSizes('no-such-scale'), {})
-
-    def test_getAvailableSizesWithInvalidScale(self):
-        self.assertEqual(self.view.available_sizes, {})
-
-    def test_getImageSizeWithInvalidScale(self):
-        self.assertEqual(self.view.getImageSize('no-such-scale'), (0, 0))
-
-    def testGuardedAccess(self):
-        # make sure it's not possible to access scales of forbidden images
-        self.item.__allow_access_to_unprotected_subobjects__ = 0
-        ImageScaling._sizes = {'foo': (23, 23)}
-        credentials = self.layer.getCredentials()
-        response = self.publish('/item/@@images/image/foo', basic=credentials)
-        self.assertEqual(response.getStatus(), 401)
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 
 
