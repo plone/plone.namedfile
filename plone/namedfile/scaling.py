@@ -177,6 +177,7 @@ class DefaultImageScalingFactory(object):
         direction='thumbnail',
         height=None,
         width=None,
+        scale=None,
         **parameters
     ):
 
