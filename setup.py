@@ -4,8 +4,9 @@ from setuptools import setup
 import os
 
 
-version = '3.1.0.dev0'
-description = "File types and fields for images, files and blob files with filenames"  # noqa
+version = '4.0.0.dev0'
+description = 'File types and fields for images, files and blob files with ' \
+              'filenames'
 long_description = ('\n\n'.join([
     open('README.rst').read(),
     open('CHANGES.rst').read(),
@@ -20,7 +21,7 @@ setup(
     long_description=long_description,
     classifiers=[
         "Framework :: Plone",
-        "Framework :: Plone :: 5.0",
+        "Framework :: Plone :: 5.1",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
         "Topic :: Software Development :: Libraries :: Python Modules",
@@ -36,9 +37,11 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'setuptools',
         'plone.rfc822>=1.0b2',
-        'zope.app.file',
+        'plone.scale[storage] >=1.4.999',
+        'plone.schemaeditor',
+        'plone.supermodel',
+        'setuptools',
         'zope.browserpage',
         'zope.component',
         'zope.copy',
@@ -46,17 +49,16 @@ setup(
         'zope.traversing',
     ],
     extras_require={
-        'editor': ['plone.schemaeditor'],
-        'scales': ['plone.scale[storage] >=1.1'],
-        'supermodel': ['plone.supermodel'],
         'test': [
             'lxml',
             'Pillow',
-            'plone.namedfile[supermodel, scales]',
             'plone.testing[z2]',
         ],
-        # BBB
+        # BBB - remove in version 5
         'blobs': [],
+        'editor': [],
         'marshaler': [],
+        'scales': [],
+        'supermodel': [],
     },
 )

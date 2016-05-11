@@ -1,16 +1,26 @@
 Changelog
 =========
 
-3.1.0 (unreleased)
+4.0.0 (unreleased)
 ------------------
 
 Incompatibilities:
 
-- *add item here*
+- Targets Plone 5.1 only, coredev 5.0 and 4.3 are on 3.0.x branch [jensens]:
+
+  - ``plone.supermodel``, ``plone.scale`` and ``plone.schemaeditor`` are now hard depedencies.
+    The extras  in setup.py are kept for bbb reasons, but are empty.
+    Conditional code is now no longer conditional.
+    This simplifies the code a lot.
+
+  - ``zope.app.file`` is no longer hard dependency.
+    If it is there, its FileChunk implementation is still checked for, otherwise not.
+
 
 New:
 
 - uses adapter as factory for scales as in plone.scale>=1.5
+  [jensens]
 
 Fixes:
 

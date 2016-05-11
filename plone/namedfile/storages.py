@@ -18,9 +18,8 @@ class StringStorable(object):
         if not isinstance(data, str):
             raise NotStorable('Could not store data (not of "str" type).')
 
-        fp = blob.open('w')
-        fp.write(data)
-        fp.close()
+        with blob.open('w') as fp:
+            fp.write(data)
 
 
 @implementer(IStorage)
@@ -41,12 +40,11 @@ class FileChunkStorable(object):
         if not isinstance(data, FileChunk):
             raise NotStorable('Could not store data (not a of "FileChunk" type).')  # noqa
 
-        fp = blob.open('w')
-        chunk = data
-        while chunk:
-            fp.write(chunk._data)
-            chunk = chunk.next
-        fp.close()
+        with blob.open('w') as fp:
+            chunk = data
+            while chunk:
+                fp.write(chunk._data)
+                chunk = chunk.next
 
 
 @implementer(IStorage)
@@ -71,9 +69,8 @@ class FileUploadStorable(object):
 
         data.seek(0)
 
-        fp = blob.open('w')
-        block = data.read(MAXCHUNKSIZE)
-        while block:
-            fp.write(block)
+        with blob.open('w') as fp:
             block = data.read(MAXCHUNKSIZE)
-        fp.close()
+            while block:
+                fp.write(block)
+                block = data.read(MAXCHUNKSIZE)

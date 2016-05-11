@@ -3,6 +3,7 @@ from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
 from logging import exception
+from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.utils import set_headers
@@ -16,7 +17,6 @@ from plone.scale.storage import AnnotationStorage
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from ZODB.POSException import ConflictError
-from zope.app.file.file import FileChunk
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import alsoProvides
@@ -199,7 +199,7 @@ class DefaultImageScalingFactory(object):
 
         # Handle cases where large image data is stored in FileChunks instead
         # of plain string
-        if isinstance(orig_data, FileChunk):
+        if isinstance(orig_data, tuple(FILECHUNK_CLASSES)):
             # Convert data to 8-bit string
             # (FileChunk does not provide read() access)
             orig_data = str(orig_data)
@@ -348,13 +348,14 @@ class ImageScaling(BrowserView):
         date = DateTime(context._p_mtime)
         return date.millis()
 
-    def scale(self,
-              fieldname=None,
-              scale=None,
-              height=None,
-              width=None,
-              direction='thumbnail',
-              **parameters
+    def scale(
+        self,
+        fieldname=None,
+        scale=None,
+        height=None,
+        width=None,
+        direction='thumbnail',
+        **parameters
     ):
         if fieldname is None:
             primary_field = IPrimaryFieldInfo(self.context, None)
