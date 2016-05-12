@@ -3,18 +3,22 @@ from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
 from logging import exception
+from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
+from plone.protect.interfaces import IDisableCSRFProtection
 from plone.rfc822.interfaces import IPrimaryFieldInfo
+from plone.scale.interfaces import IImageScaleFactory
+from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.scale import scaleImage
 from plone.scale.storage import AnnotationStorage
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from ZODB.POSException import ConflictError
-from zope.app.file.file import FileChunk
 from zope.component import queryUtility
+from zope.deprecation import deprecate
 from zope.interface import alsoProvides
 from zope.interface import implementer
 from zope.publisher.interfaces import IPublishTraverse
@@ -22,17 +26,10 @@ from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import ITraversable
 from zope.traversing.interfaces import TraversalError
 
-import pkg_resources
+import logging
 
 
-try:
-    pkg_resources.get_distribution('plone.protect>=3.0')
-except (pkg_resources.DistributionNotFound, pkg_resources.VersionConflict):
-    IDisableCSRFProtection = None
-else:
-    # Soft dependency to make this package work without plone.protect
-    from plone.protect.interfaces import IDisableCSRFProtection
-
+logger = logging.getLogger(__name__)
 _marker = object()
 
 
@@ -152,6 +149,100 @@ class ImmutableTraverser(object):
                 raise TraversalError(name)
 
 
+@implementer(IImageScaleFactory)
+class DefaultImageScalingFactory(object):
+
+    def __init__(self, context):
+        self.context = context
+
+    def get_quality(self):
+        """Get plone.app.imaging's quality setting"""
+        getScaledImageQuality = queryUtility(IScaledImageQuality)
+        if getScaledImageQuality is None:
+            return None
+        return getScaledImageQuality()
+
+    def create_scale(self, data, direction, height, width, **parameters):
+        return scaleImage(
+            data,
+            direction=direction,
+            height=height,
+            width=width,
+            **parameters
+        )
+
+    def __call__(
+        self,
+        fieldname=None,
+        direction='thumbnail',
+        height=None,
+        width=None,
+        scale=None,
+        **parameters
+    ):
+
+        """Factory for image scales`.
+        """
+        orig_value = getattr(self.context, fieldname)
+        if orig_value is None:
+            return
+
+        if height is None and width is None:
+            dummy, format_ = orig_value.contentType.split('/', 1)
+            return None, format_, (orig_value._width, orig_value._height)
+        orig_data = None
+        try:
+            orig_data = orig_value.open()
+        except AttributeError:
+            orig_data = getattr(aq_base(orig_value), 'data', orig_value)
+        if not orig_data:
+            return
+
+        # Handle cases where large image data is stored in FileChunks instead
+        # of plain string
+        if isinstance(orig_data, tuple(FILECHUNK_CLASSES)):
+            # Convert data to 8-bit string
+            # (FileChunk does not provide read() access)
+            orig_data = str(orig_data)
+
+        # If quality wasn't in the parameters, try the site's default scaling
+        # quality if it exists.
+        if 'quality' not in parameters:
+            quality = self.get_quality()
+            if quality:
+                parameters['quality'] = quality
+
+        try:
+            result = self.create_scale(
+                orig_data,
+                direction=direction,
+                height=height,
+                width=width,
+                **parameters
+            )
+        except (ConflictError, KeyboardInterrupt):
+            raise
+        except Exception:
+            exception(
+                'Could not scale "%r" of %r',
+                orig_value,
+                self.context.absolute_url()
+            )
+            return
+        if result is None:
+            return
+
+        data, format_, dimensions = result
+        mimetype = u'image/{0}'.format(format_.lower())
+        value = orig_value.__class__(
+            data,
+            contentType=mimetype,
+            filename=orig_value.filename
+        )
+        value.fieldname = fieldname
+        return value, format_, dimensions
+
+
 @implementer(ITraversable, IPublishTraverse)
 class ImageScaling(BrowserView):
     """ view used for generating (and storing) image scales """
@@ -166,27 +257,32 @@ class ImageScaling(BrowserView):
         if stack and stack[-1] not in self._ignored_stacks:
             # field and scale name were given...
             scale = stack.pop()
-            image = self.scale(name, scale)             # this is aq-wrapped
+            image = self.scale(name, scale)  # this is an aq-wrapped scale_view
+            if image:
+                return image
         elif '-' in name:
             # we got a uid...
             if '.' in name:
                 name, ext = name.rsplit('.', 1)
             storage = AnnotationStorage(self.context)
             info = storage.get(name)
-            if info is not None:
-                scale_view = ImageScale(self.context, self.request, **info)
-                alsoProvides(scale_view, IStableImageScale)
-                return scale_view.__of__(self.context)
+            if info is None:
+                raise NotFound(self, name, self.request)
+            scale_view = ImageScale(self.context, self.request, **info)
+            alsoProvides(scale_view, IStableImageScale)
+            return scale_view.__of__(self.context)
         else:
             # otherwise `name` must refer to a field...
             if '.' in name:
                 name, ext = name.rsplit('.', 1)
             value = getattr(self.context, name)
             scale_view = ImageScale(
-                self.context, self.request, data=value, fieldname=name)
+                self.context,
+                self.request,
+                data=value,
+                fieldname=name
+            )
             return scale_view.__of__(self.context)
-        if image is not None:
-            return image
         raise NotFound(self, name, self.request)
 
     def traverse(self, name, furtherPath):
@@ -195,7 +291,11 @@ class ImageScaling(BrowserView):
         value = self.guarded_orig_image(name)
         if not furtherPath:
             image = ImageScale(
-                self.context, self.request, data=value, fieldname=name)
+                self.context,
+                self.request,
+                data=value,
+                fieldname=name
+            )
         else:
             return ImmutableTraverser(self.scale(name, furtherPath[-1]))
 
@@ -205,20 +305,29 @@ class ImageScaling(BrowserView):
 
     _sizes = {}
 
+    @deprecate('use property available_sizes instead')
     def getAvailableSizes(self, fieldname=None):
+        if fieldname:
+            logger.warn(
+                'fieldname was passed to deprecated getAvailableSizes, but '
+                'will be ignored.'
+            )
+        return self.available_sizes
+
+    @property
+    def available_sizes(self):
         # fieldname is ignored by default
-        getAvailableSizes = queryUtility(IAvailableSizes)
-        if getAvailableSizes is None:
+        sizes_util = queryUtility(IAvailableSizes)
+        if sizes_util is None:
             return self._sizes
-        sizes = getAvailableSizes()
+        sizes = sizes_util()
         if sizes is None:
             return {}
         return sizes
 
-    def _set_sizes(self, value):
+    @available_sizes.setter
+    def available_sizes(self, value):
         self._sizes = value
-
-    available_sizes = property(getAvailableSizes, _set_sizes)
 
     def getImageSize(self, fieldname=None):
         if fieldname is not None:
@@ -232,76 +341,6 @@ class ImageScaling(BrowserView):
     def guarded_orig_image(self, fieldname):
         return guarded_getattr(self.context, fieldname, None)
 
-    def getQuality(self):
-        """Get plone.app.imaging's quality setting"""
-        # Avoid dependening on version where interface first
-        # appeared.
-        try:
-            from plone.scale.interfaces import IScaledImageQuality
-        except ImportError:
-            return None
-        getScaledImageQuality = queryUtility(IScaledImageQuality)
-        if getScaledImageQuality is None:
-            return None
-        return getScaledImageQuality()
-
-    def create(self,
-               fieldname,
-               direction='thumbnail',
-               height=None,
-               width=None,
-               **parameters):
-        """Factory for image scales, see `IImageScaleStorage.scale`.
-        """
-        orig_value = getattr(self.context, fieldname)
-        if orig_value is None:
-            return
-
-        if height is None and width is None:
-            _, format_ = orig_value.contentType.split('/', 1)
-            return None, format_, (orig_value._width, orig_value._height)
-        orig_data = None
-        try:
-            orig_data = orig_value.open()
-        except AttributeError:
-            orig_data = getattr(aq_base(orig_value), 'data', orig_value)
-        if not orig_data:
-            return
-
-        # Handle cases where large image data is stored in FileChunks instead
-        # of plain string
-        if isinstance(orig_data, FileChunk):
-            # Convert data to 8-bit string
-            # (FileChunk does not provide read() access)
-            orig_data = str(orig_data)
-
-        # If quality wasn't in the parameters, try the site's default scaling
-        # quality if it exists.
-        if 'quality' not in parameters:
-            quality = self.getQuality()
-            if quality:
-                parameters['quality'] = quality
-
-        try:
-            result = scaleImage(orig_data,
-                                direction=direction,
-                                height=height,
-                                width=width,
-                                **parameters)
-        except (ConflictError, KeyboardInterrupt):
-            raise
-        except Exception:
-            exception('could not scale "%r" of %r',
-                      orig_value, self.context.absolute_url())
-            return
-        if result is not None:
-            data, format_, dimensions = result
-            mimetype = u'image/{0}'.format(format_.lower())
-            value = orig_value.__class__(
-                data, contentType=mimetype, filename=orig_value.filename)
-            value.fieldname = fieldname
-            return value, format_, dimensions
-
     def modified(self):
         """Provide a callable to return the modification time of content
         items, so stored image scales can be invalidated.
@@ -310,43 +349,55 @@ class ImageScaling(BrowserView):
         date = DateTime(context._p_mtime)
         return date.millis()
 
-    def scale(self,
-              fieldname=None,
-              scale=None,
-              height=None,
-              width=None,
-              direction='thumbnail',
-              **parameters):
+    def scale(
+        self,
+        fieldname=None,
+        scale=None,
+        height=None,
+        width=None,
+        direction='thumbnail',
+        **parameters
+    ):
         if fieldname is None:
-            fieldname = IPrimaryFieldInfo(self.context).fieldname
+            primary_field = IPrimaryFieldInfo(self.context, None)
+            if primary_field is None:
+                return  # 404
+            fieldname = primary_field.fieldname
         if scale is not None:
-            available = self.getAvailableSizes(fieldname)
+            if width is not None or height is not None:
+                logger.warn(
+                    'A scale name and width/heigth are given. Those are'
+                    'mutually exclusive: solved by ignoring width/heigth and '
+                    'taking name'
+                )
+            available = self.available_sizes
             if scale not in available:
-                return None
+                return None  # 404
             width, height = available[scale]
-
         if IDisableCSRFProtection and self.request is not None:
             alsoProvides(self.request, IDisableCSRFProtection)
-
         storage = AnnotationStorage(self.context, self.modified)
-        info = storage.scale(factory=self.create,
-                             fieldname=fieldname,
-                             height=height,
-                             width=width,
-                             direction=direction,
-                             **parameters)
+        info = storage.scale(
+            fieldname=fieldname,
+            height=height,
+            width=width,
+            direction=direction,
+            **parameters
+        )
+        if info is None:
+            return  # 404
+        info['fieldname'] = fieldname
+        scale_view = ImageScale(self.context, self.request, **info)
+        return scale_view.__of__(self.context)
 
-        if info is not None:
-            info['fieldname'] = fieldname
-            scale_view = ImageScale(self.context, self.request, **info)
-            return scale_view.__of__(self.context)
-
-    def tag(self,
-            fieldname=None,
-            scale=None,
-            height=None,
-            width=None,
-            direction='thumbnail',
-            **kwargs):
+    def tag(
+        self,
+        fieldname=None,
+        scale=None,
+        height=None,
+        width=None,
+        direction='thumbnail',
+        **kwargs
+    ):
         scale = self.scale(fieldname, scale, height, width, direction)
         return scale.tag(**kwargs) if scale else None

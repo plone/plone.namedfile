@@ -18,9 +18,9 @@
       />
 
   <include file="z3c-blobfile.zcml" />
-  <include zcml:condition="installed plone.supermodel" file="handler.zcml" />
-  <include zcml:condition="installed plone.rfc822" file="marshaler.zcml" />
-  <include zcml:condition="installed plone.schemaeditor" file="editor.zcml" />
-  <include zcml:condition="installed plone.scale" file="scaling.zcml" />
+  <include file="handler.zcml" />
+  <include file="marshaler.zcml" />
+  <include file="scaling.zcml" />
+  <include file="editor.zcml" />
 
 </configure>

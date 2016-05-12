@@ -3,27 +3,6 @@ Usage
 
 This demonstrates how to use the package.
 
-
-Test setup
-----------
-
-We must first load the package's ZCML::
-
-    >>> configuration = """\
-    ... <configure
-    ...      xmlns="http://namespaces.zope.org/zope"
-    ...      i18n_domain="plone.namedfile.tests">
-    ...
-    ...     <include package="plone.namedfile" />
-    ...
-    ... </configure>
-    ... """
-
-    >>> from StringIO import StringIO
-    >>> from zope.configuration import xmlconfig
-    >>> xmlconfig.xmlconfig(StringIO(configuration))
-
-
 Schema fields
 -------------
 
