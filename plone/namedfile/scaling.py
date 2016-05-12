@@ -2,7 +2,6 @@
 from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
-from logging import exception
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
@@ -223,7 +222,7 @@ class DefaultImageScalingFactory(object):
         except (ConflictError, KeyboardInterrupt):
             raise
         except Exception:
-            exception(
+            logger.exception(
                 'Could not scale "%r" of %r',
                 orig_value,
                 self.context.absolute_url()
@@ -382,6 +381,7 @@ class ImageScaling(BrowserView):
             height=height,
             width=width,
             direction=direction,
+            scale=scale,
             **parameters
         )
         if info is None:
@@ -399,5 +399,5 @@ class ImageScaling(BrowserView):
         direction='thumbnail',
         **kwargs
     ):
-        scale = self.scale(fieldname, scale, height, width, direction)
+        scale = self.scale(fieldname, scale, height, width, direction, scale)
         return scale.tag(**kwargs) if scale else None
