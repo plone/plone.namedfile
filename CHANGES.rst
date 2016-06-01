@@ -30,6 +30,8 @@ Fixes:
 - Fixed test isolation problem in ``test_blobfile.py``.
   [jensens]
 
+- Fix warning on testing.zcml missing an i18n:domain.
+  [gforcada]
 
 3.0.8 (2016-02-26)
 ------------------
