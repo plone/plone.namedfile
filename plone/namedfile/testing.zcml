@@ -1,4 +1,5 @@
-<configure xmlns="http://namespaces.zope.org/zope">
+<configure xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="plone.namedfile.tests">
 
   <include package="zope.security" file="meta.zcml" />
   <include package="zope.component" file="meta.zcml" />
