@@ -69,9 +69,9 @@ class ImageScalingTests(unittest.TestCase):
     layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
 
     def setUp(self):
-        data = getFile('image.gif').read()
+        data = getFile('image.png').read()
         item = DummyContent()
-        item.image = NamedImage(data, 'image/gif', u'image.gif')
+        item.image = NamedImage(data, 'image/png', u'image.png')
         self.layer['app']._setOb('item', item)
         self.item = self.layer['app'].item
         self.scaling = ImageScaling(self.item, None)
@@ -79,10 +79,10 @@ class ImageScalingTests(unittest.TestCase):
     def testCreateScale(self):
         foo = self.scaling.scale('image', width=100, height=80)
         self.assertTrue(foo.uid)
-        self.assertEqual(foo.mimetype, 'image/jpeg')
+        self.assertEqual(foo.mimetype, 'image/png')
         self.assertEqual(foo.width, 80)
         self.assertEqual(foo.height, 80)
-        assertImage(self, foo.data.data, 'JPEG', (80, 80))
+        assertImage(self, foo.data.data, 'PNG', (80, 80))
 
     def testCreateScaleWithoutData(self):
         item = DummyContent()
@@ -94,12 +94,12 @@ class ImageScalingTests(unittest.TestCase):
         self.scaling.available_sizes = {'foo': (60, 60)}
         foo = self.scaling.scale('image', scale='foo')
         self.assertTrue(foo.uid)
-        self.assertEqual(foo.mimetype, 'image/jpeg')
+        self.assertEqual(foo.mimetype, 'image/png')
         self.assertEqual(foo.width, 60)
         self.assertEqual(foo.height, 60)
-        assertImage(self, foo.data.data, 'JPEG', (60, 60))
+        assertImage(self, foo.data.data, 'PNG', (60, 60))
         expected_url = re.compile(
-            r'http://nohost/item/@@images/[-a-z0-9]{36}\.jpeg')
+            r'http://nohost/item/@@images/[-a-z0-9]{36}\.png')
         self.assertTrue(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
 
@@ -192,9 +192,17 @@ class ImageScalingTests(unittest.TestCase):
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
         self.assertTrue(re.match(expected, tag).groups())
 
-    def testScaledImageQuality(self):
+    def testScaledJpegImageQuality(self):
+        """Test image quality setting for jpeg images.
+        Image quality not available for PNG images.
+        """
+        data = getFile('image.jpg').read()
+        item = DummyContent()
+        item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
+        scaling = ImageScaling(item, None)
+
         # scale an image, record its size
-        foo = self.scaling.scale('image', width=100, height=80)
+        foo = scaling.scale('image', width=100, height=80)
         size_foo = foo.data.getSize()
         # let's pretend p.a.imaging set the scaling quality to "really sloppy"
         gsm = getGlobalSiteManager()
@@ -202,7 +210,7 @@ class ImageScalingTests(unittest.TestCase):
         gsm.registerUtility(qualitySupplier.getQuality, IScaledImageQuality)
         wait_to_ensure_modified()
         # now scale again
-        bar = self.scaling.scale('image', width=100, height=80)
+        bar = scaling.scale('image', width=100, height=80)
         size_bar = bar.data.getSize()
         # first one should be bigger
         self.assertTrue(size_foo > size_bar)
@@ -214,9 +222,9 @@ class ImageTraverseTests(unittest.TestCase):
 
     def setUp(self):
         self.app = self.layer['app']
-        data = getFile('image.gif').read()
+        data = getFile('image.png').read()
         item = DummyContent()
-        item.image = NamedImage(data, 'image/gif', u'image.gif')
+        item.image = NamedImage(data, 'image/png', u'image.png')
         self.app._setOb('item', item)
         self.item = self.app.item
         self._orig_sizes = ImageScaling._sizes
@@ -243,7 +251,7 @@ class ImageTraverseTests(unittest.TestCase):
         ImageScaling._sizes = {'thumb': (128, 128)}
         uid, ext, width, height = self.traverse('image/thumb')
         self.assertEqual((width, height), ImageScaling._sizes['thumb'])
-        self.assertEqual(ext, 'jpeg')
+        self.assertEqual(ext, 'png')
 
     def testCustomSizes(self):
         # set custom image sizes

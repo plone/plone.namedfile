@@ -24,6 +24,9 @@ New:
 
 Fixes:
 
+- Fix tests to work with latest plone.scale changes, where gif images are no longer converted to jpeg.
+  [thet]
+
 - Fixed test setup to use layers properly.
   [jensens]
 
