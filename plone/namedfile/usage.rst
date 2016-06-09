@@ -181,7 +181,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blob')
     >>> data = download()
-    >>> isinstance(data, file)
+    >>> hasattr(data, 'read') and hasattr(data, 'tell') and hasattr(data, 'seek')  # file-like object
     True
     >>> data.read()
     'dummy test data'
@@ -207,7 +207,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blobimage')
     >>> data = download()
-    >>> isinstance(data, file)
+    >>> hasattr(data, 'read') and hasattr(data, 'tell') and hasattr(data, 'seek')  # file-like object
     True
     >>> data.read() == zptlogo
     True
@@ -245,7 +245,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
     >>> data = display_file()
-    >>> isinstance(data, file)
+    >>> hasattr(data, 'read') and hasattr(data, 'tell') and hasattr(data, 'seek')  # file-like object
     True
     >>> data.read()
     'dummy test data'
@@ -269,7 +269,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blobimage')
     >>> data = display_file()
-    >>> isinstance(data, file)
+    >>> hasattr(data, 'read') and hasattr(data, 'tell') and hasattr(data, 'seek')  # file-like object
     True
     >>> data.read() == zptlogo
     True

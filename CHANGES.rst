@@ -24,6 +24,12 @@ New:
 
 Fixes:
 
+- Prevent attempt to create a filestream_iterator from a temporary file associated with an
+  uncommited blob.
+  Fixes an error on Windows 10 "WindowsError 32" by attempting to delete or access a file in use
+  by another process.
+  [smcmahon]
+
 - Fix tests to work with latest plone.scale changes, where gif images are no longer converted to jpeg.
   [thet]
 

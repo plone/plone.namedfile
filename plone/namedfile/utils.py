@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from cStringIO import StringIO
 from plone.namedfile.interfaces import IBlobby
 
 import mimetypes
@@ -73,7 +74,9 @@ def stream_data(file):
         # in case of uncomitted changes
         # filename = file._blob.committed()
 
-        filename = file._blob._p_blob_uncommitted or file._blob.committed()
-        return filestream_iterator(filename, 'rb')
+        if file._blob._p_blob_uncommitted:
+            return StringIO(file.data)
+
+        return filestream_iterator(file._blob.committed(), 'rb')
 
     return file.data
