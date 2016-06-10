@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from cStringIO import StringIO
 from plone.namedfile.interfaces import IBlobby
 
 import mimetypes
@@ -69,14 +68,10 @@ def stream_data(file):
     """Return the given file as a stream if possible.
     """
 
-    if IBlobby.providedBy(file) and filestream_iterator is not None:
-        # XXX: we may want to use this instead, which would raise an error
-        # in case of uncomitted changes
-        # filename = file._blob.committed()
-
+    if IBlobby.providedBy(file):
         if file._blob._p_blob_uncommitted:
-            return StringIO(file.data)
-
-        return filestream_iterator(file._blob.committed(), 'rb')
+            return file.data
+        if filestream_iterator is not None:
+            return filestream_iterator(file._blob.committed(), 'rb')
 
     return file.data
