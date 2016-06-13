@@ -105,8 +105,11 @@ class ImageScalingTests(unittest.TestCase):
 
         tag = foo.tag()
         base = self.item.absolute_url()
-        expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
+        expected = \
+            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
+                base
+            )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
@@ -123,7 +126,7 @@ class ImageScalingTests(unittest.TestCase):
         data = getFile('image.jpg').read()
         self.item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
         foo2 = self.scaling.scale('image', scale='foo')
-        self.failIf(foo1.data == foo2.data, 'scale not updated?')
+        self.assertFalse(foo1.data == foo2.data, 'scale not updated?')
 
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
@@ -172,24 +175,33 @@ class ImageScalingTests(unittest.TestCase):
     def testGetOriginalScaleTag(self):
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
-        expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
+        expected = \
+            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
+                base
+            )
         self.assertTrue(re.match(expected, tag).groups())
 
     def testScaleOnItemWithNonASCIITitle(self):
         self.item.title = '\xc3\xbc'
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
-        expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
-            r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
+        expected = \
+            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
+                base
+            )
         self.assertTrue(re.match(expected, tag).groups())
 
     def testScaleOnItemWithUnicodeTitle(self):
         self.item.Title = lambda: '\xc3\xbc'.decode('utf8')
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
-        expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
-            r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />' % base
+        expected = \
+            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
+                base
+            )
         self.assertTrue(re.match(expected, tag).groups())
 
     def testScaledJpegImageQuality(self):
@@ -240,8 +252,11 @@ class ImageTraverseTests(unittest.TestCase):
         scale = stack.pop(0)
         tag = static_traverser.traverse(scale, stack)
         base = self.item.absolute_url()
-        expected = r'<img src="%s/@@images/([-0-9a-f]{36}).(jpeg|gif|png)" ' \
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />' % base
+        expected = \
+            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
+                base
+            )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
         uid, ext, height, width = groups

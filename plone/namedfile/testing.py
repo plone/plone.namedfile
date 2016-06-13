@@ -33,11 +33,11 @@ class NamedFileTestLayer(Layer):
 PLONE_NAMEDFILE_FIXTURE = NamedFileTestLayer()
 
 PLONE_NAMEDFILE_INTEGRATION_TESTING = z2.IntegrationTesting(
-    bases=(PLONE_NAMEDFILE_FIXTURE,),
-    name="plone.namedfile:NamedFileTestLayerIntegration"
+    bases=(PLONE_NAMEDFILE_FIXTURE, ),
+    name='plone.namedfile:NamedFileTestLayerIntegration',
 )
 
 PLONE_NAMEDFILE_FUNCTIONAL_TESTING = z2.FunctionalTesting(
-    bases=(PLONE_NAMEDFILE_FIXTURE,),
-    name="plone.namedfile:NamedFileTestLayerFunctional"
+    bases=(PLONE_NAMEDFILE_FIXTURE, ),
+    name='plone.namedfile:NamedFileTestLayerFunctional',
 )

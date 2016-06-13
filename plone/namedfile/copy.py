@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Copy hook for proper copying blob data
+
+This file was borrowed from z3c.blobfile and is licensed under the terms of
+the ZPL.
 """
-# This file was borrowed from z3c.blobfile and is licensed under the terms of
-# the ZPL.
 from plone.namedfile.interfaces import INamedBlobFile
 from ZODB.blob import Blob
 from zope.component import adapter

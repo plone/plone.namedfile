@@ -113,7 +113,7 @@ class ImagePublisherTests(unittest.TestCase):
 
         class HeadRequest(Request):
             def get_method(self):
-                return "HEAD"
+                return 'HEAD'
 
         head_request = HeadRequest(scale.url)
         mbrowser = self.browser.mech_browser
