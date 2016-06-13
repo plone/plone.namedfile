@@ -23,7 +23,7 @@ import unittest
 def getFile(filename):
     """ return contents of the file with the given name """
     filename = os.path.join(os.path.dirname(__file__), filename)
-    return open(filename, 'r')
+    return open(filename, 'rb')
 
 
 def wait_to_ensure_modified():

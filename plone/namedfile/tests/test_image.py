@@ -13,7 +13,7 @@ import os
 def getFile(filename):
     """ return contents of the file with the given name """
     filename = os.path.join(os.path.dirname(__file__), filename)
-    return open(filename, 'r')
+    return open(filename, 'rb')
 
 zptlogo = (
     'GIF89a\x10\x00\x10\x00\xd5\x00\x00\xff\xff\xff\xff\xff\xfe\xfc\xfd\xfd'
