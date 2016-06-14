@@ -223,9 +223,10 @@ class DefaultImageScalingFactory(object):
             raise
         except Exception:
             logger.exception(
-                'Could not scale "%r" of %r',
-                orig_value,
-                self.context.absolute_url()
+                'Could not scale "{0!r}" of {1!r}'.format(
+                    orig_value,
+                    self.context.absolute_url
+                ),
             )
             return
         if result is None:

@@ -45,6 +45,9 @@ Fixes:
 - Fix warning on testing.zcml missing an i18n:domain.
   [gforcada]
 
+- Fix some code analysis warnings.
+  [gforcada]
+
 3.0.8 (2016-02-26)
 ------------------
 

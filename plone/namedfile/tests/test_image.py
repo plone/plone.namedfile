@@ -6,8 +6,8 @@ from plone.namedfile.interfaces import INamedImage
 from plone.namedfile.utils import get_contenttype
 from zope.interface.verify import verifyClass
 
-import unittest
 import os
+import unittest
 
 
 def getFile(filename):

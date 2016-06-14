@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from plone.supermodel.exportimport import ObjectHandler
 from plone.namedfile import field
+from plone.supermodel.exportimport import ObjectHandler
 
 
 class FileFieldHandler(ObjectHandler):

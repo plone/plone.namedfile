@@ -22,8 +22,8 @@ from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.interfaces import INamedBlobFile
 from plone.namedfile.interfaces import INamedBlobImage
 from plone.namedfile.interfaces import IStorage
-from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
+from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests.test_image import zptlogo
 from zope.component import provideUtility
 from zope.interface.verify import verifyClass
@@ -37,22 +37,22 @@ def registerUtilities():
     provideUtility(
         storages.StringStorable(),
         IStorage,
-        name="__builtin__.str"
+        name='__builtin__.str'
     )
     provideUtility(
         storages.UnicodeStorable(),
         IStorage,
-        name="__builtin__.unicode"
+        name='__builtin__.unicode'
     )
     provideUtility(
         storages.FileChunkStorable(),
         IStorage,
-        name="plone.namedfile.file.FileChunk"
+        name='plone.namedfile.file.FileChunk'
     )
     provideUtility(
         storages.FileDescriptorStorable(),
         IStorage,
-        name="__builtin__.file"
+        name='__builtin__.file'
     )
 
 

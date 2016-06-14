@@ -2,9 +2,9 @@
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.testing import layered
 
-
 import doctest
 import unittest
+
 
 TEST_FILES = [
     'usage.rst',
