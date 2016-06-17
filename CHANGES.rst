@@ -14,7 +14,10 @@ New:
 
 Fixes:
 
-- *add item here*
+- Backport from v4 a fix for a problem streaming an uncommitted image scale.
+  Fixes an error on Windows 10 "WindowsError 32" by attempting to delete or
+  access a file in use by another process.
+  [smcmahon]
 
 
 3.0.8 (2016-02-26)

@@ -202,9 +202,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blob')
     >>> data = download()
-    >>> isinstance(data, file)
-    True
-    >>> data.read()
+    >>> hasattr(data, 'read') and data.read() or data
     'dummy test data'
     >>> request.response.getHeader('Content-Length')
     '15'
@@ -228,9 +226,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blobimage')
     >>> data = download()
-    >>> isinstance(data, file)
-    True
-    >>> data.read() == zptlogo
+    >>> hasattr(data, 'read') and data.read() or data == zptlogo
     True
     >>> request.response.getHeader('Content-Length')
     '341'
@@ -266,9 +262,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
     >>> data = display_file()
-    >>> isinstance(data, file)
-    True
-    >>> data.read()
+    >>> hasattr(data, 'read') and data.read() or data
     'dummy test data'
     >>> request.response.getHeader('Content-Length')
     '15'
@@ -290,9 +284,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blobimage')
     >>> data = display_file()
-    >>> isinstance(data, file)
-    True
-    >>> data.read() == zptlogo
+    >>> hasattr(data, 'read') and data.read() or data == zptlogo
     True
     >>> request.response.getHeader('Content-Length')
     '341'
