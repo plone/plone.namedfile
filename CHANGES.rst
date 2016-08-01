@@ -10,7 +10,8 @@ Breaking changes:
 
 New features:
 
-- *add item here*
+- Add Pdata storage
+  [vangheem]
 
 Bug fixes:
 
