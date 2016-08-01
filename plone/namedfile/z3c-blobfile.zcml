@@ -30,6 +30,12 @@
       factory=".storages.FileUploadStorable"
       />
 
+  <utility
+      name="OFS.Image.Pdata"
+      provides=".interfaces.IStorage"
+      factory=".storages.PDataStoragable"
+      />
+
   <adapter factory=".copy.BlobFileCopyHook" />
 
 </configure>
