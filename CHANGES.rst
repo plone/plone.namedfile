@@ -22,6 +22,9 @@ New:
 - uses adapter as factory for scales as in plone.scale>=1.5
   [jensens]
 
+- Add Pdata storage
+  [vangheem]
+
 Fixes:
 
 - Several tests were failing on Windows 10 due to binary files being opened in text mode. Fixed.

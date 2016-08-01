@@ -8,6 +8,7 @@ from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
+from plone.namedfile.tests import getFile
 from plone.scale.interfaces import IScaledImageQuality
 from StringIO import StringIO
 from zExceptions import Unauthorized
@@ -21,12 +22,6 @@ import PIL
 import re
 import time
 import unittest
-
-
-def getFile(filename):
-    """ return contents of the file with the given name """
-    filename = os.path.join(os.path.dirname(__file__), filename)
-    return open(filename, 'rb')
 
 
 def wait_to_ensure_modified():
