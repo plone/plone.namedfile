@@ -1,8 +1,8 @@
 Changelog
 =========
 
-4.0.0 (unreleased)
-------------------
+4.0 (2016-08-12)
+----------------
 
 Incompatibilities:
 
