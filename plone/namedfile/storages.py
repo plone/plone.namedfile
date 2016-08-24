@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # This file was borrowed from z3c.blobfile and is licensed under the terms of
 # the ZPL.
+from OFS.Image import Pdata
 from plone.namedfile.file import FileChunk
 from plone.namedfile.interfaces import IStorage
 from plone.namedfile.interfaces import NotStorable
@@ -74,3 +75,13 @@ class FileUploadStorable(object):
             while block:
                 fp.write(block)
                 block = data.read(MAXCHUNKSIZE)
+
+
+@implementer(IStorage)
+class PDataStorable(object):
+    def store(self, pdata, blob):
+        if not isinstance(pdata, Pdata):
+            raise NotStorable('Could not store data (not of "Pdata").')
+        fp = blob.open('w')
+        fp.write(str(pdata))
+        fp.close()

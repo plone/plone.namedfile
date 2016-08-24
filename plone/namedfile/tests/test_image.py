@@ -3,17 +3,12 @@
 
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
+from plone.namedfile.tests import getFile
 from plone.namedfile.utils import get_contenttype
 from zope.interface.verify import verifyClass
 
-import os
 import unittest
 
-
-def getFile(filename):
-    """ return contents of the file with the given name """
-    filename = os.path.join(os.path.dirname(__file__), filename)
-    return open(filename, 'rb')
 
 zptlogo = (
     'GIF89a\x10\x00\x10\x00\xd5\x00\x00\xff\xff\xff\xff\xff\xfe\xfc\xfd\xfd'
