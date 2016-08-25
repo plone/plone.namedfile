@@ -17,7 +17,6 @@ from zope.component import getGlobalSiteManager
 from zope.component import getSiteManager
 from zope.interface import implementer
 
-import os
 import PIL
 import re
 import time
