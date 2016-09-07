@@ -4,18 +4,10 @@ Changelog
 3.0.10 (unreleased)
 -------------------
 
-Breaking changes:
-
-- *add item here*
-
 New features:
 
 - Add Pdata storage
   [vangheem]
-
-Bug fixes:
-
-- *add item here*
 
 
 3.0.9 (2016-06-21)
