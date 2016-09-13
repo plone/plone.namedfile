@@ -10,7 +10,8 @@ Breaking changes:
 
 New features:
 
-- *add item here*
+- Add Pdata storage
+  [vangheem]
 
 Bug fixes:
 
@@ -37,9 +38,6 @@ New:
 
 - uses adapter as factory for scales as in plone.scale>=1.5
   [jensens]
-
-- Add Pdata storage
-  [vangheem]
 
 Fixes:
 
