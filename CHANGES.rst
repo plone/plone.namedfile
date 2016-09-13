@@ -4,18 +4,10 @@ Changelog
 4.1 (unreleased)
 ----------------
 
-Breaking changes:
-
-- *add item here*
-
 New features:
 
 - Add Pdata storage
   [vangheem]
-
-Bug fixes:
-
-- *add item here*
 
 
 4.0 (2016-08-12)
