@@ -14,7 +14,8 @@ New features:
 
 Bug fixes:
 
-- *add item here*
+- Add support for range requests on blob files
+  [vangheem]
 
 
 3.0.10 (2016-09-07)
