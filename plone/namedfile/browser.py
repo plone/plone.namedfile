@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from AccessControl.ZopeGuards import guarded_getattr
+from plone.namedfile.interfaces import INamedBlobFile
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
@@ -7,6 +8,13 @@ from Products.Five.browser import BrowserView
 from zope.interface import implementer
 from zope.publisher.interfaces import IPublishTraverse
 from zope.publisher.interfaces import NotFound
+
+try:
+    from plone.app.blob.download import handleRequestRange
+    from plone.app.blob.iterators import BlobStreamIterator
+    HAS_PAB = True
+except ImportError:
+    HAS_PAB = False
 
 
 @implementer(IPublishTraverse)
@@ -43,7 +51,12 @@ class Download(BrowserView):
     def __call__(self):
         file = self._getFile()
         self.set_headers(file)
-        return stream_data(file)
+        if not INamedBlobFile.providedBy(file) or not HAS_PAB:
+            return stream_data(file)
+
+        request_range = handleRequestRange(
+            self.context, file.getSize(), self.request, self.request.response)
+        return BlobStreamIterator(file._blob, **request_range)
 
     def set_headers(self, file):
         if not self.filename:
