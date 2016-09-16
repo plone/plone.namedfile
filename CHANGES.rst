@@ -24,6 +24,15 @@ New features:
 Bug fixes:
 
 - *add item here*
+- Add automatic image rotation baed on EXIF data for all images.
+  Based on piexif library and ideas of maartenkling and ezvirtual.
+  Choosen piexif as it allow read and write of exif data for future enhancements.
+  http://piexif.readthedocs.org/en/latest/
+  For Orientation examples and description see http://www.daveperrett.com/articles/2012/07/28/exif-orientation-handling-is-a-ghetto/ test data https://github.com/recurser/exif-orientation-examples
+  Additional Test Images with different MIME-Types (JPEG and TIFF) and possible problems: https://github.com/ianare/exif-samples.git
+  [loechel]
+- Added handler for Tiff Images in getImageInfo.
+  [loechel]
 
 
 4.1 (2016-09-14)
