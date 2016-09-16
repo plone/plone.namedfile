@@ -13,6 +13,7 @@ def process_tiff(data):
     --> Doc http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
 
     """
+#    import ipdb; ipdb.set_trace()
     content_type = 'image/tiff'
     w = -1
     h = -1
@@ -36,6 +37,7 @@ def process_tiff(data):
             log.info("Tiff Image in little-endian encoding")
         else:
             # not a tiff image
+            log.info("Endian or 42 Check failed")
             pass
         tiff = StringIO(data)
         tiff.read(4)  # Magic Header, could be skipped, already processed
@@ -68,6 +70,13 @@ def process_tiff(data):
 
 
 def _translate_field_type(field_type):
+    """handle Tiff Image File Directory Types
+    --> Doc http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
+    page 14-16
+
+    TODO: translate to correct python struct mapping
+    TODO: check mappings
+    """
     if field_type == 1:
         field_type = 'I'  # BYTE: 8-bit unsigned Integer
     elif field_type == 2:
@@ -78,8 +87,22 @@ def _translate_field_type(field_type):
     elif field_type == 4:
         field_type = 'L'  # LONG: 32-bit (4-byte) unsigned integer
     elif field_type == '5':
-        field_type = ''
         # RATIONAL, two LONGs: the first represents the numerator
         # of a fraction; the second, the donominator
+        field_type = ''
+    elif field_type == '6':  # SBYTE: An 8-bit signed (twos-complement) integer
+        field_type = ''
+    elif field_type == '7':  # UNDEFINED
+        field_type = ''
+    elif field_type == '8':  # SSHORT: A 16-bit (2-byte) signed (twos-complement) integer
+        field_type = ''
+    elif field_type == '9':  # SLONG: A 32-bit (4-byte) signed (twos-complement) integer
+        field_type = ''
+    elif field_type == '10':  # SRATIONAL: Two SLONG's (mutator, denominator)
+        field_type = ''
+    elif field_type == '11':  # FLOAT: Single precision (4-byte) IEEE format.
+        field_type = ''
+    elif field_type == '12':  # DOUBLE: Double precision (8-byte) IEEE format.
+        field_type = ''
     else:
         log.error('Unallowed field type found')
