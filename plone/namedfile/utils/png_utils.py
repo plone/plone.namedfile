@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from logging import getLogger
-from StringIO import StringIO
 
 import struct
+
 
 log = getLogger(__name__)
 

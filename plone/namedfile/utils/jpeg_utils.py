@@ -5,6 +5,7 @@ from StringIO import StringIO
 
 import struct
 
+
 log = getLogger(__name__)
 
 

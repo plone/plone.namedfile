@@ -5,6 +5,7 @@ from StringIO import StringIO
 
 import struct
 
+
 log = getLogger(__name__)
 
 
@@ -31,13 +32,13 @@ def process_tiff(data):
         # next 2 Bytes always Number: 42
         if data[:2] == 'MM' and struct.unpack('>I', data[2:4])[0] == 42:
             endian = '>'  # big-endian encoding for the whole data stream
-            log.info("Tiff Image in big-endian encoding")
+            log.info('Tiff Image in big-endian encoding')
         elif data[:2] == 'II' and struct.unpack('<I', data[2:4])[0] == 42:
             endian = '<'  # little-endian encoding for the whole data stream
-            log.info("Tiff Image in little-endian encoding")
+            log.info('Tiff Image in little-endian encoding')
         else:
             # not a tiff image
-            log.info("Endian or 42 Check failed")
+            log.info('Endian or 42 Check failed')
             pass
         tiff = StringIO(data)
         tiff.read(4)  # Magic Header, could be skipped, already processed
