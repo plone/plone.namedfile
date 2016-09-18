@@ -91,19 +91,21 @@ def _translate_field_type(field_type):
         # RATIONAL, two LONGs: the first represents the numerator
         # of a fraction; the second, the donominator
         field_type = ''
-    elif field_type == '6':  # SBYTE: An 8-bit signed (twos-complement) integer
+    elif field_type == '6':
+        field_type = ''  # SBYTE: An 8-bit signed (twos-complement) integer
+    elif field_type == '7':
+        field_type = ''  # UNDEFINED
+    elif field_type == '8':
         field_type = ''
-    elif field_type == '7':  # UNDEFINED
+        # SSHORT: A 16-bit (2-byte) signed (twos-complement) integer
+    elif field_type == '9':
         field_type = ''
-    elif field_type == '8':  # SSHORT: A 16-bit (2-byte) signed (twos-complement) integer
-        field_type = ''
-    elif field_type == '9':  # SLONG: A 32-bit (4-byte) signed (twos-complement) integer
-        field_type = ''
-    elif field_type == '10':  # SRATIONAL: Two SLONG's (mutator, denominator)
-        field_type = ''
-    elif field_type == '11':  # FLOAT: Single precision (4-byte) IEEE format.
-        field_type = ''
-    elif field_type == '12':  # DOUBLE: Double precision (8-byte) IEEE format.
-        field_type = ''
+        # SLONG: A 32-bit (4-byte) signed (twos-complement) integer
+    elif field_type == '10':
+        field_type = ''  # SRATIONAL: Two SLONG's (mutator, denominator)
+    elif field_type == '11':
+        field_type = ''  # FLOAT: Single precision (4-byte) IEEE format.
+    elif field_type == '12':
+        field_type = ''  # DOUBLE: Double precision (8-byte) IEEE format.
     else:
         log.error('Unallowed field type found')
