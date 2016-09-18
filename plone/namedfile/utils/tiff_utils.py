@@ -109,3 +109,4 @@ def _translate_field_type(field_type):
         field_type = ''  # DOUBLE: Double precision (8-byte) IEEE format.
     else:
         log.error('Unallowed field type found')
+    return field_type
