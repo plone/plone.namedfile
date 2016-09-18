@@ -6,7 +6,6 @@ from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.tiff_utils import process_tiff
 from StringIO import StringIO
-from ZPublisher.HTTPRequest import FileUpload
 
 import mimetypes
 import os.path
@@ -107,29 +106,34 @@ def getImageInfo(data):
     width = -1
     content_type = ''
 
-    if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):  # handle GIFs
-        # Check to see if content_type is correct
+    if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
+        # handle GIFs
         content_type = 'image/gif'
         w, h = struct.unpack('<HH', data[6:10])
         width = int(w)
         height = int(h)
 
-    elif data[:8] == '\211PNG\r\n\032\n':  # handle PNG
+    elif data[:8] == '\211PNG\r\n\032\n':
+        # handle PNG
         content_type, width, height = process_png(data)
 
-    elif data[:2] == '\377\330':  # handle JPEGs
+    elif data[:2] == '\377\330':
+        # handle JPEGs
         content_type, width, height = process_jpeg(data)
 
-    elif (size >= 30) and data.startswith('BM'):  # handle BMPs
+    elif (size >= 30) and data.startswith('BM'):
+        # handle BMPs
         kind = struct.unpack('<H', data[14:16])[0]
         if kind == 40:  # Windows 3.x bitmap
             content_type = 'image/x-ms-bmp'
             width, height = struct.unpack('<LL', data[18:26])
 
-    elif (size >= 4) and data[:4] in ['MM\x00*', 'II*\x00']:  # handle TIFFs
+    elif (size >= 4) and data[:4] in ['MM\x00*', 'II*\x00']:
+        # handle TIFFs
         content_type, width, height = process_tiff(data)
 
-    else:  # Use PIL / Pillow to determ Image Information
+    else:
+        # Use PIL / Pillow to determ Image Information
         try:
             img = PIL.Image.open(StringIO(data))
             width, height = img.size
@@ -138,10 +142,10 @@ def getImageInfo(data):
             # TODO: determ wich error really happens
             # Should happen if data is to short --> first_bytes
             log.error(e)
-            #return 'image/jpeg', -1, -1
+            # return 'image/jpeg', -1, -1
 
     log.debug('Image Info (Type: %s, Width: %s, Height: %s)',
-             content_type, width, height)
+              content_type, width, height)
     return content_type, width, height
 
 
@@ -159,6 +163,7 @@ def get_exif(image):
         except Exception as e:
             # TODO: determ wich error really happens
             # Should happen if data is to short --> first_bytes
+            log.warn(e)
             exif_data = exif_data = {
                 '0th': {
                     piexif.ImageIFD.XResolution: (width, 1),
@@ -230,7 +235,8 @@ def rotate_image(image_data, method=None, REQUEST=None):
 
     try:
         exif_bytes = piexif.dump(exif_data)
-    except:
+    except Exception as e:
+        log.warn(e)
         del(exif_data['Exif'][piexif.ExifIFD.SceneType])
         # This Element piexif.ExifIFD.SceneType cause error on dump
         exif_bytes = piexif.dump(exif_data)

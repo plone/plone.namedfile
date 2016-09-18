@@ -2,7 +2,6 @@
 # The implementations in this file are largely borrowed
 # from zope.app.file and z3c.blobfile
 # and are licensed under the ZPL.
-from cStringIO import StringIO
 from logging import getLogger
 from persistent import Persistent
 from plone.namedfile.interfaces import INamedBlobFile
