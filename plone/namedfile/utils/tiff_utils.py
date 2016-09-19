@@ -48,7 +48,7 @@ def process_tiff(data):
         while (b and ord(b) != 0xDA):
             field_tag = struct.unpack_from(endian + 'I', tiff)
             field_type = struct.unpack_from(endian + 'I', tiff)
-            field_type = _translate_field_type(field_type)
+            field_type = translate_field_type.get(field_type, field_type)
             field_value = struct.unpack_from(endian + field_type, tiff)
             if field_tag == '256':  # ImageWidth
                 w = field_value
@@ -70,43 +70,25 @@ def process_tiff(data):
     return content_type, width, height
 
 
-def _translate_field_type(field_type):
+translate_field_type = {
     """handle Tiff Image File Directory Types
     --> Doc http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
     page 14-16
-
-    TODO: translate to correct python struct mapping
-    TODO: check mappings
     """
-    if field_type == 1:
-        field_type = 'I'  # BYTE: 8-bit unsigned Integer
-    elif field_type == 2:
-        field_type = 'c'  # 'b' 'B'
-        # ASCII: 8-bit byte that contains a 7-bit ASCII code
-    elif field_type == 3:
-        field_type = 'H'  # SHORT: 16-bit (2-byte) unsigned integer
-    elif field_type == 4:
-        field_type = 'L'  # LONG: 32-bit (4-byte) unsigned integer
-    elif field_type == '5':
-        # RATIONAL, two LONGs: the first represents the numerator
-        # of a fraction; the second, the donominator
-        field_type = ''
-    elif field_type == '6':
-        field_type = ''  # SBYTE: An 8-bit signed (twos-complement) integer
-    elif field_type == '7':
-        field_type = ''  # UNDEFINED
-    elif field_type == '8':
-        field_type = ''
-        # SSHORT: A 16-bit (2-byte) signed (twos-complement) integer
-    elif field_type == '9':
-        field_type = ''
-        # SLONG: A 32-bit (4-byte) signed (twos-complement) integer
-    elif field_type == '10':
-        field_type = ''  # SRATIONAL: Two SLONG's (mutator, denominator)
-    elif field_type == '11':
-        field_type = ''  # FLOAT: Single precision (4-byte) IEEE format.
-    elif field_type == '12':
-        field_type = ''  # DOUBLE: Double precision (8-byte) IEEE format.
-    else:
-        log.error('Unallowed field type found')
-    return field_type
+    # TODO: translate to correct python struct mapping
+    # TODO: check mappings
+    '1': 'I',  # BYTE: 8-bit unsigned Integer
+    '2': 'c',  # 'b' 'B'
+               # ASCII: 8-bit byte that contains a 7-bit ASCII code
+    '3': 'H',  # SHORT: 16-bit (2-byte) unsigned integer
+    '4': 'L',  # LONG: 32-bit (4-byte) unsigned integer
+    '5': '',  # RATIONAL, two LONGs: the first represents the numerator
+              # of a fraction; the second, the donominator
+    '6': '',  # SBYTE: An 8-bit signed (twos-complement) integer
+    '7': '',  # UNDEFINED
+    '8': '',  # SSHORT: A 16-bit (2-byte) signed (twos-complement) integer
+    '9': '',   # SLONG: A 32-bit (4-byte) signed (twos-complement) integer
+    '10': '',  # SRATIONAL: Two SLONG's (mutator, denominator)
+    '11': '',  # FLOAT: Single precision (4-byte) IEEE format.
+    '12': '',  # DOUBLE: Double precision (8-byte) IEEE format.
+}
