@@ -23,7 +23,7 @@ _ = MessageFactory('plone')
 
 class InvalidImageFile(ValidationError):
     """Exception for invalid image file"""
-    __doc__ = _(u"Invalid image file")
+    __doc__ = _(u'Invalid image file')
 
 
 def validate_image_field(field, value):

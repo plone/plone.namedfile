@@ -30,6 +30,7 @@ class NamedFileTestLayer(Layer):
         # Zap the stacked zca context
         zca.popGlobalRegistry()
 
+
 PLONE_NAMEDFILE_FIXTURE = NamedFileTestLayer()
 
 PLONE_NAMEDFILE_INTEGRATION_TESTING = z2.IntegrationTesting(

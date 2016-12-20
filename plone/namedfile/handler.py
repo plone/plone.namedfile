@@ -11,6 +11,7 @@ class FileFieldHandler(ObjectHandler):
         'schema': 'rw'
     })
 
+
 NamedFileHandler = FileFieldHandler(field.NamedFile)
 NamedImageHandler = FileFieldHandler(field.NamedImage)
 
