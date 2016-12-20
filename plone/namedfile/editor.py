@@ -36,6 +36,7 @@ class INamedImageField(interfaces.INamedImageField):
             'missing_value'].description,
         required=False)
 
+
 NamedFileFactory = FieldFactory(field.NamedFile, _(u'File Upload'))
 NamedImageFactory = FieldFactory(field.NamedImage, _(u'Image'))
 
@@ -70,6 +71,7 @@ class INamedBlobImageField(interfaces.INamedBlobImageField):
         description=interfaces.INamedBlobImageField[
             'missing_value'].description,
         required=False)
+
 
 NamedBlobFileFactory = FieldFactory(field.NamedBlobFile, _(u'File Upload'))
 NamedBlobImageFactory = FieldFactory(field.NamedBlobImage, _(u'Image'))

@@ -65,7 +65,7 @@ class INamed(Interface):
     """An item with a filename
     """
 
-    filename = schema.TextLine(title=u"Filename", required=False, default=None)
+    filename = schema.TextLine(title=u'Filename', required=False, default=None)
 
 
 class INamedFile(INamed, IFile):
