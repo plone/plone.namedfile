@@ -222,7 +222,7 @@ class DefaultImageScalingFactory(object):
         except (ConflictError, KeyboardInterrupt):
             raise
         except IOError:
-            if orig_value.contentType == 'image/svg+xml':
+            if getattr(orig_value, 'contentType', '') == 'image/svg+xml':
                 result = orig_data.read(), 'SVG', (width, height)
             else:
                 logger.exception(
