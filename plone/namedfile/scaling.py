@@ -221,6 +221,17 @@ class DefaultImageScalingFactory(object):
             )
         except (ConflictError, KeyboardInterrupt):
             raise
+        except IOError:
+            if getattr(orig_value, 'contentType', '') == 'image/svg+xml':
+                result = orig_data.read(), 'SVG', (width, height)
+            else:
+                logger.exception(
+                    'Could not scale "{0!r}" of {1!r}'.format(
+                        orig_value,
+                        self.context.absolute_url
+                    ),
+                )
+                return
         except Exception:
             logger.exception(
                 'Could not scale "{0!r}" of {1!r}'.format(
