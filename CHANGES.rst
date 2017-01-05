@@ -14,7 +14,8 @@ New features:
 
 Bug fixes:
 
-- *add item here*
+- Fix contentType attribute should be str type, what leads to validation errors (fixes `#38`_).
+  [rodfersou]
 
 
 3.0.10 (2016-09-07)
@@ -379,3 +380,6 @@ Fixes:
 ------------------
 
 * Initial release
+
+
+.. _`#38`: https://github.com/plone/plone.namedfile/issues/38
