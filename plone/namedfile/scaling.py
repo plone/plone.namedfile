@@ -281,7 +281,7 @@ class ImageScaling(BrowserView):
                 raise NotFound(self, name, self.request)
             scale_view = ImageScale(self.context, self.request, **info)
             alsoProvides(scale_view, IStableImageScale)
-            return scale_view.__of__(self.context)
+            return scale_view
         else:
             # otherwise `name` must refer to a field...
             if '.' in name:
@@ -293,7 +293,7 @@ class ImageScaling(BrowserView):
                 data=value,
                 fieldname=name
             )
-            return scale_view.__of__(self.context)
+            return scale_view
         raise NotFound(self, name, self.request)
 
     def traverse(self, name, furtherPath):
@@ -400,7 +400,7 @@ class ImageScaling(BrowserView):
             return  # 404
         info['fieldname'] = fieldname
         scale_view = ImageScale(self.context, self.request, **info)
-        return scale_view.__of__(self.context)
+        return scale_view
 
     def tag(
         self,
