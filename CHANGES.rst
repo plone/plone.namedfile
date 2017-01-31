@@ -14,7 +14,8 @@ New features:
 
 Bug fixes:
 
-- *add item here*
+- BrowserViews have no Acquisition.
+  [pbauer]
 
 
 4.1.1 (2017-01-20)
