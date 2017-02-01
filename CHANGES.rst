@@ -14,7 +14,8 @@ New features:
 
 Bug fixes:
 
-- *add item here*
+- BrowserViews have no Acquisition.
+  [pbauer]
 
 - Remove deprecated __of__ calls on BrowserViews
   [MrTango]
