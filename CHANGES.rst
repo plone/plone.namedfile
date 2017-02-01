@@ -16,6 +16,9 @@ Bug fixes:
 
 - *add item here*
 
+- Remove deprecated __of__ calls on BrowserViews
+  [MrTango]
+
 
 4.1.1 (2017-01-20)
 ------------------
