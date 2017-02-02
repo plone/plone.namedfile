@@ -52,6 +52,8 @@ Bug fixes:
 
 - Fix bug on Image rotation if ImageIFD.XResolution or ImageIFD.YResolution are not set.
   [loechel]
+- Fix test to use new zope testbrowser internals.
+  [davisagli]
 
 - Fix: Do not log failing PIL image regognition as error, but as warning.
   [jensens]
