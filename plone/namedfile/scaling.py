@@ -430,8 +430,33 @@ class ImageScaling(BrowserView):
         if info is None:
             return  # 404
 
-        (orig_width, orig_height) = self.getImageSize(fieldname)
+        info['srcset'] = self.calculate_srcset(
+            fieldname=fieldname,
+            height=height,
+            width=width,
+            direction=direction,
+            scale=scale,
+            storage=storage,
+            **parameters
+        )
+        info['fieldname'] = fieldname
+        scale_view = ImageScale(self.context, self.request, **info)
+        return scale_view
+
+    def calculate_srcset(
+        self,
+        fieldname=None,
+        scale=None,
+        height=None,
+        width=None,
+        direction='thumbnail',
+        storage=None,
+        **parameters
+    ):
         srcset = []
+        if storage is None:
+            return srcset
+        (orig_width, orig_height) = self.getImageSize(fieldname)
         for retinaScale in self.getRetinaScales():
             # Don't create retina scales larger than the source image.
             if orig_height and orig_height < height * retinaScale['scale']:
@@ -449,11 +474,7 @@ class ImageScaling(BrowserView):
             scale_src['scale'] = retinaScale['scale']
             if scale_src is not None:
                 srcset.append(scale_src)
-        info['srcset'] = srcset
-
-        info['fieldname'] = fieldname
-        scale_view = ImageScale(self.context, self.request, **info)
-        return scale_view
+        return srcset
 
     def tag(
         self,
