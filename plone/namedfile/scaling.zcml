@@ -3,13 +3,14 @@
     xmlns:browser="http://namespaces.zope.org/browser">
   <include package="zope.annotation" />
   <browser:page
-      allowed_attributes="scale"
+      allowed_attributes="scale tag"
       class=".scaling.ImageScaling"
       for=".interfaces.IImageScaleTraversable"
       name="images"
       permission="zope2.View"
   />
   <browser:page
+      allowed_attributes="scale tag"
       class=".scaling.NavigationRootScaling"
       for="plone.app.layout.navigation.interfaces.INavigationRoot"
       name="image_scale"
