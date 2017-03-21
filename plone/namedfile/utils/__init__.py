@@ -5,7 +5,10 @@ from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.tiff_utils import process_tiff
+from plone.registry.interfaces import IRegistry
+from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 from StringIO import StringIO
+from zope.component import queryUtility
 
 import mimetypes
 import os.path
@@ -244,3 +247,27 @@ def rotate_image(image_data, method=None, REQUEST=None):
     img.save(output_image_data, format=fmt, exif=exif_bytes)
     width, height = img.size
     return output_image_data.getvalue(), width, height, exif_data
+
+
+def getRetinaScales():
+    registry = queryUtility(IRegistry)
+    if not registry:
+        return []
+    settings = registry.forInterface(
+        IImagingSchema, prefix='plone', check=False)
+    if settings.retina_scales == '2x':
+        return [{
+            'scale': 2,
+            'quality': settings.quality_2x,
+        }]
+    if settings.retina_scales == '3x':
+        return [
+            {
+                'scale': 2,
+                'quality': settings.quality_2x,
+            },
+            {
+                'scale': 3,
+                'quality': settings.quality_3x,
+            }]
+    return []

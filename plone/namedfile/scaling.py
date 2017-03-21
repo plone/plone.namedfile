@@ -2,9 +2,11 @@
 from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
+from plone.memoize import ram
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
+from plone.namedfile.utils import getRetinaScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.protect.interfaces import IDisableCSRFProtection
@@ -15,6 +17,7 @@ from plone.scale.scale import scaleImage
 from plone.scale.storage import AnnotationStorage
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
+from zExceptions import Unauthorized
 from ZODB.POSException import ConflictError
 from zope.component import queryUtility
 from zope.deprecation import deprecate
@@ -57,9 +60,22 @@ class ImageScale(BrowserView):
             name = info['fieldname']
         self.__name__ = u'{0}.{1}'.format(name, extension)
         self.url = u'{0}/@@images/{1}'.format(url, self.__name__)
+        self.srcset = info.get('srcset', [])
 
     def absolute_url(self):
         return self.url
+
+    def srcset_attribute(self):
+        srcset_attr = []
+        extension = self.data.contentType.split('/')[-1].lower()
+        for scale in self.srcset:
+            srcset_attr.append(u'{0}/@@images/{1}.{2} {3}x'.format(
+                self.context.absolute_url(),
+                scale['uid'],
+                extension,
+                scale['scale']))
+        srcset_attr = ', '.join(srcset_attr)
+        return srcset_attr
 
     def tag(self, height=_marker, width=_marker, alt=_marker,
             css_class=None, title=_marker, **kwargs):
@@ -83,6 +99,11 @@ class ImageScale(BrowserView):
             ('width', width),
             ('class', css_class),
         ]
+
+        srcset_attr = self.srcset_attribute()
+        if srcset_attr:
+            values.append(('srcset', srcset_attr))
+
         values.extend(kwargs.items())
 
         parts = ['<img']
@@ -342,7 +363,14 @@ class ImageScaling(BrowserView):
 
     def getImageSize(self, fieldname=None):
         if fieldname is not None:
-            value = self.guarded_orig_image(fieldname)
+            try:
+                value = self.guarded_orig_image(fieldname)
+            except Unauthorized:
+                # This is a corner case that can be seen in some tests,
+                # at least plone.app.caching and plone.formwidget.namedfile.
+                # When it is *really* unauthorized to get this image,
+                # it will go wrong somewhere else.
+                value = None
             if value is None:
                 return (0, 0)
             return value.getImageSize()
@@ -351,6 +379,9 @@ class ImageScaling(BrowserView):
 
     def guarded_orig_image(self, fieldname):
         return guarded_getattr(self.context, fieldname, None)
+
+    def getRetinaScales(self):
+        return getRetinaScales()
 
     def modified(self):
         """Provide a callable to return the modification time of content
@@ -398,9 +429,52 @@ class ImageScaling(BrowserView):
         )
         if info is None:
             return  # 404
+
+        info['srcset'] = self.calculate_srcset(
+            fieldname=fieldname,
+            height=height,
+            width=width,
+            direction=direction,
+            scale=scale,
+            storage=storage,
+            **parameters
+        )
         info['fieldname'] = fieldname
         scale_view = ImageScale(self.context, self.request, **info)
         return scale_view
+
+    def calculate_srcset(
+        self,
+        fieldname=None,
+        scale=None,
+        height=None,
+        width=None,
+        direction='thumbnail',
+        storage=None,
+        **parameters
+    ):
+        srcset = []
+        if storage is None:
+            return srcset
+        (orig_width, orig_height) = self.getImageSize(fieldname)
+        for retinaScale in self.getRetinaScales():
+            # Don't create retina scales larger than the source image.
+            if orig_height and orig_height < height * retinaScale['scale']:
+                continue
+            if orig_width and orig_width < width * retinaScale['scale']:
+                continue
+            parameters['quality'] = retinaScale['quality']
+            scale_src = storage.scale(
+                fieldname=fieldname,
+                height=height * retinaScale['scale'],
+                width=width * retinaScale['scale'],
+                direction=direction,
+                **parameters
+            )
+            scale_src['scale'] = retinaScale['scale']
+            if scale_src is not None:
+                srcset.append(scale_src)
+        return srcset
 
     def tag(
         self,
@@ -413,3 +487,18 @@ class ImageScaling(BrowserView):
     ):
         scale = self.scale(fieldname, scale, height, width, direction)
         return scale.tag(**kwargs) if scale else None
+
+
+class NavigationRootScaling(ImageScaling):
+    def _scale_cachekey(method, self, brain, fieldname, **kwargs):
+        return (brain.UID, brain.modified, fieldname, kwargs)
+
+    @ram.cache(_scale_cachekey)
+    def tag(self,
+            brain,
+            fieldname,
+            **kwargs):
+        obj = brain.getObject()
+        images = obj.restrictedTraverse('@@images')
+        tag = images.tag(fieldname, **kwargs)
+        return tag
