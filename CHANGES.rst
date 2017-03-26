@@ -4,18 +4,10 @@ Changelog
 4.2.0 (unreleased)
 ------------------
 
-Breaking changes:
-
-- *add item here*
-
 New features:
 
 - Add retina image scales using srcset attribute.
   [didrix]
-
-Bug fixes:
-
-- *add item here*
 
 
 4.1.2 (2017-02-12)
