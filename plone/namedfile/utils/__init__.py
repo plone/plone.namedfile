@@ -196,6 +196,11 @@ def rotate_image(image_data, method=None, REQUEST=None):
             pass
         if exif_data and piexif.ImageIFD.Orientation in exif_data['0th']:
             orientation = exif_data['0th'][piexif.ImageIFD.Orientation]
+        if exif_data and \
+                (not exif_data['0th'].get(piexif.ImageIFD.XResolution) or \
+                 not exif_data['0th'].get(piexif.ImageIFD.YResolution)):
+            exif_data['0th'][piexif.ImageIFD.XResolution] = (img.width, 1)
+            exif_data['0th'][piexif.ImageIFD.YResolution] = (img.height, 1)
     if exif_data is None:
         width, height = img.size
         exif_data = {
@@ -219,19 +224,31 @@ def rotate_image(image_data, method=None, REQUEST=None):
     elif orientation == 3:
         img = img.transpose(PIL.Image.ROTATE_180)
     elif orientation == 4:
-        img = img.transpose(PIL.Image.ROTATE_180).transpose(PIL.Image.FLIP_LEFT_RIGHT)  # NOQA
+        img = img.transpose(PIL.Image.ROTATE_180).transpose(
+            PIL.Image.FLIP_LEFT_RIGHT)
     elif orientation == 5:
-        img = img.transpose(PIL.Image.ROTATE_270).transpose(PIL.Image.FLIP_LEFT_RIGHT)  # NOQA
-        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]  # NOQA
+        img = img.transpose(PIL.Image.ROTATE_270).transpose(
+            PIL.Image.FLIP_LEFT_RIGHT)
     elif orientation == 6:
         img = img.transpose(PIL.Image.ROTATE_270)
-        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]  # NOQA
     elif orientation == 7:
-        img = img.transpose(PIL.Image.ROTATE_90).transpose(PIL.Image.FLIP_LEFT_RIGHT)  # NOQA
-        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]  # NOQA
+        img = img.transpose(PIL.Image.ROTATE_90).transpose(
+            PIL.Image.FLIP_LEFT_RIGHT)
     elif orientation == 8:
         img = img.transpose(PIL.Image.ROTATE_90)
-        exif_data['0th'][piexif.ImageIFD.XResolution], exif_data['0th'][piexif.ImageIFD.YResolution] = exif_data['0th'][piexif.ImageIFD.YResolution], exif_data['0th'][piexif.ImageIFD.XResolution]  # NOQA
+
+    if orientation in [5, 6, 7, 8]:
+        if exif_data['0th'][piexif.ImageIFD.XResolution] and \
+                exif_data['0th'][piexif.ImageIFD.YResolution]:
+            exif_data['0th'][piexif.ImageIFD.XResolution], \
+                exif_data['0th'][piexif.ImageIFD.YResolution] = \
+                exif_data['0th'][piexif.ImageIFD.YResolution], \
+                exif_data['0th'][piexif.ImageIFD.XResolution]
+        else:
+            exif_data['0th'][piexif.ImageIFD.XResolution], \
+                exif_data['0th'][piexif.ImageIFD.YResolution] = \
+                (img.width, 1), (img.height, 1)
+
 
     # set orientation to normal
     exif_data['0th'][piexif.ImageIFD.Orientation] = 1
