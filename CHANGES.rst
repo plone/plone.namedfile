@@ -14,7 +14,8 @@ New features:
 
 Bug fixes:
 
-- *add item here*
+- Fix bug on Image rotation if ImageIFD.XResolution or ImageIFD.YResolution are not set.
+  [loechel]
 
 
 4.2.0 (2017-03-26)
