@@ -265,7 +265,7 @@ class DefaultImageScalingFactory(object):
             return
 
         data, format_, dimensions = result
-        mimetype = u'image/{0}'.format(format_.lower())
+        mimetype = 'image/{0}'.format(format_.lower())
         value = orig_value.__class__(
             data,
             contentType=mimetype,
