@@ -14,6 +14,9 @@ New features:
 
 Bug fixes:
 
+- Fix #46, when ``tiff_utils.process_tiff`` failed and a ``width referenced before assignment`` error occured.
+  [thet]
+
 - Fix contentType attribute should be str type, what leads to validation errors (fixes `#38`_).
   [rodfersou]
 

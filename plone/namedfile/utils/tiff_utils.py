@@ -14,8 +14,7 @@ def process_tiff(data):
     --> Doc http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
 
     """
-#    import ipdb; ipdb.set_trace()
-    content_type = 'image/tiff'
+    content_type = None
     w = -1
     h = -1
     # check for '42' as flag for tiff:
@@ -30,43 +29,48 @@ def process_tiff(data):
         # --> II (4949.H) --> little-endian
         # --> MM (4D4D.H) --> big-endian
         # next 2 Bytes always Number: 42
+        endian = None
         if data[:2] == 'MM' and struct.unpack('>I', data[2:4])[0] == 42:
+            content_type = 'image/tiff'
             endian = '>'  # big-endian encoding for the whole data stream
             log.info('Tiff Image in big-endian encoding')
         elif data[:2] == 'II' and struct.unpack('<I', data[2:4])[0] == 42:
+            content_type = 'image/tiff'
             endian = '<'  # little-endian encoding for the whole data stream
             log.info('Tiff Image in little-endian encoding')
         else:
             # not a tiff image
             log.info('Endian or 42 Check failed')
-            pass
-        tiff = StringIO(data)
-        tiff.read(4)  # Magic Header, could be skipped, already processed
-        offset = struct.unpack_from(endian + 'I', tiff)  # first IFD offset
-        b = tiff.read(offset)
-        # Process Image File Directory
-        while (b and ord(b) != 0xDA):
-            field_tag = struct.unpack_from(endian + 'I', tiff)
-            field_type = struct.unpack_from(endian + 'I', tiff)
-            field_type = translate_field_type.get(field_type, field_type)
-            field_value = struct.unpack_from(endian + field_type, tiff)
-            if field_tag == '256':  # ImageWidth
-                w = field_value
-            elif field_tag == '257':  # ImageLength
-                h = field_value
-                # as fields has to appear in ascending order
-                # we could skip all other fields
-                break
-            next_offset = struct.unpack_from(endian + 'I', tiff)
-            b.read(next_offset)
-        width = int(w)
-        height = int(h)
+
+        if endian:
+            tiff = StringIO(data)
+            tiff.read(4)  # Magic Header, could be skipped, already processed
+            offset = struct.unpack_from(endian + 'I', tiff)  # first IFD offset
+            b = tiff.read(offset)
+            # Process Image File Directory
+            while (b and ord(b) != 0xDA):
+                field_tag = struct.unpack_from(endian + 'I', tiff)
+                field_type = struct.unpack_from(endian + 'I', tiff)
+                field_type = translate_field_type.get(field_type, field_type)
+                field_value = struct.unpack_from(endian + field_type, tiff)
+                if field_tag == '256':  # ImageWidth
+                    w = field_value
+                elif field_tag == '257':  # ImageLength
+                    h = field_value
+                    # as fields has to appear in ascending order
+                    # we could skip all other fields
+                    break
+                next_offset = struct.unpack_from(endian + 'I', tiff)
+                b.read(next_offset)
     except struct.error:
         pass
     except ValueError:
         pass
     except TypeError:
         pass
+
+    width = int(w)
+    height = int(h)
     return content_type, width, height
 
 
