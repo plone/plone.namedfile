@@ -4,14 +4,6 @@ Changelog
 3.0.11 (unreleased)
 -------------------
 
-Breaking changes:
-
-- *add item here*
-
-New features:
-
-- *add item here*
-
 Bug fixes:
 
 - Fix contentType attribute should be str type, what leads to validation errors (fixes `#38`_).
