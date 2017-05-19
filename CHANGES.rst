@@ -23,6 +23,9 @@ Bug fixes:
 - Fix bug on Image rotation if ImageIFD.XResolution or ImageIFD.YResolution are not set.
   [loechel]
 
+- Fix: Do not log failing PIL image regognition as error, but as warning.
+  [jensens]
+
 
 4.2.0 (2017-03-26)
 ------------------
