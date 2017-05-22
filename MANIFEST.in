@@ -1,5 +1,5 @@
 include *
-recursive-include docs *
-recursive-include plone *
+graft docs
+graft plone
 
-global-exclude *.pyc
+global-exclude *.py[co]
