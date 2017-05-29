@@ -17,10 +17,6 @@ import PIL.Image
 import struct
 import urllib
 
-if api.env.plone_version() >= '5.0':
-    import pdb; pdb.set_trace()
-    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
-
 
 log = getLogger(__name__)
 
@@ -277,6 +273,7 @@ def getRetinaScales():
     if not registry:
         return []
     if api.env.plone_version() >= '5.0':
+        from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
         settings = registry.forInterface(
             IImagingSchema, prefix='plone', check=False)
 
