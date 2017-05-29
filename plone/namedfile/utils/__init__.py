@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from logging import getLogger
-from plone import api
 from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
@@ -269,27 +268,21 @@ def rotate_image(image_data, method=None, REQUEST=None):
 
 
 def getRetinaScales():
-    registry = queryUtility(IRegistry)
-    if not registry:
-        return []
-    if api.env.plone_version() >= '5.0':
+    try:
         from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
-        settings = registry.forInterface(
-            IImagingSchema, prefix='plone', check=False)
-
-    if settings and settings.retina_scales == '2x':
-        return [{
-            'scale': 2,
-            'quality': settings.quality_2x,
-        }]
-    elif settings and settings.retina_scales == '3x':
-        return [
-            {
-                'scale': 2,
-                'quality': settings.quality_2x,
-            },
-            {
-                'scale': 3,
-                'quality': settings.quality_3x,
-            }]
+        registry = queryUtility(IRegistry)
+        if registy:
+            settings = registry.forInterface(
+                IImagingSchema, prefix='plone', check=False)
+            if settings.retina_scales == '2x':
+                return [
+                    {'scale': 2, 'quality': settings.quality_2x},
+                ]
+            elif settings.retina_scales == '3x':
+                return [
+                    {'scale': 2, 'quality': settings.quality_2x},
+                    {'scale': 3, 'quality': settings.quality_3x},
+                ]
+    except ImportError:
+        log.info('IImagingSchema for Retina Scales not importable.')
     return []
