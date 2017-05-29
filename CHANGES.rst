@@ -26,6 +26,9 @@ Bug fixes:
 - Fix: Do not log failing PIL image regognition as error, but as warning.
   [jensens]
 
+- Fix: compatibility for Plone 4 re-added.
+  [loechel]
+
 
 4.2.0 (2017-03-26)
 ------------------

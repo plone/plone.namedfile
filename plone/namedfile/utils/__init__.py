@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from logging import getLogger
+from plone import api
 from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
-from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 from StringIO import StringIO
 from zope.component import queryUtility
 
@@ -16,6 +16,10 @@ import piexif
 import PIL.Image
 import struct
 import urllib
+
+if api.env.plone_version() >= '5.0':
+    import pdb; pdb.set_trace()
+    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 
 
 log = getLogger(__name__)
@@ -272,14 +276,16 @@ def getRetinaScales():
     registry = queryUtility(IRegistry)
     if not registry:
         return []
-    settings = registry.forInterface(
-        IImagingSchema, prefix='plone', check=False)
-    if settings.retina_scales == '2x':
+    if api.env.plone_version() >= '5.0':
+        settings = registry.forInterface(
+            IImagingSchema, prefix='plone', check=False)
+
+    if settings and settings.retina_scales == '2x':
         return [{
             'scale': 2,
             'quality': settings.quality_2x,
         }]
-    if settings.retina_scales == '3x':
+    elif settings and settings.retina_scales == '3x':
         return [
             {
                 'scale': 2,
