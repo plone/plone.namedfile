@@ -1,6 +1,22 @@
 Changelog
 =========
 
+[B (unreleased)
+----------------
+
+Breaking changes:
+
+- *add item here*
+
+New features:
+
+- *add item here*
+
+Bug fixes:
+
+- *add item here*
+
+
 4.2.1 (2017-05-30)
 ------------------
 
