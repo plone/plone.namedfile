@@ -6,7 +6,6 @@ from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
-from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 from StringIO import StringIO
 from zope.component import queryUtility
 
@@ -19,6 +18,12 @@ import urllib
 
 
 log = getLogger(__name__)
+
+try:
+    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
+except ImportError:
+    IImagingSchema = None
+    log.info('IImagingSchema for Retina Scales not available.')
 
 
 try:
@@ -270,23 +275,16 @@ def rotate_image(image_data, method=None, REQUEST=None):
 
 def getRetinaScales():
     registry = queryUtility(IRegistry)
-    if not registry:
-        return []
-    settings = registry.forInterface(
-        IImagingSchema, prefix='plone', check=False)
-    if settings.retina_scales == '2x':
-        return [{
-            'scale': 2,
-            'quality': settings.quality_2x,
-        }]
-    if settings.retina_scales == '3x':
-        return [
-            {
-                'scale': 2,
-                'quality': settings.quality_2x,
-            },
-            {
-                'scale': 3,
-                'quality': settings.quality_3x,
-            }]
+    if IImagingSchema and registry:
+        settings = registry.forInterface(
+            IImagingSchema, prefix='plone', check=False)
+        if settings.retina_scales == '2x':
+            return [
+                {'scale': 2, 'quality': settings.quality_2x},
+            ]
+        elif settings.retina_scales == '3x':
+            return [
+                {'scale': 2, 'quality': settings.quality_2x},
+                {'scale': 3, 'quality': settings.quality_3x},
+            ]
     return []
