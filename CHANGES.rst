@@ -1,8 +1,8 @@
 Changelog
 =========
 
-[B (unreleased)
-----------------
+4.2.2.dev0 (unreleased)
+-----------------------
 
 Breaking changes:
 
