@@ -19,6 +19,12 @@ import urllib
 
 log = getLogger(__name__)
 
+try:
+    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
+except ImportError:
+    IImagingSchema = None
+    log.info('IImagingSchema for Retina Scales not available.')
+
 
 try:
     # use this to stream data if we can
@@ -268,21 +274,17 @@ def rotate_image(image_data, method=None, REQUEST=None):
 
 
 def getRetinaScales():
-    try:
-        from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
-        registry = queryUtility(IRegistry)
-        if registy:
-            settings = registry.forInterface(
-                IImagingSchema, prefix='plone', check=False)
-            if settings.retina_scales == '2x':
-                return [
-                    {'scale': 2, 'quality': settings.quality_2x},
-                ]
-            elif settings.retina_scales == '3x':
-                return [
-                    {'scale': 2, 'quality': settings.quality_2x},
-                    {'scale': 3, 'quality': settings.quality_3x},
-                ]
-    except ImportError:
-        log.info('IImagingSchema for Retina Scales not importable.')
+    registry = queryUtility(IRegistry)
+    if IImagingSchema and registry:
+        settings = registry.forInterface(
+            IImagingSchema, prefix='plone', check=False)
+        if settings.retina_scales == '2x':
+            return [
+                {'scale': 2, 'quality': settings.quality_2x},
+            ]
+        elif settings.retina_scales == '3x':
+            return [
+                {'scale': 2, 'quality': settings.quality_2x},
+                {'scale': 3, 'quality': settings.quality_3x},
+            ]
     return []
