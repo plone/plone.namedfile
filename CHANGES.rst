@@ -47,6 +47,9 @@ Bug fixes:
 - BrowserViews have no Acquisition.
   [pbauer]
 
+- Fix test to use new zope testbrowser internals.
+  [davisagli]
+
 
 4.1.1 (2017-01-20)
 ------------------
