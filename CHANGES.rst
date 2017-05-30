@@ -4,14 +4,6 @@ Changelog
 4.2.1 (unreleased)
 ------------------
 
-Breaking changes:
-
-- *add item here*
-
-New features:
-
-- *add item here*
-
 Bug fixes:
 
 - Fix #46, when ``process_png``, ``process_jpeg`` and ``process_tiff`` could fail with a ``width referenced before assignment`` error.
