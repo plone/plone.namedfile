@@ -44,6 +44,7 @@ class ImageScale(BrowserView):
     # when we retrieve it)
     __roles__ = ('Anonymous',)
     __allow_access_to_unprotected_subobjects__ = 1
+    data = None
 
     def __init__(self, context, request, **info):
         self.context = context
@@ -66,15 +67,15 @@ class ImageScale(BrowserView):
         return self.url
 
     def srcset_attribute(self):
-        srcset_attr = []
+        _srcset_attr = []
         extension = self.data.contentType.split('/')[-1].lower()
         for scale in self.srcset:
-            srcset_attr.append(u'{0}/@@images/{1}.{2} {3}x'.format(
+            _srcset_attr.append(u'{0}/@@images/{1}.{2} {3}x'.format(
                 self.context.absolute_url(),
                 scale['uid'],
                 extension,
                 scale['scale']))
-        srcset_attr = ', '.join(srcset_attr)
+        srcset_attr = ', '.join(_srcset_attr)
         return srcset_attr
 
     def tag(self, height=_marker, width=_marker, alt=_marker,
@@ -192,18 +193,18 @@ class DefaultImageScalingFactory(object):
         )
 
     def __call__(
-        self,
-        fieldname=None,
-        direction='thumbnail',
-        height=None,
-        width=None,
-        scale=None,
-        **parameters
+            self,
+            fieldname=None,
+            direction='thumbnail',
+            height=None,
+            width=None,
+            scale=None,
+            **parameters
     ):
 
         """Factory for image scales`.
         """
-        orig_value = getattr(self.context, fieldname)
+        orig_value = getattr(self.context, fieldname, None)
         if orig_value is None:
             return
 
