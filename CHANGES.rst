@@ -14,7 +14,8 @@ New features:
 
 Bug fixes:
 
-- *add item here*
+- Dont't break DefaultImageScalingFactory, if for any reason the fieldname isn't available on the context.
+  [thet]
 
 
 4.2.1 (2017-05-30)
