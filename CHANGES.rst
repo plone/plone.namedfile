@@ -17,6 +17,9 @@ Bug fixes:
 - Dont't break DefaultImageScalingFactory, if for any reason the fieldname isn't available on the context.
   [thet]
 
+- Different caching keys for different domains
+  [mamico]
+
 
 4.2.1 (2017-05-30)
 ------------------
