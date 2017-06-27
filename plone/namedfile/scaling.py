@@ -492,7 +492,7 @@ class ImageScaling(BrowserView):
 
 class NavigationRootScaling(ImageScaling):
     def _scale_cachekey(method, self, brain, fieldname, **kwargs):
-        return (brain.UID, brain.modified, fieldname, kwargs)
+        return (self.context.absolute_url(), brain.UID, brain.modified, fieldname, kwargs)
 
     @ram.cache(_scale_cachekey)
     def tag(self,
