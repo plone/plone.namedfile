@@ -4,14 +4,6 @@ Changelog
 4.2.2.dev0 (unreleased)
 -----------------------
 
-Breaking changes:
-
-- *add item here*
-
-New features:
-
-- *add item here*
-
 Bug fixes:
 
 - Dont't break DefaultImageScalingFactory, if for any reason the fieldname isn't available on the context.
