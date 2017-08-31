@@ -81,8 +81,8 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.height, 80)
         assertImage(self, foo.data.data, 'PNG', (80, 80))
 
-    def testCreateRetinaScale(self):
-        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+    def testCreateHighPixelDensityScale(self):
+        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
         foo = self.scaling.scale('image', width=100, height=80)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
@@ -96,10 +96,10 @@ class ImageScalingTests(unittest.TestCase):
         foo = scaling.scale('image', width=100, height=80)
         self.assertEqual(foo, None)
 
-    def testCreateRetinaScaleWithoutData(self):
+    def testCreateHighPixelDensityScaleWithoutData(self):
         item = DummyContent()
         scaling = ImageScaling(item, None)
-        scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+        scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
         foo = scaling.scale('image', width=100, height=80)
         self.assertFalse(hasattr(foo, 'srcset'))
 
@@ -129,8 +129,8 @@ class ImageScalingTests(unittest.TestCase):
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
-    def testGetRetinaScaleByName(self):
-        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+    def testGetHighPixelDensityScaleByName(self):
+        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
         self.scaling.available_sizes = {'foo': (60, 60)}
         foo = self.scaling.scale('image', scale='foo')
         self.assertTrue(foo.srcset)
@@ -266,10 +266,10 @@ class ImageScalingTests(unittest.TestCase):
         # first one should be bigger
         self.assertTrue(size_foo > size_bar)
 
-    def testOversizedRetinaScale(self):
+    def testOversizedHighPixelDensityScale(self):
         orig_size = max(self.scaling.getImageSize('image'))
         scale_size = orig_size / 2
-        self.scaling.getRetinaScales = lambda: [
+        self.scaling.getHighPixelDensityScales = lambda: [
             {'scale': 2, 'quality': 66},
             {'scale': 3, 'quality': 66}]
         foo = self.scaling.scale('image', width=scale_size, height=scale_size)
