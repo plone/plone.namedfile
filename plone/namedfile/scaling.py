@@ -250,7 +250,7 @@ class DefaultImageScalingFactory(object):
                 logger.exception(
                     'Could not scale "{0!r}" of {1!r}'.format(
                         orig_value,
-                        self.context.absolute_url
+                        self.context.absolute_url,
                     ),
                 )
                 return
@@ -258,7 +258,7 @@ class DefaultImageScalingFactory(object):
             logger.exception(
                 'Could not scale "{0!r}" of {1!r}'.format(
                     orig_value,
-                    self.context.absolute_url
+                    self.context.absolute_url,
                 ),
             )
             return
@@ -270,7 +270,7 @@ class DefaultImageScalingFactory(object):
         value = orig_value.__class__(
             data,
             contentType=mimetype,
-            filename=orig_value.filename
+            filename=orig_value.filename,
         )
         value.fieldname = fieldname
         return value, format_, dimensions
@@ -313,7 +313,7 @@ class ImageScaling(BrowserView):
                 self.context,
                 self.request,
                 data=value,
-                fieldname=name
+                fieldname=name,
             )
             return scale_view
         raise NotFound(self, name, self.request)
@@ -327,7 +327,7 @@ class ImageScaling(BrowserView):
                 self.context,
                 self.request,
                 data=value,
-                fieldname=name
+                fieldname=name,
             )
         else:
             return ImmutableTraverser(self.scale(name, furtherPath[-1]))
@@ -343,7 +343,7 @@ class ImageScaling(BrowserView):
         if fieldname:
             logger.warn(
                 'fieldname was passed to deprecated getAvailableSizes, but '
-                'will be ignored.'
+                'will be ignored.',
             )
         return self.available_sizes
 
@@ -411,7 +411,7 @@ class ImageScaling(BrowserView):
                 logger.warn(
                     'A scale name and width/heigth are given. Those are'
                     'mutually exclusive: solved by ignoring width/heigth and '
-                    'taking name'
+                    'taking name',
                 )
             available = self.available_sizes
             if scale not in available:
@@ -460,15 +460,23 @@ class ImageScaling(BrowserView):
         (orig_width, orig_height) = self.getImageSize(fieldname)
         for retinaScale in self.getRetinaScales():
             # Don't create retina scales larger than the source image.
-            if orig_height and orig_height < height * retinaScale['scale']:
-                continue
-            if orig_width and orig_width < width * retinaScale['scale']:
+            if (
+                (
+                    height and
+                    orig_height and
+                    orig_height < height * retinaScale['scale']
+                ) or (
+                    width and
+                    orig_width and
+                    orig_width < width * retinaScale['scale']
+                )
+            ):
                 continue
             parameters['quality'] = retinaScale['quality']
             scale_src = storage.scale(
                 fieldname=fieldname,
-                height=height * retinaScale['scale'],
-                width=width * retinaScale['scale'],
+                height=height * retinaScale['scale'] if height else height,
+                width=width * retinaScale['scale'] if width else width,
                 direction=direction,
                 **parameters
             )
@@ -492,7 +500,13 @@ class ImageScaling(BrowserView):
 
 class NavigationRootScaling(ImageScaling):
     def _scale_cachekey(method, self, brain, fieldname, **kwargs):
-        return (self.context.absolute_url(), brain.UID, brain.modified, fieldname, kwargs)
+        return (
+            self.context.absolute_url(),
+            brain.UID,
+            brain.modified,
+            fieldname,
+            kwargs,
+        )
 
     @ram.cache(_scale_cachekey)
     def tag(self,

@@ -124,7 +124,7 @@ class ImageScalingTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
@@ -133,6 +133,72 @@ class ImageScalingTests(unittest.TestCase):
         self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
         self.scaling.available_sizes = {'foo': (60, 60)}
         foo = self.scaling.scale('image', scale='foo')
+        self.assertTrue(foo.srcset)
+        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
+        self.assertEqual(foo.srcset[0]['width'], 120)
+        self.assertEqual(foo.srcset[0]['height'], 120)
+        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+
+        tag = foo.tag()
+        base = self.item.absolute_url()
+        expected = (
+            r'<img src="{0}'.format(base) +
+            r'/@@images/([-0-9a-f]{36})'
+            r'.(jpeg|gif|png)" '
+            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
+            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
+            r'.(jpeg|gif|png)'
+            r' 2x" />')
+        groups = re.match(expected, tag).groups()
+        self.assertTrue(groups, tag)
+
+    def testGetRetinaScaleByWidthAndHeight(self):
+        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+        foo = self.scaling.scale('image', width=60, height=60)
+        self.assertTrue(foo.srcset)
+        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
+        self.assertEqual(foo.srcset[0]['width'], 120)
+        self.assertEqual(foo.srcset[0]['height'], 120)
+        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+
+        tag = foo.tag()
+        base = self.item.absolute_url()
+        expected = (
+            r'<img src="{0}'.format(base) +
+            r'/@@images/([-0-9a-f]{36})'
+            r'.(jpeg|gif|png)" '
+            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
+            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
+            r'.(jpeg|gif|png)'
+            r' 2x" />')
+        groups = re.match(expected, tag).groups()
+        self.assertTrue(groups, tag)
+
+    def testGetRetinaScaleByWidthOnly(self):
+        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+        foo = self.scaling.scale('image', width=60)
+        self.assertTrue(foo.srcset)
+        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
+        self.assertEqual(foo.srcset[0]['width'], 120)
+        self.assertEqual(foo.srcset[0]['height'], 120)
+        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+
+        tag = foo.tag()
+        base = self.item.absolute_url()
+        expected = (
+            r'<img src="{0}'.format(base) +
+            r'/@@images/([-0-9a-f]{36})'
+            r'.(jpeg|gif|png)" '
+            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
+            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
+            r'.(jpeg|gif|png)'
+            r' 2x" />')
+        groups = re.match(expected, tag).groups()
+        self.assertTrue(groups, tag)
+
+    def testGetRetinaScaleByHeightOnly(self):
+        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+        foo = self.scaling.scale('image', height=60)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['width'], 120)
@@ -217,7 +283,7 @@ class ImageScalingTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         self.assertTrue(re.match(expected, tag).groups())
 
@@ -228,7 +294,7 @@ class ImageScalingTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         self.assertTrue(re.match(expected, tag).groups())
 
@@ -239,7 +305,7 @@ class ImageScalingTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         self.assertTrue(re.match(expected, tag).groups())
 
@@ -304,7 +370,7 @@ class ImageTraverseTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
