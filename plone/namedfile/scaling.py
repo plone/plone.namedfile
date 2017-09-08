@@ -460,15 +460,23 @@ class ImageScaling(BrowserView):
         (orig_width, orig_height) = self.getImageSize(fieldname)
         for retinaScale in self.getRetinaScales():
             # Don't create retina scales larger than the source image.
-            if orig_height and orig_height < height * retinaScale['scale']:
-                continue
-            if orig_width and orig_width < width * retinaScale['scale']:
+            if (
+                (
+                    height and
+                    orig_height and
+                    orig_height < height * retinaScale['scale']
+                ) or (
+                    width and
+                    orig_width and
+                    orig_width < width * retinaScale['scale']
+                )
+            ):
                 continue
             parameters['quality'] = retinaScale['quality']
             scale_src = storage.scale(
                 fieldname=fieldname,
-                height=height * retinaScale['scale'],
-                width=width * retinaScale['scale'],
+                height=height * retinaScale['scale'] if height else height,
+                width=width * retinaScale['scale'] if width else width,
                 direction=direction,
                 **parameters
             )
@@ -492,7 +500,13 @@ class ImageScaling(BrowserView):
 
 class NavigationRootScaling(ImageScaling):
     def _scale_cachekey(method, self, brain, fieldname, **kwargs):
-        return (self.context.absolute_url(), brain.UID, brain.modified, fieldname, kwargs)
+        return (
+            self.context.absolute_url(),
+            brain.UID,
+            brain.modified,
+            fieldname,
+            kwargs,
+        )
 
     @ram.cache(_scale_cachekey)
     def tag(self,
