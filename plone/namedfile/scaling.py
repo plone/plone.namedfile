@@ -250,7 +250,7 @@ class DefaultImageScalingFactory(object):
                 logger.exception(
                     'Could not scale "{0!r}" of {1!r}'.format(
                         orig_value,
-                        self.context.absolute_url
+                        self.context.absolute_url,
                     ),
                 )
                 return
@@ -258,7 +258,7 @@ class DefaultImageScalingFactory(object):
             logger.exception(
                 'Could not scale "{0!r}" of {1!r}'.format(
                     orig_value,
-                    self.context.absolute_url
+                    self.context.absolute_url,
                 ),
             )
             return
@@ -270,7 +270,7 @@ class DefaultImageScalingFactory(object):
         value = orig_value.__class__(
             data,
             contentType=mimetype,
-            filename=orig_value.filename
+            filename=orig_value.filename,
         )
         value.fieldname = fieldname
         return value, format_, dimensions
@@ -313,7 +313,7 @@ class ImageScaling(BrowserView):
                 self.context,
                 self.request,
                 data=value,
-                fieldname=name
+                fieldname=name,
             )
             return scale_view
         raise NotFound(self, name, self.request)
@@ -327,7 +327,7 @@ class ImageScaling(BrowserView):
                 self.context,
                 self.request,
                 data=value,
-                fieldname=name
+                fieldname=name,
             )
         else:
             return ImmutableTraverser(self.scale(name, furtherPath[-1]))
@@ -343,7 +343,7 @@ class ImageScaling(BrowserView):
         if fieldname:
             logger.warn(
                 'fieldname was passed to deprecated getAvailableSizes, but '
-                'will be ignored.'
+                'will be ignored.',
             )
         return self.available_sizes
 
@@ -411,7 +411,7 @@ class ImageScaling(BrowserView):
                 logger.warn(
                     'A scale name and width/heigth are given. Those are'
                     'mutually exclusive: solved by ignoring width/heigth and '
-                    'taking name'
+                    'taking name',
                 )
             available = self.available_sizes
             if scale not in available:

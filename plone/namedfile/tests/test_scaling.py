@@ -124,7 +124,7 @@ class ImageScalingTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
@@ -283,7 +283,7 @@ class ImageScalingTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         self.assertTrue(re.match(expected, tag).groups())
 
@@ -294,7 +294,7 @@ class ImageScalingTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         self.assertTrue(re.match(expected, tag).groups())
 
@@ -305,7 +305,7 @@ class ImageScalingTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         self.assertTrue(re.match(expected, tag).groups())
 
@@ -370,7 +370,7 @@ class ImageTraverseTests(unittest.TestCase):
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base
+                base,
             )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
