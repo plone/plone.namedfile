@@ -14,7 +14,8 @@ New features:
 
 Bug fixes:
 
-- *add item here*
+- Fix test to use new zope testbrowser internals.
+  [davisagli]
 
 
 4.2.3 (2017-09-08)
@@ -52,8 +53,6 @@ Bug fixes:
 
 - Fix bug on Image rotation if ImageIFD.XResolution or ImageIFD.YResolution are not set.
   [loechel]
-- Fix test to use new zope testbrowser internals.
-  [davisagli]
 
 - Fix: Do not log failing PIL image regognition as error, but as warning.
   [jensens]
