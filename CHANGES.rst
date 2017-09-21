@@ -1,7 +1,7 @@
 Changelog
 =========
 
-4.2.3 (unreleased)
+4.2.4 (unreleased)
 ------------------
 
 Breaking changes:
@@ -16,6 +16,16 @@ Bug fixes:
 
 - remove mention of "retina" (https://github.com/plone/Products.CMFPlone/issues/2123)
   [tkimnguyen]
+
+
+4.2.3 (2017-09-08)
+------------------
+
+Bug fixes:
+
+- Fix bug #56 where ``srcset`` generation failed on no given width or height if there was no sclae given.
+  https://github.com/plone/plone.namedfile/pull/56
+  [jensens]
 
 
 4.2.2 (2017-07-03)
