@@ -6,7 +6,7 @@ from plone.memoize import ram
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
-from plone.namedfile.utils import getRetinaScales
+from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.protect.interfaces import IDisableCSRFProtection
@@ -381,8 +381,12 @@ class ImageScaling(BrowserView):
     def guarded_orig_image(self, fieldname):
         return guarded_getattr(self.context, fieldname, None)
 
+    @deprecate('use getHighPixelDensityScales instead')
     def getRetinaScales(self):
-        return getRetinaScales()
+        return getHighPixelDensityScales()
+
+    def getHighPixelDensityScales(self):
+        return getHighPixelDensityScales()
 
     def modified(self):
         """Provide a callable to return the modification time of content
@@ -458,29 +462,29 @@ class ImageScaling(BrowserView):
         if storage is None:
             return srcset
         (orig_width, orig_height) = self.getImageSize(fieldname)
-        for retinaScale in self.getRetinaScales():
+        for hdScale in self.getHighPixelDensityScales():
             # Don't create retina scales larger than the source image.
             if (
                 (
                     height and
                     orig_height and
-                    orig_height < height * retinaScale['scale']
+                    orig_height < height * hdScale['scale']
                 ) or (
                     width and
                     orig_width and
-                    orig_width < width * retinaScale['scale']
+                    orig_width < width * hdScale['scale']
                 )
             ):
                 continue
-            parameters['quality'] = retinaScale['quality']
+            parameters['quality'] = hdScale['quality']
             scale_src = storage.scale(
                 fieldname=fieldname,
-                height=height * retinaScale['scale'] if height else height,
-                width=width * retinaScale['scale'] if width else width,
+                height=height * hdScale['scale'] if height else height,
+                width=width * hdScale['scale'] if width else width,
                 direction=direction,
                 **parameters
             )
-            scale_src['scale'] = retinaScale['scale']
+            scale_src['scale'] = hdScale['scale']
             if scale_src is not None:
                 srcset.append(scale_src)
         return srcset

@@ -8,6 +8,7 @@ from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
 from StringIO import StringIO
 from zope.component import queryUtility
+from zope.deprecation import deprecate
 
 import mimetypes
 import os.path
@@ -23,7 +24,7 @@ try:
     from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 except ImportError:
     IImagingSchema = None
-    log.info('IImagingSchema for Retina Scales not available.')
+    log.info('IImagingSchema for high pixel density scales not available.')
 
 
 try:
@@ -272,17 +273,20 @@ def rotate_image(image_data, method=None, REQUEST=None):
     width, height = img.size
     return output_image_data.getvalue(), width, height, exif_data
 
-
+@deprecate('use getHighPixelDensityScales instead')
 def getRetinaScales():
+    return getHighPixelDensityScales()
+
+def getHighPixelDensityScales():
     registry = queryUtility(IRegistry)
     if IImagingSchema and registry:
         settings = registry.forInterface(
             IImagingSchema, prefix='plone', check=False)
-        if settings.retina_scales == '2x':
+        if settings.highpixeldensity_scales == '2x':
             return [
                 {'scale': 2, 'quality': settings.quality_2x},
             ]
-        elif settings.retina_scales == '3x':
+        elif settings.highpixeldensity_scales == '3x':
             return [
                 {'scale': 2, 'quality': settings.quality_2x},
                 {'scale': 3, 'quality': settings.quality_3x},
