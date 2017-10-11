@@ -158,6 +158,8 @@ class NamedFile(Persistent):
     True
     """
 
+    __allow_access_to_unprotected_subobjects__ = 1  # pass Zope2 AccessControl
+
     filename = FieldProperty(INamedFile['filename'])
 
     def __init__(self, data='', contentType='', filename=None):
@@ -308,6 +310,8 @@ class NamedImage(NamedFile):
 @implementer(INamedBlobFile)
 class NamedBlobFile(Persistent):
     """A file stored in a ZODB BLOB, with a filename"""
+
+    __allow_access_to_unprotected_subobjects__ = 1  # pass Zope2 AccessControl
 
     filename = FieldProperty(INamedFile['filename'])
 

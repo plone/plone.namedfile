@@ -10,7 +10,11 @@ Breaking changes:
 
 New features:
 
-- *add item here*
+- Allow restricted Python to access public file attributes and helper
+  methods (mainly ``filename``, ``contentType``, ``data``, ``getSize`` and
+  ``getImageSize``)
+  by setting ``__allow_access_to_unprotected_subobjects__ = 1``
+  [datakurre]
 
 Bug fixes:
 
