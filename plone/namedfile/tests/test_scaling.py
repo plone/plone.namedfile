@@ -152,8 +152,8 @@ class ImageScalingTests(unittest.TestCase):
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
-    def testGetRetinaScaleByWidthAndHeight(self):
-        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+    def testGetHPDScaleByWidthAndHeight(self):
+        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
         foo = self.scaling.scale('image', width=60, height=60)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
@@ -174,8 +174,8 @@ class ImageScalingTests(unittest.TestCase):
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
-    def testGetRetinaScaleByWidthOnly(self):
-        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+    def testGetHPDScaleByWidthOnly(self):
+        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
         foo = self.scaling.scale('image', width=60)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
@@ -196,8 +196,8 @@ class ImageScalingTests(unittest.TestCase):
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
-    def testGetRetinaScaleByHeightOnly(self):
-        self.scaling.getRetinaScales = lambda: [{'scale': 2, 'quality': 66}]
+    def testGetHPDScaleByHeightOnly(self):
+        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
         foo = self.scaling.scale('image', height=60)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
