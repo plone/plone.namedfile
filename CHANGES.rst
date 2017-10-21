@@ -1,7 +1,7 @@
 Changelog
 =========
 
-4.2.4 (unreleased)
+4.3 (unreleased)
 ------------------
 
 Breaking changes:
@@ -10,12 +10,13 @@ Breaking changes:
 
 New features:
 
-- *add item here*
+- Target Zope 4 (test chnages only).
 
 Bug fixes:
 
 - remove mention of "retina" (https://github.com/plone/Products.CMFPlone/issues/2123)
   [tkimnguyen]
+
 - Fix test to use new zope testbrowser internals.
   [davisagli]
 
