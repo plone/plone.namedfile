@@ -16,6 +16,8 @@ Bug fixes:
 
 - remove mention of "retina" (https://github.com/plone/Products.CMFPlone/issues/2123)
   [tkimnguyen]
+- Fix test to use new zope testbrowser internals.
+  [davisagli]
 
 
 4.2.3 (2017-09-08)
