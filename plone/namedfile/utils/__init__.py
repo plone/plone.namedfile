@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-
 from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
-from StringIO import StringIO
+from six.StringIO import StringIO
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 
