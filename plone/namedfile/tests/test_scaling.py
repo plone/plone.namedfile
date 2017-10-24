@@ -10,7 +10,7 @@ from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
 from plone.scale.interfaces import IScaledImageQuality
-from six.StringIO import StringIO
+from six import StringIO
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
 from zope.component import getGlobalSiteManager
