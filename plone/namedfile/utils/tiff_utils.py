@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
 from logging import getLogger
-from StringIO import StringIO
+from six import StringIO
 
 import struct
 

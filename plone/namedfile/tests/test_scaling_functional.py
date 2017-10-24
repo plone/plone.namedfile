@@ -10,7 +10,7 @@ from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
 from plone.testing.z2 import Browser
-from StringIO import StringIO
+from six import StringIO
 from zope.annotation import IAttributeAnnotatable
 from zope.interface import implementer
 
