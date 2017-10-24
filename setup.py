@@ -43,6 +43,7 @@ setup(
         'plone.schemaeditor',
         'plone.supermodel',
         'setuptools',
+        'six',
         'zope.browserpage',
         'zope.component',
         'zope.copy',
