@@ -82,7 +82,9 @@ class ImageScalingTests(unittest.TestCase):
         assertImage(self, foo.data.data, 'PNG', (80, 80))
 
     def testCreateHighPixelDensityScale(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
+        self.scaling.getHighPixelDensityScales = lambda: [
+            {'scale': 2, 'quality': 66}
+        ]
         foo = self.scaling.scale('image', width=100, height=80)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
@@ -99,7 +101,9 @@ class ImageScalingTests(unittest.TestCase):
     def testCreateHighPixelDensityScaleWithoutData(self):
         item = DummyContent()
         scaling = ImageScaling(item, None)
-        scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
+        scaling.getHighPixelDensityScales = lambda: [
+            {'scale': 2, 'quality': 66}
+        ]
         foo = scaling.scale('image', width=100, height=80)
         self.assertFalse(hasattr(foo, 'srcset'))
 
@@ -130,7 +134,9 @@ class ImageScalingTests(unittest.TestCase):
         self.assertTrue(groups, tag)
 
     def testGetHighPixelDensityScaleByName(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
+        self.scaling.getHighPixelDensityScales = lambda: [
+            {'scale': 2, 'quality': 66}
+        ]
         self.scaling.available_sizes = {'foo': (60, 60)}
         foo = self.scaling.scale('image', scale='foo')
         self.assertTrue(foo.srcset)
@@ -153,7 +159,9 @@ class ImageScalingTests(unittest.TestCase):
         self.assertTrue(groups, tag)
 
     def testGetHPDScaleByWidthAndHeight(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
+        self.scaling.getHighPixelDensityScales = lambda: [
+            {'scale': 2, 'quality': 66}
+        ]
         foo = self.scaling.scale('image', width=60, height=60)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
@@ -175,7 +183,9 @@ class ImageScalingTests(unittest.TestCase):
         self.assertTrue(groups, tag)
 
     def testGetHPDScaleByWidthOnly(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
+        self.scaling.getHighPixelDensityScales = lambda: [
+            {'scale': 2, 'quality': 66}
+        ]
         foo = self.scaling.scale('image', width=60)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
@@ -197,7 +207,9 @@ class ImageScalingTests(unittest.TestCase):
         self.assertTrue(groups, tag)
 
     def testGetHPDScaleByHeightOnly(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
+        self.scaling.getHighPixelDensityScales = lambda: [
+            {'scale': 2, 'quality': 66}
+        ]
         foo = self.scaling.scale('image', height=60)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')

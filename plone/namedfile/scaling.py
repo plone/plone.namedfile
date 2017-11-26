@@ -70,11 +70,14 @@ class ImageScale(BrowserView):
         _srcset_attr = []
         extension = self.data.contentType.split('/')[-1].lower()
         for scale in self.srcset:
-            _srcset_attr.append(u'{0}/@@images/{1}.{2} {3}x'.format(
-                self.context.absolute_url(),
-                scale['uid'],
-                extension,
-                scale['scale']))
+            _srcset_attr.append(
+                u'{0}/@@images/{1}.{2} {3}x'.format(
+                    self.context.absolute_url(),
+                    scale['uid'],
+                    extension,
+                    scale['scale'],
+                )
+            )
         srcset_attr = ', '.join(_srcset_attr)
         return srcset_attr
 
