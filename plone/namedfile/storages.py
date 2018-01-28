@@ -8,6 +8,7 @@ from plone.namedfile.interfaces import NotStorable
 from zope.interface import implementer
 from zope.publisher.browser import FileUpload
 
+import six
 
 MAXCHUNKSIZE = 1 << 16
 
@@ -27,7 +28,7 @@ class StringStorable(object):
 class UnicodeStorable(StringStorable):
 
     def store(self, data, blob):
-        if not isinstance(data, unicode):
+        if not isinstance(data, six.text_type):
             raise NotStorable('Could not store data (not of "unicode" type).')
 
         data = data.encode('UTF-8')
