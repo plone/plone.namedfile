@@ -6,6 +6,7 @@ from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
 from six import StringIO
+from six.moves import urllib
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 
@@ -13,9 +14,8 @@ import mimetypes
 import os.path
 import piexif
 import PIL.Image
+import six
 import struct
-import urllib
-
 
 log = getLogger(__name__)
 
@@ -75,9 +75,9 @@ def set_headers(file, response, filename=None):
     response.setHeader('Content-Length', file.getSize())
 
     if filename is not None:
-        if not isinstance(filename, unicode):
-            filename = unicode(filename, 'utf-8', errors='ignore')
-        filename = urllib.quote(filename.encode('utf8'))
+        if not isinstance(filename, six.text_type):
+            filename = six.text_type(filename, 'utf-8', errors='ignore')
+        filename = urllib.parse.quote(filename.encode('utf8'))
         response.setHeader(
             'Content-Disposition',
             'attachment; filename*=UTF-8\'\'{0}'.format(filename)
