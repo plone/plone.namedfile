@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from email.Encoders import encode_base64
+from email.encoders import encode_base64
 from plone.namedfile import NamedBlobFile
 from plone.namedfile import NamedBlobImage
 from plone.namedfile import NamedFile
