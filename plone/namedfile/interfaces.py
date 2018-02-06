@@ -12,7 +12,7 @@ class IFile(Interface):
     contentType = schema.BytesLine(
         title=u'Content Type',
         description=u'The content type identifies the type of data.',
-        default='',
+        default=b'',
         required=False,
         missing_value=''
     )
@@ -20,7 +20,7 @@ class IFile(Interface):
     data = schema.Bytes(
         title=u'Data',
         description=u'The actual content of the object.',
-        default='',
+        default=b'',
         missing_value='',
         required=False,
     )

@@ -19,8 +19,8 @@ from zope.interface import implementer
 from zope.schema.fieldproperty import FieldProperty
 
 import piexif
+import six
 import transaction
-
 
 log = getLogger(__name__)
 
@@ -181,7 +181,7 @@ class NamedFile(Persistent):
     def _setData(self, data):
 
         # Handle case when data is a string
-        if isinstance(data, unicode):
+        if isinstance(data, six.text_type):
             data = data.encode('UTF-8')
 
         if isinstance(data, str):

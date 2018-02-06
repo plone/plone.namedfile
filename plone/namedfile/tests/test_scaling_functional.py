@@ -10,7 +10,7 @@ from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
 from plone.testing.z2 import Browser
-from StringIO import StringIO
+from six import StringIO
 from zope.annotation import IAttributeAnnotatable
 from zope.interface import implementer
 
@@ -97,21 +97,19 @@ class ImagePublisherTests(unittest.TestCase):
         scale = self.view.scale('image', width=64, height=64)
         transaction.commit()
         # make sure the referenced image scale is available
-        self.browser.open(scale.url)
+        url = str(scale.url)
+        self.browser.open(url)
         GET_length = len(self.browser.contents)
 
         self.browser = Browser(self.layer['app'])
         self.browser.handleErrors = False
         self.browser.addHeader('Referer', self.layer['app'].absolute_url())
-        from urllib2 import Request
 
-        class HeadRequest(Request):
-            def get_method(self):
-                return 'HEAD'
+        def make_head_request(args):
+            return self.browser.testapp.head(url, **args)
 
-        head_request = HeadRequest(scale.url)
-        mbrowser = self.browser.mech_browser
-        mbrowser.open(head_request)
+        self.browser._processRequest(url, make_head_request)
+
         self.assertEqual('image/png', self.browser.headers['content-type'])
         self.assertEqual(
             self.browser.headers['Content-Length'],

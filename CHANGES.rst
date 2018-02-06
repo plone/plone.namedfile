@@ -1,7 +1,7 @@
 Changelog
 =========
 
-4.2.4 (unreleased)
+4.3 (unreleased)
 ------------------
 
 Breaking changes:
@@ -16,10 +16,18 @@ New features:
   by setting ``__allow_access_to_unprotected_subobjects__ = 1``
   [datakurre]
 
+- Target Zope 4 (test changes only).
+
 Bug fixes:
+
+- Prepare for Python 2 / 3 compatibility
+  [ale-rt, pbauer]
 
 - remove mention of "retina" (https://github.com/plone/Products.CMFPlone/issues/2123)
   [tkimnguyen]
+
+- Fix test to use new zope testbrowser internals.
+  [davisagli]
 
 
 4.2.3 (2017-09-08)

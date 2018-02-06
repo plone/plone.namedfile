@@ -29,7 +29,7 @@ from zope.traversing.interfaces import ITraversable
 from zope.traversing.interfaces import TraversalError
 
 import logging
-
+import six
 
 logger = logging.getLogger(__name__)
 _marker = object()
@@ -114,7 +114,7 @@ class ImageScale(BrowserView):
             if isinstance(v, int):
                 v = str(v)
             elif isinstance(v, str):
-                v = unicode(v, 'utf8')
+                v = six.text_type(v, 'utf8')
             parts.append(u'{0}={1}'.format(k, quoteattr(v)))
         parts.append('/>')
 

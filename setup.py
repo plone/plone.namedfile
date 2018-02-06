@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from setuptools import find_packages
 from setuptools import setup
+
 import os
 
 
-version = '4.2.4.dev0'
+version = '4.3.dev0'
 description = 'File types and fields for images, files and blob files with ' \
               'filenames'
 long_description = ('\n\n'.join([
@@ -42,6 +43,7 @@ setup(
         'plone.schemaeditor',
         'plone.supermodel',
         'setuptools',
+        'six',
         'zope.browserpage',
         'zope.component',
         'zope.copy',
