@@ -320,7 +320,7 @@ class NamedBlobFile(Persistent):
         self.contentType = contentType
         self._blob = Blob()
         f = self._blob.open('w')
-        f.write('')
+        f.write(b'')
         f.close()
         self._setData(data)
         self.filename = filename
@@ -372,7 +372,7 @@ class NamedBlobImage(NamedBlobFile):
     """An image stored in a ZODB BLOB with a filename
     """
 
-    def __init__(self, data='', contentType='', filename=None):
+    def __init__(self, data=b'', contentType='', filename=None):
         super(NamedBlobImage, self).__init__(data,
                                              contentType=contentType,
                                              filename=filename)

@@ -14,25 +14,35 @@ MAXCHUNKSIZE = 1 << 16
 
 
 @implementer(IStorage)
-class StringStorable(object):
+class BytesStorable(object):
 
     def store(self, data, blob):
-        if not isinstance(data, str):
-            raise NotStorable('Could not store data (not of "str" type).')
+        if not isinstance(data, six.binary_type):
+            raise NotStorable('Could not store data (not of bytes type).')
 
         with blob.open('w') as fp:
             fp.write(data)
 
 
 @implementer(IStorage)
-class UnicodeStorable(StringStorable):
+class TextStorable(BytesStorable):
 
     def store(self, data, blob):
         if not isinstance(data, six.text_type):
             raise NotStorable('Could not store data (not of "unicode" type).')
 
         data = data.encode('UTF-8')
-        StringStorable.store(self, data, blob)
+        BytesStorable.store(self, data, blob)
+
+
+@implementer(IStorage)
+class UnicodeStorable(TextStorable):
+    pass
+
+
+@implementer(IStorage)
+class StringStorable(BytesStorable):
+    pass
 
 
 @implementer(IStorage)
