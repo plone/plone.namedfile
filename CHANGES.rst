@@ -14,7 +14,8 @@ New features:
 
 Bug fixes:
 
-- *add item here*
+- Display of SVG in Image Content-Type were broken because of wrong mimetype.
+  [jensens]
 
 
 4.2.4 (2017-11-26)
@@ -31,7 +32,7 @@ Bug fixes:
 
 Bug fixes:
 
-- Fix bug #56 where ``srcset`` generation failed on no given width or height if there was no sclae given.
+- Fix bug #56 where ``srcset`` generation failed on no given width or height if there was no scale given.
   https://github.com/plone/plone.namedfile/pull/56
   [jensens]
 
