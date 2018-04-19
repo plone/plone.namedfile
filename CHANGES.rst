@@ -10,7 +10,9 @@ Breaking changes:
 
 New features:
 
-- Target Zope 4 (test chnages only).
+- It is now possible to customize in an easier way the ``@@images`` view
+  [ale-rt]
+- Target Zope 4 (test changes only).
 
 Bug fixes:
 

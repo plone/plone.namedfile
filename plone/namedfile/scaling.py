@@ -31,6 +31,7 @@ from zope.traversing.interfaces import TraversalError
 import logging
 import six
 
+
 logger = logging.getLogger(__name__)
 _marker = object()
 
@@ -282,6 +283,7 @@ class ImageScaling(BrowserView):
     # Ignore some stacks to help with accessing via webdav, otherwise you get a
     # 404 NotFound error.
     _ignored_stacks = ('manage_DAVget', 'manage_FTPget')
+    _scale_view_class = ImageScale
 
     def publishTraverse(self, request, name):
         """ used for traversal via publisher, i.e. when using as a url """
@@ -301,7 +303,11 @@ class ImageScaling(BrowserView):
             info = storage.get(name)
             if info is None:
                 raise NotFound(self, name, self.request)
-            scale_view = ImageScale(self.context, self.request, **info)
+            scale_view = self._scale_view_class(
+                self.context,
+                self.request,
+                **info
+            )
             alsoProvides(scale_view, IStableImageScale)
             return scale_view
         else:
@@ -309,7 +315,7 @@ class ImageScaling(BrowserView):
             if '.' in name:
                 name, ext = name.rsplit('.', 1)
             value = getattr(self.context, name)
-            scale_view = ImageScale(
+            scale_view = self._scale_view_class(
                 self.context,
                 self.request,
                 data=value,
@@ -323,7 +329,7 @@ class ImageScaling(BrowserView):
         # validate access
         value = self.guarded_orig_image(name)
         if not furtherPath:
-            image = ImageScale(
+            image = self._scale_view_class(
                 self.context,
                 self.request,
                 data=value,
@@ -445,7 +451,7 @@ class ImageScaling(BrowserView):
             **parameters
         )
         info['fieldname'] = fieldname
-        scale_view = ImageScale(self.context, self.request, **info)
+        scale_view = self._scale_view_class(self.context, self.request, **info)
         return scale_view
 
     def calculate_srcset(
