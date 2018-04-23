@@ -114,7 +114,6 @@ def getImageInfo(data):
     height = -1
     width = -1
     content_type = ''
-
     if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
         # handle GIFs
         content_type = 'image/gif'
@@ -140,7 +139,10 @@ def getImageInfo(data):
     elif (size >= 4) and data[:4] in ['MM\x00*', 'II*\x00']:
         # handle TIFFs
         content_type, width, height = process_tiff(data)
-
+    elif size >= 4 and data[:5] == '<?xml' and '<svg' in data:
+        # handle SVG
+        content_type = 'image/svg+xml'
+        log.info('Can not handle SVG. Image sizes are not set properly.')
     else:
         # Use PIL / Pillow to determ Image Information
         try:
@@ -273,9 +275,11 @@ def rotate_image(image_data, method=None, REQUEST=None):
     width, height = img.size
     return output_image_data.getvalue(), width, height, exif_data
 
+
 @deprecate('use getHighPixelDensityScales instead')
 def getRetinaScales():
     return getHighPixelDensityScales()
+
 
 def getHighPixelDensityScales():
     registry = queryUtility(IRegistry)

@@ -54,12 +54,17 @@ class ImageScale(BrowserView):
             self.data = getattr(self.context, self.fieldname)
 
         url = self.context.absolute_url()
-        extension = self.data.contentType.split('/')[-1].lower()
+        major, minor = self.data.contentType.split('/')
+        if minor == 'svg+xml':
+            # handle special case of svg:
+            extension = '.svg'
+        else:
+            extension = '.' + minor.lower()
         if 'uid' in info:
             name = info['uid']
         else:
             name = info['fieldname']
-        self.__name__ = u'{0}.{1}'.format(name, extension)
+        self.__name__ = u'{0}{1}'.format(name, extension)
         self.url = u'{0}/@@images/{1}'.format(url, self.__name__)
         self.srcset = info.get('srcset', [])
 
@@ -70,11 +75,14 @@ class ImageScale(BrowserView):
         _srcset_attr = []
         extension = self.data.contentType.split('/')[-1].lower()
         for scale in self.srcset:
-            _srcset_attr.append(u'{0}/@@images/{1}.{2} {3}x'.format(
-                self.context.absolute_url(),
-                scale['uid'],
-                extension,
-                scale['scale']))
+            _srcset_attr.append(
+                u'{0}/@@images/{1}.{2} {3}x'.format(
+                    self.context.absolute_url(),
+                    scale['uid'],
+                    extension,
+                    scale['scale'],
+                )
+            )
         srcset_attr = ', '.join(_srcset_attr)
         return srcset_attr
 
@@ -234,26 +242,18 @@ class DefaultImageScalingFactory(object):
                 parameters['quality'] = quality
 
         try:
-            result = self.create_scale(
-                orig_data,
-                direction=direction,
-                height=height,
-                width=width,
-                **parameters
-            )
+            if getattr(orig_value, 'contentType', '') == 'image/svg+xml':
+                result = orig_data.read(), 'SVG+XML', (width, height)
+            else:
+                result = self.create_scale(
+                    orig_data,
+                    direction=direction,
+                    height=height,
+                    width=width,
+                    **parameters
+                )
         except (ConflictError, KeyboardInterrupt):
             raise
-        except IOError:
-            if getattr(orig_value, 'contentType', '') == 'image/svg+xml':
-                result = orig_data.read(), 'SVG', (width, height)
-            else:
-                logger.exception(
-                    'Could not scale "{0!r}" of {1!r}'.format(
-                        orig_value,
-                        self.context.absolute_url,
-                    ),
-                )
-                return
         except Exception:
             logger.exception(
                 'Could not scale "{0!r}" of {1!r}'.format(
@@ -262,6 +262,7 @@ class DefaultImageScalingFactory(object):
                 ),
             )
             return
+
         if result is None:
             return
 
@@ -414,7 +415,7 @@ class ImageScaling(BrowserView):
             if width is not None or height is not None:
                 logger.warn(
                     'A scale name and width/heigth are given. Those are'
-                    'mutually exclusive: solved by ignoring width/heigth and '
+                    'mutually exclusive: solved by ignoring width/height and '
                     'taking name',
                 )
             available = self.available_sizes
