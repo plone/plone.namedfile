@@ -19,7 +19,7 @@ First, we wire up the handlers::
     ... </configure>
     ... """
 
-    >>> from StringIO import StringIO
+    >>> from six import StringIO
     >>> from zope.configuration import xmlconfig
     >>> xmlconfig.xmlconfig(StringIO(configuration))
 
@@ -46,7 +46,7 @@ Named file
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
     >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
-    >>> print prettyXML(element)
+    >>> print(prettyXML(element))
     <field name="dummy" type="plone.namedfile.field.NamedFile">
       <description>Test desc</description>
       <readonly>True</readonly>
@@ -69,10 +69,10 @@ Named file
     <class 'plone.namedfile.field.NamedFile'>
     >>> reciprocal.__name__
     'dummy'
-    >>> reciprocal.title
-    u'Test'
-    >>> reciprocal.description
-    u'Test desc'
+    >>> print(reciprocal.title)
+    Test
+    >>> print(reciprocal.description)
+    Test desc
     >>> reciprocal.required
     False
     >>> reciprocal.readonly
@@ -89,7 +89,7 @@ Named image
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
     >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
-    >>> print prettyXML(element)
+    >>> print(prettyXML(element))
     <field name="dummy" type="plone.namedfile.field.NamedImage">
       <description>Test desc</description>
       <readonly>True</readonly>
@@ -112,10 +112,10 @@ Named image
     <class 'plone.namedfile.field.NamedImage'>
     >>> reciprocal.__name__
     'dummy'
-    >>> reciprocal.title
-    u'Test'
-    >>> reciprocal.description
-    u'Test desc'
+    >>> print(reciprocal.title)
+    Test
+    >>> print(reciprocal.description)
+    Test desc
     >>> reciprocal.required
     False
     >>> reciprocal.readonly
@@ -132,7 +132,7 @@ Named blob file
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
     >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
-    >>> print prettyXML(element)
+    >>> print(prettyXML(element))
     <field name="dummy" type="plone.namedfile.field.NamedBlobFile">
       <description>Test desc</description>
       <readonly>True</readonly>
@@ -155,10 +155,10 @@ Named blob file
     <class 'plone.namedfile.field.NamedBlobFile'>
     >>> reciprocal.__name__
     'dummy'
-    >>> reciprocal.title
-    u'Test'
-    >>> reciprocal.description
-    u'Test desc'
+    >>> print(reciprocal.title)
+    Test
+    >>> print(reciprocal.description)
+    Test desc
     >>> reciprocal.required
     False
     >>> reciprocal.readonly
@@ -175,7 +175,7 @@ Named blob image
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
     >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
-    >>> print prettyXML(element)
+    >>> print(prettyXML(element))
     <field name="dummy" type="plone.namedfile.field.NamedBlobImage">
       <description>Test desc</description>
       <readonly>True</readonly>
@@ -198,10 +198,10 @@ Named blob image
     <class 'plone.namedfile.field.NamedBlobImage'>
     >>> reciprocal.__name__
     'dummy'
-    >>> reciprocal.title
-    u'Test'
-    >>> reciprocal.description
-    u'Test desc'
+    >>> print(reciprocal.title)
+    Test
+    >>> print(reciprocal.description)
+    Test desc
     >>> reciprocal.required
     False
     >>> reciprocal.readonly

@@ -43,28 +43,28 @@ The FileContainer class creates empty objects to start with::
 
     >>> container = FileContainer()
 
-    >>> container.simple.data
-    ''
+    >>> bytearray(container.simple.data)
+    bytearray(b'')
     >>> container.simple.contentType
     ''
     >>> container.simple.filename is None
     True
 
-    >>> container.image.data
-    ''
+    >>> len(container.image.data)
+    0
     >>> container.image.contentType
     ''
     >>> container.image.filename is None
     True
 
-    >>> container.blob.data
-    ''
+    >>> len(container.blob.data)
+    0
     >>> container.blob.contentType
     ''
     >>> container.blob.filename is None
     True
-    >>> container.blobimage.data
-    ''
+    >>> len(container.blobimage.data)
+    0
     >>> container.blobimage.contentType
     ''
     >>> container.blobimage.filename is None
@@ -74,41 +74,41 @@ Let's now set some actual data in these files. Notice how the constructor
 will attempt to guess the filename from the file extension::
 
     >>> container.simple = namedfile.NamedFile('dummy test data', filename=u"test.txt")
-    >>> container.simple.data
-    'dummy test data'
+    >>> bytearray(container.simple.data)
+    bytearray(b'dummy test data')
     >>> container.simple.contentType
     'text/plain'
-    >>> container.simple.filename
-    u'test.txt'
+    >>> print(container.simple.filename)
+    test.txt
 
     >>> container.blob = namedfile.NamedBlobFile('dummy test data', filename=u"test.txt")
-    >>> container.blob.data
-    'dummy test data'
+    >>> bytearray(container.blob.data)
+    bytearray(b'dummy test data')
     >>> container.blob.contentType
     'text/plain'
-    >>> container.blob.filename
-    u'test.txt'
+    >>> print(container.blob.filename)
+    test.txt
 
 Let's also try to read a GIF, courtesy of the zope.app.file tests::
 
     >>> zptlogo = (
-    ...     'GIF89a\x10\x00\x10\x00\xd5\x00\x00\xff\xff\xff\xff\xff\xfe\xfc\xfd\xfd'
-    ...     '\xfa\xfb\xfc\xf7\xf9\xfa\xf5\xf8\xf9\xf3\xf6\xf8\xf2\xf5\xf7\xf0\xf4\xf6'
-    ...     '\xeb\xf1\xf3\xe5\xed\xef\xde\xe8\xeb\xdc\xe6\xea\xd9\xe4\xe8\xd7\xe2\xe6'
-    ...     '\xd2\xdf\xe3\xd0\xdd\xe3\xcd\xdc\xe1\xcb\xda\xdf\xc9\xd9\xdf\xc8\xd8\xdd'
-    ...     '\xc6\xd7\xdc\xc4\xd6\xdc\xc3\xd4\xda\xc2\xd3\xd9\xc1\xd3\xd9\xc0\xd2\xd9'
-    ...     '\xbd\xd1\xd8\xbd\xd0\xd7\xbc\xcf\xd7\xbb\xcf\xd6\xbb\xce\xd5\xb9\xcd\xd4'
-    ...     '\xb6\xcc\xd4\xb6\xcb\xd3\xb5\xcb\xd2\xb4\xca\xd1\xb2\xc8\xd0\xb1\xc7\xd0'
-    ...     '\xb0\xc7\xcf\xaf\xc6\xce\xae\xc4\xce\xad\xc4\xcd\xab\xc3\xcc\xa9\xc2\xcb'
-    ...     '\xa8\xc1\xca\xa6\xc0\xc9\xa4\xbe\xc8\xa2\xbd\xc7\xa0\xbb\xc5\x9e\xba\xc4'
-    ...     '\x9b\xbf\xcc\x98\xb6\xc1\x8d\xae\xbaFgs\x00\x00\x00\x00\x00\x00\x00\x00'
-    ...     '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    ...     '\x00,\x00\x00\x00\x00\x10\x00\x10\x00\x00\x06z@\x80pH,\x12k\xc8$\xd2f\x04'
-    ...     '\xd4\x84\x01\x01\xe1\xf0d\x16\x9f\x80A\x01\x91\xc0ZmL\xb0\xcd\x00V\xd4'
-    ...     '\xc4a\x87z\xed\xb0-\x1a\xb3\xb8\x95\xbdf8\x1e\x11\xca,MoC$\x15\x18{'
-    ...     '\x006}m\x13\x16\x1a\x1f\x83\x85}6\x17\x1b $\x83\x00\x86\x19\x1d!%)\x8c'
-    ...     '\x866#\'+.\x8ca`\x1c`(,/1\x94B5\x19\x1e"&*-024\xacNq\xba\xbb\xb8h\xbeb'
-    ...     '\x00A\x00;'
+    ...     b'GIF89a\x10\x00\x10\x00\xd5\x00\x00\xff\xff\xff\xff\xff\xfe\xfc\xfd\xfd'
+    ...     b'\xfa\xfb\xfc\xf7\xf9\xfa\xf5\xf8\xf9\xf3\xf6\xf8\xf2\xf5\xf7\xf0\xf4\xf6'
+    ...     b'\xeb\xf1\xf3\xe5\xed\xef\xde\xe8\xeb\xdc\xe6\xea\xd9\xe4\xe8\xd7\xe2\xe6'
+    ...     b'\xd2\xdf\xe3\xd0\xdd\xe3\xcd\xdc\xe1\xcb\xda\xdf\xc9\xd9\xdf\xc8\xd8\xdd'
+    ...     b'\xc6\xd7\xdc\xc4\xd6\xdc\xc3\xd4\xda\xc2\xd3\xd9\xc1\xd3\xd9\xc0\xd2\xd9'
+    ...     b'\xbd\xd1\xd8\xbd\xd0\xd7\xbc\xcf\xd7\xbb\xcf\xd6\xbb\xce\xd5\xb9\xcd\xd4'
+    ...     b'\xb6\xcc\xd4\xb6\xcb\xd3\xb5\xcb\xd2\xb4\xca\xd1\xb2\xc8\xd0\xb1\xc7\xd0'
+    ...     b'\xb0\xc7\xcf\xaf\xc6\xce\xae\xc4\xce\xad\xc4\xcd\xab\xc3\xcc\xa9\xc2\xcb'
+    ...     b'\xa8\xc1\xca\xa6\xc0\xc9\xa4\xbe\xc8\xa2\xbd\xc7\xa0\xbb\xc5\x9e\xba\xc4'
+    ...     b'\x9b\xbf\xcc\x98\xb6\xc1\x8d\xae\xbaFgs\x00\x00\x00\x00\x00\x00\x00\x00'
+    ...     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    ...     b'\x00,\x00\x00\x00\x00\x10\x00\x10\x00\x00\x06z@\x80pH,\x12k\xc8$\xd2f\x04'
+    ...     b'\xd4\x84\x01\x01\xe1\xf0d\x16\x9f\x80A\x01\x91\xc0ZmL\xb0\xcd\x00V\xd4'
+    ...     b'\xc4a\x87z\xed\xb0-\x1a\xb3\xb8\x95\xbdf8\x1e\x11\xca,MoC$\x15\x18{'
+    ...     b'\x006}m\x13\x16\x1a\x1f\x83\x85}6\x17\x1b $\x83\x00\x86\x19\x1d!%)\x8c'
+    ...     b'\x866#\'+.\x8ca`\x1c`(,/1\x94B5\x19\x1e"&*-024\xacNq\xba\xbb\xb8h\xbeb'
+    ...     b'\x00A\x00;'
     ...     )
 
     >>> container.image = namedfile.NamedImage(zptlogo, filename=u"zpt.gif")
@@ -116,16 +116,16 @@ Let's also try to read a GIF, courtesy of the zope.app.file tests::
     True
     >>> container.image.contentType
     'image/gif'
-    >>> container.image.filename
-    u'zpt.gif'
+    >>> print(container.image.filename)
+    zpt.gif
 
     >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, filename=u"zpt.gif")
     >>> container.blobimage.data == zptlogo
     True
     >>> container.blobimage.contentType
     'image/gif'
-    >>> container.blobimage.filename
-    u'zpt.gif'
+    >>> print(container.blobimage.filename)
+    zpt.gif
 
 Note that is possible for force the mimetype::
 
@@ -134,20 +134,20 @@ Note that is possible for force the mimetype::
     True
     >>> container.image.contentType
     'image/foo'
-    >>> container.image.filename
-    u'zpt.gif'
+    >>> print(container.image.filename)
+    zpt.gif
 
     >>> container.blobimage = namedfile.NamedBlobImage(zptlogo, contentType='image/foo', filename=u"zpt.gif")
     >>> container.blobimage.data == zptlogo
     True
     >>> container.blobimage.contentType
     'image/foo'
-    >>> container.blobimage.filename
-    u'zpt.gif'
+    >>> print(container.blobimage.filename)
+    zpt.gif
 
 The filename must be set to a unicode string, not a bytestring::
 
-    >>> container.image.filename = 'foo'
+    >>> container.image.filename = b'foo'
     Traceback (most recent call last):
     ...
     WrongType: ('foo', <type 'unicode'>, 'filename')
@@ -169,8 +169,8 @@ We will test this with a dummy request, faking traversal::
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'simple')
-    >>> download()
-    'dummy test data'
+    >>> bytearray(download())
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')
@@ -181,8 +181,8 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blob')
     >>> data = download()
-    >>> hasattr(data, 'read') and data.read() or data
-    'dummy test data'
+    >>> bytearray(hasattr(data, 'read') and data.read() or data)
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')
@@ -230,8 +230,8 @@ We will test this with a dummy request, faking traversal::
 
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'simple')
-    >>> display_file()
-    'dummy test data'
+    >>> bytearray(display_file())
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')
@@ -241,8 +241,8 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
     >>> data = display_file()
-    >>> hasattr(data, 'read') and data.read() or data
-    'dummy test data'
+    >>> bytearray(hasattr(data, 'read') and data.read() or data)
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')
@@ -298,8 +298,8 @@ We will test this with a dummy request, faking traversal::
 
     >>> request = TestRequest()
     >>> download = Download(container, request)
-    >>> download()
-    'dummy test data'
+    >>> bytearray(download())
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')
