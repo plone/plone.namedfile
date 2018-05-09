@@ -42,10 +42,10 @@ class FileChunk(Persistent):
         return self._data[i:j]
 
     def __len__(self):
-        data = str(self)
+        data = bytes(self)
         return len(data)
 
-    def __str__(self):
+    def __bytes__(self):
         next = self.next
         if next is None:
             return self._data
@@ -56,7 +56,7 @@ class FileChunk(Persistent):
             result.append(self._data)
             next = self.next
 
-        return ''.join(result)
+        return b''.join(result)
 
 
 FILECHUNK_CLASSES = [FileChunk]
@@ -160,7 +160,7 @@ class NamedFile(Persistent):
 
     filename = FieldProperty(INamedFile['filename'])
 
-    def __init__(self, data='', contentType='', filename=None):
+    def __init__(self, data=b'', contentType='', filename=None):
         if (
             filename is not None and
             contentType in ('', 'application/octet-stream')
@@ -172,7 +172,7 @@ class NamedFile(Persistent):
 
     def _getData(self):
         if isinstance(self._data, tuple(FILECHUNK_CLASSES)):
-            return str(self._data)
+            return bytes(self._data)
         else:
             return self._data
 
@@ -271,7 +271,7 @@ class NamedImage(NamedFile):
     """
     filename = FieldProperty(INamedFile['filename'])
 
-    def __init__(self, data='', contentType='', filename=None):
+    def __init__(self, data=b'', contentType='', filename=None):
         self.contentType, self._width, self._height = getImageInfo(data)
         self.filename = filename
         self._setData(data)
@@ -311,7 +311,7 @@ class NamedBlobFile(Persistent):
 
     filename = FieldProperty(INamedFile['filename'])
 
-    def __init__(self, data='', contentType='', filename=None):
+    def __init__(self, data=b'', contentType='', filename=None):
         if (
             filename is not None and
             contentType in ('', 'application/octet-stream')

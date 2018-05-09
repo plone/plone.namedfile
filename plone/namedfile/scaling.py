@@ -113,7 +113,7 @@ class ImageScale(BrowserView):
                 continue
             if isinstance(v, int):
                 v = str(v)
-            elif isinstance(v, str):
+            elif isinstance(v, six.binary_type):
                 v = six.text_type(v, 'utf8')
             parts.append(u'{0}={1}'.format(k, quoteattr(v)))
         parts.append('/>')

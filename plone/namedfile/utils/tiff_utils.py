@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from logging import getLogger
-from six import StringIO
+from six import BytesIO
 
 import struct
 
@@ -42,7 +42,7 @@ def process_tiff(data):
             log.info('Endian or 42 Check failed')
 
         if endian:
-            tiff = StringIO(data)
+            tiff = BytesIO(data)
             tiff.read(4)  # Magic Header, could be skipped, already processed
             offset = struct.unpack_from(endian + 'I', tiff)  # first IFD offset
             b = tiff.read(offset)

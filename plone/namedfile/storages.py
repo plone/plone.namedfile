@@ -94,5 +94,5 @@ class PDataStorable(object):
         if not isinstance(pdata, Pdata):
             raise NotStorable('Could not store data (not of "Pdata").')
         fp = blob.open('w')
-        fp.write(str(pdata))
+        fp.write(bytes(pdata))
         fp.close()

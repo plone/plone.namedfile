@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from logging import getLogger
-from six import StringIO
+from six import BytesIO
 
 import struct
 
@@ -15,9 +15,9 @@ def process_jpeg(data):
     h = -1
     size = len(data)
 
-    if (size >= 2) and data.startswith('\377\330'):  # handle JPEGs
+    if (size >= 2) and data.startswith(b'\377\330'):  # handle JPEGs
         content_type = 'image/jpeg'
-        jpeg = StringIO(data)
+        jpeg = BytesIO(data)
         jpeg.read(2)
         b = jpeg.read(1)
         try:

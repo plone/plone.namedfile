@@ -33,15 +33,15 @@ class TestStorable(unittest.TestCase):
         pass
 
     def test_pdata_storable(self):
-        pdata = Pdata(getFile('image.gif').read())
+        pdata = Pdata(getFile('image.gif'))
         fi = NamedBlobImage(pdata, filename=u'image.gif')
         self.assertEqual(303, fi.getSize())
 
     def test_str_storable(self):
-        fi = NamedBlobImage(getFile('image.gif').read(), filename=u'image.gif')
+        fi = NamedBlobImage(getFile('image.gif'), filename=u'image.gif')
         self.assertEqual(303, fi.getSize())
 
     def test_filechunk_storable(self):
-        fi = NamedBlobImage(FileChunk(getFile('image.gif').read()),
+        fi = NamedBlobImage(FileChunk(getFile('image.gif')),
                             filename=u'image.gif')
         self.assertEqual(303, fi.getSize())

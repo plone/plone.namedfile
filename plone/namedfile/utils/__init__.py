@@ -5,7 +5,7 @@ from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
-from six import StringIO
+from six import BytesIO
 from six.moves import urllib
 from zope.component import queryUtility
 from zope.deprecation import deprecate
@@ -104,7 +104,7 @@ def _ensure_data(image):
         image.seek(0)
     else:
         data = image
-    return str(data)
+    return bytes(data)
 
 
 def getImageInfo(data):
@@ -114,36 +114,36 @@ def getImageInfo(data):
     width = -1
     content_type = ''
 
-    if (size >= 10) and data[:6] in ('GIF87a', 'GIF89a'):
+    if (size >= 10) and data[:6] in (b'GIF87a', b'GIF89a'):
         # handle GIFs
         content_type = 'image/gif'
         w, h = struct.unpack('<HH', data[6:10])
         width = int(w)
         height = int(h)
 
-    elif data[:8] == '\211PNG\r\n\032\n':
+    elif data[:8] == b'\211PNG\r\n\032\n':
         # handle PNG
         content_type, width, height = process_png(data)
 
-    elif data[:2] == '\377\330':
+    elif data[:2] == b'\377\330':
         # handle JPEGs
         content_type, width, height = process_jpeg(data)
 
-    elif (size >= 30) and data.startswith('BM'):
+    elif (size >= 30) and data.startswith(b'BM'):
         # handle BMPs
         kind = struct.unpack('<H', data[14:16])[0]
         if kind == 40:  # Windows 3.x bitmap
             content_type = 'image/x-ms-bmp'
             width, height = struct.unpack('<LL', data[18:26])
 
-    elif (size >= 4) and data[:4] in ['MM\x00*', 'II*\x00']:
+    elif (size >= 4) and data[:4] in [b'MM\x00*', b'II*\x00']:
         # handle TIFFs
         content_type, width, height = process_tiff(data)
 
     else:
         # Use PIL / Pillow to determ Image Information
         try:
-            img = PIL.Image.open(StringIO(data))
+            img = PIL.Image.open(BytesIO(data))
             width, height = img.size
             content_type = img.format
         except Exception:
@@ -193,7 +193,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
     """
     orientation = 1  # if not set assume correct orrinetation --> 1
     data = _ensure_data(image_data)
-    img = PIL.Image.open(StringIO(data))
+    img = PIL.Image.open(BytesIO(data))
 
     exif_data = None
     if 'exif' in img.info:
