@@ -182,7 +182,7 @@ class NamedFile(Persistent):
         if isinstance(data, six.text_type):
             data = data.encode('UTF-8')
 
-        if isinstance(data, str):
+        if isinstance(data, six.binary_type):
             self._data, self._size = FileChunk(data), len(data)
             return
 

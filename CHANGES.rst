@@ -15,7 +15,7 @@ New features:
 Bug fixes:
 
 - Prepare for Python 2 / 3 compatibility
-  [ale-rt, pbauer]
+  [ale-rt, pbauer, MatthewWilkes]
 
 - remove mention of "retina" (https://github.com/plone/Products.CMFPlone/issues/2123)
   [tkimnguyen]
