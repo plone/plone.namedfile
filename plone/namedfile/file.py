@@ -45,7 +45,7 @@ class FileChunk(Persistent):
         data = bytes(self)
         return len(data)
 
-    def __bytes__(self):
+    def _get_contents(self):
         next = self.next
         if next is None:
             return self._data
@@ -57,6 +57,11 @@ class FileChunk(Persistent):
             next = self.next
 
         return b''.join(result)
+
+    if six.PY2:
+        __str__ = _get_contents
+    else:
+        __bytes__ = _get_contents
 
 
 FILECHUNK_CLASSES = [FileChunk]
