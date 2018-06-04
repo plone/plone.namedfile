@@ -4,14 +4,6 @@ Changelog
 4.2.5 (unreleased)
 ------------------
 
-Breaking changes:
-
-- *add item here*
-
-New features:
-
-- *add item here*
-
 Bug fixes:
 
 - Display of SVG in Image Content-Type were broken because of wrong mimetype.
