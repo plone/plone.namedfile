@@ -57,13 +57,11 @@ class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
         """Encode message as base64 and set content disposition
         """
         value = self._query()
-        import pdb; pdb.set_trace
 
         if value is not None:
             filename = value.filename
 
             if filename:
-                import pdb; pdb.set_trace
 
                 message.add_header('Content-Disposition', 'attachment')
                 message.set_param(
