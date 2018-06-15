@@ -140,8 +140,8 @@ refuses to encode non-primary fields::
 
     >>> from zope.interface import alsoProvides
     >>> alsoProvides(ITestContent['_file'], IPrimaryField)
-
     >>> message = constructMessageFromSchema(t, ITestContent)
+    >>> import pdb; pdb.set_trace()
     >>> messageBody = renderMessage(message)
     >>> print(messageBody)
     MIME-Version: 1.0
@@ -175,7 +175,7 @@ Let's now use this message to construct a new object::
 If we have two primary fields, they will be encoded as a multipart message::
 
     >>> alsoProvides(ITestContent['_image'], IPrimaryField)
-
+    >>> import pdb; pdb.set_trace();
     >>> message = constructMessageFromSchema(t, ITestContent)
     >>> messageBody = renderMessage(message)
     >>> print(messageBody) # doctest: +ELLIPSIS
