@@ -3,6 +3,7 @@ from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.testing import layered
 
 import doctest
+import re
 import six
 import unittest
 
@@ -18,7 +19,7 @@ class Py23DocChecker(doctest.OutputChecker):
     def check_output(self, want, got, optionflags):
         if six.PY2:
             got = re.sub('zExceptions.NotFound', 'NotFound', got)
-            got = re.sub("u'(.*?)'", "'\\1'", want)
+            got = re.sub("u'(.*?)'", "'\\1'", got)
             got = re.sub(
                 r"WrongType: \('(.*?)', <type 'unicode'>, '(.*?)'\)",
                 r"zope.schema._bootstrapinterfaces.WrongType: (b'\1', <class 'str'>, '\2')",    # noqa E508

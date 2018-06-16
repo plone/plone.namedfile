@@ -166,7 +166,7 @@ Let's now use this message to construct a new object::
     >>> newContent._file.contentType
     'text/plain'
     >>> newContent._file.filename
-    u'test.txt'
+    'test.txt'
 
     >>> newContent._image is None
     True
@@ -212,11 +212,11 @@ Of course, we will also be able to load this data from a message::
     >>> newContent._file.contentType
     'text/plain'
     >>> newContent._file.filename
-    u'test.txt'
+    'test.txt'
 
     >>> newContent._image.data == zptlogo
     True
     >>> newContent._image.contentType
     'image/gif'
     >>> newContent._image.filename
-    u'zptl\xf8go.gif'
+    'zptl\xf8go.gif'
