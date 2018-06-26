@@ -150,7 +150,7 @@ def getImageInfo(data):
             # TODO: determ wich error really happens
             # Should happen if data is to short --> first_bytes
             # happens also if data is an svg or another special format.
-            log.warn(
+            log.warning(
                 'PIL can not recognize the image. '
                 'Image is probably broken or of a non-supported format.'
             )
