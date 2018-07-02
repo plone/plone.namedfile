@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from plone.testing import Layer
 from plone.testing import publisher
-from plone.testing import zope
 from plone.testing import zca
 from plone.testing import zodb
+from plone.testing import zope
 from zope.configuration import xmlconfig
 
 

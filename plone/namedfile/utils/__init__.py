@@ -17,6 +17,7 @@ import PIL.Image
 import six
 import struct
 
+
 log = getLogger(__name__)
 
 try:

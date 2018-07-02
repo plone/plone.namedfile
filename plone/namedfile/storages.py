@@ -10,6 +10,7 @@ from zope.publisher.browser import FileUpload
 
 import six
 
+
 MAXCHUNKSIZE = 1 << 16
 
 

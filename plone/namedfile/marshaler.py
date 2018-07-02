@@ -27,7 +27,7 @@ class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
         # never in a header
         if not primary:
             raise ValueError(
-                'File fields can only be marshaled as primary fields'
+                'File fields can only be marshaled as primary fields',
             )
         if value is None:
             return None
@@ -66,7 +66,7 @@ class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
                     'filename',
                     filename.encode('utf-8') if six.PY2 else filename,
                     header='Content-Disposition',
-                    charset='utf-8'
+                    charset='utf-8',
                 )
 
 

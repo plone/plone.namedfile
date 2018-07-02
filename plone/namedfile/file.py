@@ -22,6 +22,7 @@ import piexif
 import six
 import transaction
 
+
 log = getLogger(__name__)
 
 
