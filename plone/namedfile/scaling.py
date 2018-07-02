@@ -341,7 +341,7 @@ class ImageScaling(BrowserView):
     @deprecate('use property available_sizes instead')
     def getAvailableSizes(self, fieldname=None):
         if fieldname:
-            logger.warn(
+            logger.warning(
                 'fieldname was passed to deprecated getAvailableSizes, but '
                 'will be ignored.',
             )

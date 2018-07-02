@@ -15,16 +15,19 @@ TEST_FILES = [
     'utils.rst',
 ]
 
+
 class Py23DocChecker(doctest.OutputChecker):
     def check_output(self, want, got, optionflags):
         if six.PY2:
-            got = re.sub('zExceptions.NotFound', 'NotFound', got)
             got = re.sub("u'(.*?)'", "'\\1'", got)
+            got = re.sub('zExceptions.NotFound', 'NotFound', got)
             got = re.sub(
                 r"WrongType: \('(.*?)', <type 'unicode'>, '(.*?)'\)",
                 r"zope.schema._bootstrapinterfaces.WrongType: (b'\1', <class 'str'>, '\2')",    # noqa E508
                 got
             )
+        if six.PY3:
+            got = re.sub("b'(.*?)'", "'\\1'", got)
         return doctest.OutputChecker.check_output(self, want, got, optionflags)
 
 

@@ -9,7 +9,7 @@ from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
-from plone.testing.z2 import Browser
+from plone.testing.zope import Browser
 from six import BytesIO
 from zope.annotation import IAttributeAnnotatable
 from zope.interface import implementer

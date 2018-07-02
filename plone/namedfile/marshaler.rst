@@ -21,9 +21,9 @@ To test this, we must first load some configuration::
     ... </configure>
     ... """
 
-    >>> from six import StringIO
+    >>> import six
     >>> from zope.configuration import xmlconfig
-    >>> xmlconfig.xmlconfig(StringIO(configuration))
+    >>> xmlconfig.xmlconfig(six.StringIO(configuration))
 
 Next, we will create a schema with which to test the marshaler::
 
@@ -86,6 +86,7 @@ binary data into a UTF-8 string in a header::
 
     >>> marshaler.getContentType()
     'text/plain'
+
     >>> marshaler.ascii
     False
 
@@ -97,6 +98,7 @@ binary data into a UTF-8 string in a header::
 
     >>> marshaler.getContentType()
     'image/gif'
+
     >>> marshaler.ascii
     False
 
@@ -104,7 +106,7 @@ Let's try it with primary fields::
 
     >>> marshaler = getMultiAdapter((t, ITestContent['_file']), IFieldMarshaler)
     >>> bytearray(marshaler.marshal(primary=True))
-    bytearray(b'dummy test data')
+    bytearray('dummy test data')
 
     >>> marshaler.getContentType()
     'text/plain'
@@ -124,31 +126,29 @@ Let's try it with primary fields::
     >>> marshaler.ascii
     False
 
-This marshaler will also post-process a message to encode the filename in
-the Content-Disposition header, and base64-encode the payload.
+This marshaler will also post-process a message to encode the filename in the Content-Disposition header.
+To illustrate that, as well as parsing of the message,
+let's construct a full message and look at the output.
 
-To illustrate that, as well as parsing of the message, let's construct
-a full message and look at the output.
-
-First, we need to mark one of the fields as primary. In this case, we will
-use the file field. The image will will now be ignored, since our marshaler
-refuses to encode non-primary fields::
+First, we need to mark one of the fields as primary.
+In this case, we will use the file field.
+The image will will now be ignored, since our marshaler refuses to encode non-primary fields::
 
     >>> from plone.rfc822.interfaces import IPrimaryField
-    >>> from plone.rfc822 import constructMessageFromSchema
-    >>> from plone.rfc822 import renderMessage
-
     >>> from zope.interface import alsoProvides
     >>> alsoProvides(ITestContent['_file'], IPrimaryField)
+
+    >>> from plone.rfc822 import constructMessageFromSchema
     >>> message = constructMessageFromSchema(t, ITestContent)
-    >>> messageBody = renderMessage(message)
+    >>> messageBody = message.as_string()
     >>> print(messageBody)
     MIME-Version: 1.0
     Content-Type: text/plain
-    Content-Disposition: attachment; filename*="utf-8''test.txt"
     Content-Transfer-Encoding: base64
+    Content-Disposition: attachment; filename*=utf-8''test.txt
     <BLANKLINE>
     ZHVtbXkgdGVzdCBkYXRh
+    <BLANKLINE>
 
 You can see here that we have a transfer encoding and a content disposition.
 
@@ -162,7 +162,7 @@ Let's now use this message to construct a new object::
     >>> from plone.rfc822 import initializeObjectFromSchema
     >>> initializeObjectFromSchema(newContent, ITestContent, inputMessage)
     >>> bytearray(newContent._file.data)
-    bytearray(b'dummy test data')
+    bytearray('dummy test data')
     >>> newContent._file.contentType
     'text/plain'
     >>> newContent._file.filename
@@ -175,7 +175,7 @@ If we have two primary fields, they will be encoded as a multipart message::
 
     >>> alsoProvides(ITestContent['_image'], IPrimaryField)
     >>> message = constructMessageFromSchema(t, ITestContent)
-    >>> messageBody = renderMessage(message)
+    >>> messageBody = message.as_string()
     >>> print(messageBody) # doctest: +ELLIPSIS
     MIME-Version: 1.0
     Content-Type: multipart/mixed; boundary="===============...=="
@@ -183,15 +183,16 @@ If we have two primary fields, they will be encoded as a multipart message::
     --===============...==
     MIME-Version: 1.0
     Content-Type: text/plain
-    Content-Disposition: attachment; filename*="utf-8''test.txt"
     Content-Transfer-Encoding: base64
+    Content-Disposition: attachment; filename*=utf-8''test.txt
     <BLANKLINE>
     ZHVtbXkgdGVzdCBkYXRh
+    <BLANKLINE>
     --===============...==
     MIME-Version: 1.0
     Content-Type: image/gif
-    Content-Disposition: attachment; filename*="utf-8''zptl%C3%B8go.gif"
     Content-Transfer-Encoding: base64
+    Content-Disposition: attachment; filename*=utf-8''zptl%C3%B8go.gif
     <BLANKLINE>
     R0lGODlhEAAQANUAAP///////vz9/fr7/Pf5+vX4+fP2+PL19/D09uvx8+Xt797o69zm6tnk6Nfi
     5tLf49Dd483c4cva38nZ38jY3cbX3MTW3MPU2sLT2cHT2cDS2b3R2L3Q17zP17vP1rvO1bnN1LbM
@@ -199,7 +200,10 @@ If we have two primary fields, they will be encoded as a multipart message::
     wY2uukZncwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwAAAAAEAAQAAAGekCAcEgsEmvIJNJm
     BNSEAQHh8GQWn4BBAZHAWm1MsM0AVtTEYYd67bAtGrO4lb1mOB4RyixNb0MkFRh7ADZ9bRMWGh+D
     hX02FxsgJIMAhhkdISUpjIY2IycrLoxhYBxgKCwvMZRCNRkeIiYqLTAyNKxOcbq7uGi+YgBBADs=
-    --===============...==--...
+    <BLANKLINE>
+    --===============...==--
+    <BLANKLINE>
+
 
 Of course, we will also be able to load this data from a message::
 
@@ -208,7 +212,7 @@ Of course, we will also be able to load this data from a message::
     >>> initializeObjectFromSchema(newContent, ITestContent, inputMessage)
 
     >>> bytearray(newContent._file.data)
-    bytearray(b'dummy test data')
+    bytearray('dummy test data')
     >>> newContent._file.contentType
     'text/plain'
     >>> newContent._file.filename

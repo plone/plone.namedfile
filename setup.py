@@ -23,8 +23,10 @@ setup(
     classifiers=[
         "Framework :: Plone",
         "Framework :: Plone :: 5.1",
+        # "Framework :: Plone :: 5.2",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: BSD License",
     ],
@@ -38,7 +40,8 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'plone.rfc822>=1.0b2',
+        'piexif',
+        'plone.rfc822>=2.0a1',
         'plone.scale[storage] >=1.4.999',
         'plone.schemaeditor',
         'plone.supermodel',
@@ -49,7 +52,6 @@ setup(
         'zope.copy',
         'zope.security',
         'zope.traversing',
-        'piexif',
     ],
     extras_require={
         'test': [
