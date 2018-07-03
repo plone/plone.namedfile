@@ -141,14 +141,13 @@ The image will will now be ignored, since our marshaler refuses to encode non-pr
     >>> from plone.rfc822 import constructMessageFromSchema
     >>> message = constructMessageFromSchema(t, ITestContent)
     >>> messageBody = message.as_string()
-    >>> print(messageBody)
+    >>> print(messageBody) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     MIME-Version: 1.0
     Content-Type: text/plain
     Content-Transfer-Encoding: base64
     Content-Disposition: attachment; filename*=utf-8''test.txt
     <BLANKLINE>
-    ZHVtbXkgdGVzdCBkYXRh
-    <BLANKLINE>
+    ZHVtbXkgdGVzdCBkYXRh...
 
 You can see here that we have a transfer encoding and a content disposition.
 
@@ -176,7 +175,7 @@ If we have two primary fields, they will be encoded as a multipart message::
     >>> alsoProvides(ITestContent['_image'], IPrimaryField)
     >>> message = constructMessageFromSchema(t, ITestContent)
     >>> messageBody = message.as_string()
-    >>> print(messageBody) # doctest: +ELLIPSIS
+    >>> print(messageBody) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     MIME-Version: 1.0
     Content-Type: multipart/mixed; boundary="===============...=="
     <BLANKLINE>
@@ -184,23 +183,21 @@ If we have two primary fields, they will be encoded as a multipart message::
     MIME-Version: 1.0
     Content-Type: text/plain
     Content-Transfer-Encoding: base64
-    Content-Disposition: attachment; filename*=utf-8''test.txt
+    Content-Disposition: attachment; filename*=...utf-8''test.txt...
     <BLANKLINE>
-    ZHVtbXkgdGVzdCBkYXRh
-    <BLANKLINE>
+    ZHVtbXkgdGVzdCBkYXRh...
     --===============...==
     MIME-Version: 1.0
     Content-Type: image/gif
     Content-Transfer-Encoding: base64
-    Content-Disposition: attachment; filename*=utf-8''zptl%C3%B8go.gif
+    Content-Disposition: attachment; filename*=...utf-8''zptl%C3%B8go.gif...
     <BLANKLINE>
     R0lGODlhEAAQANUAAP///////vz9/fr7/Pf5+vX4+fP2+PL19/D09uvx8+Xt797o69zm6tnk6Nfi
     5tLf49Dd483c4cva38nZ38jY3cbX3MTW3MPU2sLT2cHT2cDS2b3R2L3Q17zP17vP1rvO1bnN1LbM
     1LbL07XL0rTK0bLI0LHH0LDHz6/Gzq7Ezq3EzavDzKnCy6jByqbAyaS+yKK9x6C7xZ66xJu/zJi2
     wY2uukZncwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwAAAAAEAAQAAAGekCAcEgsEmvIJNJm
     BNSEAQHh8GQWn4BBAZHAWm1MsM0AVtTEYYd67bAtGrO4lb1mOB4RyixNb0MkFRh7ADZ9bRMWGh+D
-    hX02FxsgJIMAhhkdISUpjIY2IycrLoxhYBxgKCwvMZRCNRkeIiYqLTAyNKxOcbq7uGi+YgBBADs=
-    <BLANKLINE>
+    hX02FxsgJIMAhhkdISUpjIY2IycrLoxhYBxgKCwvMZRCNRkeIiYqLTAyNKxOcbq7uGi+YgBBADs=...
     --===============...==--
     <BLANKLINE>
 
