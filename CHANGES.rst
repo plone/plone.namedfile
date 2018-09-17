@@ -12,6 +12,9 @@ New features:
 
 - Target Zope 4 (test changes only).
 
+- Python 3 compatibility
+  [pbauer, matthewwilkes, fgrcon, jensens]
+
 Bug fixes:
 
 - Prepare for Python 2 / 3 compatibility
