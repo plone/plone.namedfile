@@ -150,7 +150,7 @@ The filename must be set to a unicode string, not a bytestring::
     >>> container.image.filename = b'foo'
     Traceback (most recent call last):
     ...
-    zope.schema._bootstrapinterfaces.WrongType: ('foo', <class 'str'>, 'filename')
+    zope.schema._bootstrapinterfaces.WrongType: ...
 
 
 Download view
