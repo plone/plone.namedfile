@@ -17,7 +17,6 @@ class NamedFileTestLayer(Layer):
         import plone.namedfile
         xmlconfig.file('testing.zcml', plone.namedfile)
 
-    def testSetUp(self):
         self['zodbDB_before_namedfile'] = self.get('zodbDB')
         self['zodbDB'] = zodb.stackDemoStorage(
             self.get('zodbDB'),
@@ -25,14 +24,13 @@ class NamedFileTestLayer(Layer):
         )
 
     def tearDown(self):
-        # Zap the stacked zca context
-        zca.popGlobalRegistry()
-
-    def testTearDown(self):
         # Zap the stacked ZODB
         self['zodbDB'].close()
         self['zodbDB'] = self['zodbDB_before_namedfile']
         del self['zodbDB_before_namedfile']
+
+        # Zap the stacked zca context
+        zca.popGlobalRegistry()
 
 
 PLONE_NAMEDFILE_FIXTURE = NamedFileTestLayer()
