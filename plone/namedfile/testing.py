@@ -2,7 +2,7 @@
 from plone.testing import Layer
 from plone.testing import publisher
 from plone.testing import zca
-from plone.testing import zodb
+
 from plone.testing import zope
 from zope.configuration import xmlconfig
 
@@ -17,18 +17,7 @@ class NamedFileTestLayer(Layer):
         import plone.namedfile
         xmlconfig.file('testing.zcml', plone.namedfile)
 
-        self['zodbDB_before_namedfile'] = self.get('zodbDB')
-        self['zodbDB'] = zodb.stackDemoStorage(
-            self.get('zodbDB'),
-            name='NamedFileFixture'
-        )
-
     def tearDown(self):
-        # Zap the stacked ZODB
-        self['zodbDB'].close()
-        self['zodbDB'] = self['zodbDB_before_namedfile']
-        del self['zodbDB_before_namedfile']
-
         # Zap the stacked zca context
         zca.popGlobalRegistry()
 
