@@ -16,6 +16,7 @@ from zope.annotation import IAttributeAnnotatable
 from zope.interface import implementer
 
 import PIL
+import six
 import time
 import transaction
 import unittest
@@ -53,6 +54,8 @@ class ImagePublisherTests(unittest.TestCase):
     layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 
     def setUp(self):
+        if six.PY2:
+            raise unittest.SkipTest('Disabled in py2 for now.')
         self.layer['zodbDB_before_namedfile'] = self.layer.get('zodbDB')
         self.layer['zodbDB'] = zodb.stackDemoStorage(
             self.layer.get('zodbDB'),
