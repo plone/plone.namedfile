@@ -8,6 +8,7 @@ from plone.namedfile.interfaces import NotStorable
 from zope.interface import implementer
 from zope.publisher.browser import FileUpload
 
+import io
 import six
 
 
@@ -68,6 +69,19 @@ class FileDescriptorStorable(object):
             raise NotStorable('Could not store data (not of "file").')
 
         filename = getattr(data, 'name', None)
+        if filename is not None:
+            blob.consumeFile(filename)
+            return
+
+
+class BufferedReaderStorable(object):
+
+    def store(self, data, blob):
+        raw = data.raw
+        if not isinstance(raw, io.FileIO):
+            raise NotStorable('Could not store data (not of type "io.FileIO")')
+
+        filename = getattr(data.raw, 'name', None)
         if filename is not None:
             blob.consumeFile(filename)
             return

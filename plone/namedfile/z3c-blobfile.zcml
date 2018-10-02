@@ -39,10 +39,17 @@
       />
 
   <utility
+      name="_io.BufferedReader"
+      provides=".interfaces.IStorage"
+      factory=".storages.BufferedReaderStorable"
+      />
+
+  <utility
       name="zope.publisher.browser.FileUpload"
       provides=".interfaces.IStorage"
       factory=".storages.FileUploadStorable"
       />
+
   <utility
       name="OFS.Image.Pdata"
       provides=".interfaces.IStorage"
