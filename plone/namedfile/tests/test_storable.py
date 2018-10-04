@@ -31,9 +31,6 @@ class TestStorable(unittest.TestCase):
 
     layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 
-    def setUp(self):
-        pass
-
     def test_pdata_storable(self):
         pdata = Pdata(getFile('image.gif'))
         fi = NamedBlobImage(pdata, filename=u'image.gif')

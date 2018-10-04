@@ -9,7 +9,6 @@ from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
-from plone.testing import zodb
 from plone.testing.zope import Browser
 from six import BytesIO
 from zope.annotation import IAttributeAnnotatable
@@ -17,15 +16,8 @@ from zope.interface import implementer
 
 import PIL
 import six
-import time
 import transaction
 import unittest
-
-
-def wait_to_ensure_modified():
-    # modified is measured in milliseconds
-    # wait 5ms to ensure modified will have changed
-    time.sleep(0.005)
 
 
 class IHasImage(IImageScaleTraversable):
@@ -56,11 +48,6 @@ class ImagePublisherTests(unittest.TestCase):
     def setUp(self):
         if six.PY2:
             raise unittest.SkipTest('Disabled in py2 for now.')
-        self.layer['zodbDB_before_namedfile'] = self.layer.get('zodbDB')
-        self.layer['zodbDB'] = zodb.stackDemoStorage(
-            self.layer.get('zodbDB'),
-            name='NamedFileFixture'
-        )
         data = getFile('image.png')
         item = DummyContent()
         item.image = NamedImage(data, 'image/png', u'image.png')
@@ -75,11 +62,6 @@ class ImagePublisherTests(unittest.TestCase):
 
     def tearDown(self):
         ImageScaling._sizes = self._orig_sizes
-
-        # Zap the stacked ZODB
-        # self['zodbDB'].close()
-        self.layer['zodbDB'] = self.layer['zodbDB_before_namedfile']
-        del self.layer['zodbDB_before_namedfile']
 
     def testPublishScaleViaUID(self):
         scale = self.view.scale('image', width=64, height=64)
