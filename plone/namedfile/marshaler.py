@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from email.encoders import encode_base64
 from plone.namedfile import NamedBlobFile
 from plone.namedfile import NamedBlobImage
 from plone.namedfile import NamedFile
@@ -11,6 +10,8 @@ from plone.namedfile.interfaces import INamedImageField
 from plone.rfc822.defaultfields import BaseFieldMarshaler
 from zope.component import adapter
 from zope.interface import Interface
+
+import six
 
 
 class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
@@ -26,18 +27,20 @@ class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
         # never in a header
         if not primary:
             raise ValueError(
-                'File fields can only be marshaled as primary fields')
+                'File fields can only be marshaled as primary fields',
+            )
         if value is None:
             return None
         return value.data
 
     def decode(
-            self,
-            value,
-            message=None,
-            charset='utf-8',
-            contentType=None,
-            primary=False):
+        self,
+        value,
+        message=None,
+        charset='utf-8',
+        contentType=None,
+        primary=False,
+    ):
         filename = None
         if primary and message is not None:
             filename = message.get_filename(None)
@@ -47,10 +50,9 @@ class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
         value = self._query()
         if value is None:
             return None
+        if not isinstance(value.contentType, six.text_type):
+            return value.contentType.decode('utf8')
         return value.contentType
-
-    def getCharset(self, default='utf-8'):
-        return None
 
     def postProcessMessage(self, message):
         """Encode message as base64 and set content disposition
@@ -62,12 +64,10 @@ class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
                 message.add_header('Content-Disposition', 'attachment')
                 message.set_param(
                     'filename',
-                    filename.encode('utf-8'),
+                    filename.encode('utf-8') if six.PY2 else filename,
                     header='Content-Disposition',
-                    charset='utf-8'
+                    charset='utf-8',
                 )
-
-        encode_base64(message)
 
 
 @adapter(Interface, INamedFileField)

@@ -10,12 +10,15 @@ Breaking changes:
 
 New features:
 
-- Target Zope 4 (test chnages only).
+- Target Zope 4 (test changes only).
+
+- Python 3 compatibility
+  [pbauer, matthewwilkes, fgrcon, jensens]
 
 Bug fixes:
 
 - Prepare for Python 2 / 3 compatibility
-  [ale-rt, pbauer]
+  [ale-rt, pbauer, MatthewWilkes, jensens]
 
 - remove mention of "retina" (https://github.com/plone/Products.CMFPlone/issues/2123)
   [tkimnguyen]

@@ -69,12 +69,12 @@ class TestImage(unittest.TestCase):
     def testEmpty(self):
         file = self._makeImage()
         self.assertEqual(file.contentType, '')
-        self.assertEqual(file.data, '')
+        self.assertEqual(file.data, b'')
 
     def testConstructor(self):
-        file = self._makeImage('Data')
+        file = self._makeImage(b'Data')
         self.assertEqual(file.contentType, '')
-        self.assertEqual(file.data, 'Data')
+        self.assertEqual(file.data, b'Data')
 
     def testMutators(self):
         image = self._makeImage()
@@ -97,9 +97,9 @@ class TestImage(unittest.TestCase):
     def testDataMutatorWithLargeHeader(self):
         from plone.namedfile.file import IMAGE_INFO_BYTES
         bogus_header_length = struct.pack('>H', IMAGE_INFO_BYTES * 2)
-        data = ('\xff\xd8\xff\xe0' + bogus_header_length +
-                '\x00' * IMAGE_INFO_BYTES * 2 +
-                '\xff\xc0\x00\x11\x08\x02\xa8\x04\x00')
+        data = (b'\xff\xd8\xff\xe0' + bogus_header_length +
+                b'\x00' * IMAGE_INFO_BYTES * 2 +
+                b'\xff\xc0\x00\x11\x08\x02\xa8\x04\x00')
         image = self._makeImage()
         image._setData(data)
         self.assertEqual(image.getImageSize(), (1024, 680))

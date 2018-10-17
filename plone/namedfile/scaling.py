@@ -31,6 +31,7 @@ from zope.traversing.interfaces import TraversalError
 import logging
 import six
 
+
 logger = logging.getLogger(__name__)
 _marker = object()
 
@@ -113,7 +114,7 @@ class ImageScale(BrowserView):
                 continue
             if isinstance(v, int):
                 v = str(v)
-            elif isinstance(v, str):
+            elif isinstance(v, six.binary_type):
                 v = six.text_type(v, 'utf8')
             parts.append(u'{0}={1}'.format(k, quoteattr(v)))
         parts.append('/>')
@@ -341,7 +342,7 @@ class ImageScaling(BrowserView):
     @deprecate('use property available_sizes instead')
     def getAvailableSizes(self, fieldname=None):
         if fieldname:
-            logger.warn(
+            logger.warning(
                 'fieldname was passed to deprecated getAvailableSizes, but '
                 'will be ignored.',
             )

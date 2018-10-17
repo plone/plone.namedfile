@@ -9,21 +9,15 @@ from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
-from plone.testing.z2 import Browser
-from six import StringIO
+from plone.testing.zope import Browser
+from six import BytesIO
 from zope.annotation import IAttributeAnnotatable
 from zope.interface import implementer
 
 import PIL
-import time
+import six
 import transaction
 import unittest
-
-
-def wait_to_ensure_modified():
-    # modified is measured in milliseconds
-    # wait 5ms to ensure modified will have changed
-    time.sleep(0.005)
 
 
 class IHasImage(IImageScaleTraversable):
@@ -31,7 +25,7 @@ class IHasImage(IImageScaleTraversable):
 
 
 def assertImage(testcase, data, format_, size):
-    image = PIL.Image.open(StringIO(data))
+    image = PIL.Image.open(BytesIO(data))
     testcase.assertEqual(image.format, format_)
     testcase.assertEqual(image.size, size)
 
@@ -52,7 +46,9 @@ class ImagePublisherTests(unittest.TestCase):
     layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 
     def setUp(self):
-        data = getFile('image.png').read()
+        if six.PY2:
+            raise unittest.SkipTest('Disabled in py2 for now.')
+        data = getFile('image.png')
         item = DummyContent()
         item.image = NamedImage(data, 'image/png', u'image.png')
         self.layer['app']._setOb('item', item)
@@ -115,7 +111,7 @@ class ImagePublisherTests(unittest.TestCase):
             self.browser.headers['Content-Length'],
             str(GET_length)
         )
-        self.assertEqual(self.browser.contents, '')
+        self.assertEqual(self.browser.contents, b'')
 
     def testPublishThumbViaUID(self):
         ImageScaling._sizes = {'thumb': (128, 128)}
@@ -146,7 +142,7 @@ class ImagePublisherTests(unittest.TestCase):
             self.layer['app'].absolute_url() + '/item/@@images/image'
         )
         self.assertEqual('image/png', self.browser.headers['content-type'])
-        self.assertEqual(self.browser.contents, getFile('image.png').read())
+        self.assertEqual(self.browser.contents, getFile('image.png'))
 
         # and last a scaled version
         self.browser.open(

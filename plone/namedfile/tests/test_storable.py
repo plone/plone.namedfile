@@ -22,6 +22,8 @@ from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
 
+import os
+import tempfile
 import unittest
 
 
@@ -29,19 +31,30 @@ class TestStorable(unittest.TestCase):
 
     layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 
-    def setUp(self):
-        pass
-
     def test_pdata_storable(self):
-        pdata = Pdata(getFile('image.gif').read())
+        pdata = Pdata(getFile('image.gif'))
         fi = NamedBlobImage(pdata, filename=u'image.gif')
         self.assertEqual(303, fi.getSize())
 
     def test_str_storable(self):
-        fi = NamedBlobImage(getFile('image.gif').read(), filename=u'image.gif')
+        fi = NamedBlobImage(getFile('image.gif'), filename=u'image.gif')
         self.assertEqual(303, fi.getSize())
 
     def test_filechunk_storable(self):
-        fi = NamedBlobImage(FileChunk(getFile('image.gif').read()),
+        fi = NamedBlobImage(FileChunk(getFile('image.gif')),
                             filename=u'image.gif')
+        self.assertEqual(303, fi.getSize())
+
+    def test_opened_file_storable(self):
+        data = getFile('image.gif')
+        f = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            path = f.name
+            f.write(data)
+            f.close()
+            with open(path, 'rb') as f:
+                fi = NamedBlobImage(f, filename=u'image.gif')
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
         self.assertEqual(303, fi.getSize())

@@ -8,31 +8,43 @@ from plone.namedfile.interfaces import NotStorable
 from zope.interface import implementer
 from zope.publisher.browser import FileUpload
 
+import io
 import six
+
 
 MAXCHUNKSIZE = 1 << 16
 
 
 @implementer(IStorage)
-class StringStorable(object):
+class BytesStorable(object):
 
     def store(self, data, blob):
-        if not isinstance(data, str):
-            raise NotStorable('Could not store data (not of "str" type).')
+        if not isinstance(data, six.binary_type):
+            raise NotStorable('Could not store data (not of bytes type).')
 
         with blob.open('w') as fp:
             fp.write(data)
 
 
 @implementer(IStorage)
-class UnicodeStorable(StringStorable):
+class TextStorable(BytesStorable):
 
     def store(self, data, blob):
         if not isinstance(data, six.text_type):
             raise NotStorable('Could not store data (not of "unicode" type).')
 
         data = data.encode('UTF-8')
-        StringStorable.store(self, data, blob)
+        BytesStorable.store(self, data, blob)
+
+
+@implementer(IStorage)
+class UnicodeStorable(TextStorable):
+    pass
+
+
+@implementer(IStorage)
+class StringStorable(BytesStorable):
+    pass
 
 
 @implementer(IStorage)
@@ -62,6 +74,19 @@ class FileDescriptorStorable(object):
             return
 
 
+class BufferedReaderStorable(object):
+
+    def store(self, data, blob):
+        raw = data.raw
+        if not isinstance(raw, io.FileIO):
+            raise NotStorable('Could not store data (not of type "io.FileIO")')
+
+        filename = getattr(data.raw, 'name', None)
+        if filename is not None:
+            blob.consumeFile(filename)
+            return
+
+
 @implementer(IStorage)
 class FileUploadStorable(object):
 
@@ -84,5 +109,5 @@ class PDataStorable(object):
         if not isinstance(pdata, Pdata):
             raise NotStorable('Could not store data (not of "Pdata").')
         fp = blob.open('w')
-        fp.write(str(pdata))
+        fp.write(bytes(pdata))
         fp.close()

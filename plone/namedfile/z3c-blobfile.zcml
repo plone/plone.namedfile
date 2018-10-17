@@ -1,5 +1,19 @@
 <configure xmlns="http://namespaces.zope.org/zope">
 
+  <!-- text for py3 -->
+  <utility
+      name="builtins.str"
+      provides=".interfaces.IStorage"
+      factory=".storages.TextStorable"
+      />
+
+  <!-- bytes for py3 -->
+  <utility
+      name="builtins.bytes"
+      provides=".interfaces.IStorage"
+      factory=".storages.BytesStorable"
+      />
+
   <utility
       name="__builtin__.str"
       provides=".interfaces.IStorage"
@@ -25,10 +39,17 @@
       />
 
   <utility
+      name="_io.BufferedReader"
+      provides=".interfaces.IStorage"
+      factory=".storages.BufferedReaderStorable"
+      />
+
+  <utility
       name="zope.publisher.browser.FileUpload"
       provides=".interfaces.IStorage"
       factory=".storages.FileUploadStorable"
       />
+
   <utility
       name="OFS.Image.Pdata"
       provides=".interfaces.IStorage"
