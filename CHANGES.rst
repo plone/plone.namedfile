@@ -1,12 +1,8 @@
 Changelog
 =========
 
-4.3 (unreleased)
-------------------
-
-Breaking changes:
-
-- *add item here*
+4.3 (2018-11-02)
+----------------
 
 New features:
 
