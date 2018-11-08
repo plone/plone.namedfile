@@ -268,14 +268,17 @@ def rotate_image(image_data, method=None, REQUEST=None):
         del(exif_data['Exif'][piexif.ExifIFD.SceneType])
         # This Element piexif.ExifIFD.SceneType cause error on dump
         exif_bytes = piexif.dump(exif_data)
-    output_image_data = StringIO()
+
+    output_image_data = BytesIO()
     img.save(output_image_data, format=fmt, exif=exif_bytes)
     width, height = img.size
     return output_image_data.getvalue(), width, height, exif_data
 
+
 @deprecate('use getHighPixelDensityScales instead')
 def getRetinaScales():
     return getHighPixelDensityScales()
+
 
 def getHighPixelDensityScales():
     registry = queryUtility(IRegistry)
