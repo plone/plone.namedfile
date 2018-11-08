@@ -393,8 +393,15 @@ class NamedBlobImage(NamedBlobFile):
                       'Exif Data: %s', exif_data)
             orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
             if 1 < orientation <= 8:
-                self.data, self._width, self._height, self.exif = rotate_image(
-                    self.data)
+                try:
+                    self.data, self._width, self._height, self.exif = \
+                        rotate_image(self.data)
+                except KeyboardInterrupt:
+                    raise
+                except Exception:
+                    log.warning(
+                        'Error rotating image %s based on exif data.',
+                        filename, exc_info=1)
             else:
                 self.exif = exif_data
 
