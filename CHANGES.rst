@@ -30,6 +30,8 @@ Bug fixes:
 - Fix test to use new zope testbrowser internals.
   [davisagli]
 
+- Fix a forgotten change to BytesIO.
+  [pbauer]
 
 4.2.3 (2017-09-08)
 ------------------
