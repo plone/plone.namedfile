@@ -8,6 +8,14 @@ Changelog
 
 .. towncrier release notes start
 
+4.2.6 (2018-11-13)
+------------------
+
+Bug fixes:
+
+
+- Do not fail image upload when Exif data is bad. [maurits] (#68)
+
 
 4.2.5 (2018-06-04)
 ------------------
