@@ -8,6 +8,14 @@ Changelog
 
 .. towncrier release notes start
 
+5.0.1 (2018-11-08)
+------------------
+
+Bug fixes:
+
+- Fix a forgotten change to BytesIO.
+  [pbauer]
+
 
 5.0 (2018-11-02)
 ----------------
@@ -30,8 +38,6 @@ Bug fixes:
 - Fix test to use new zope testbrowser internals.
   [davisagli]
 
-- Fix a forgotten change to BytesIO.
-  [pbauer]
 
 4.2.3 (2017-09-08)
 ------------------
