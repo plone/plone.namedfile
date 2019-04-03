@@ -28,7 +28,7 @@ log = getLogger(__name__)
 
 MAXCHUNKSIZE = 1 << 16
 IMAGE_INFO_BYTES = 1024
-MAX_INFO_BYTES = 1 << 16
+MAX_INFO_BYTES = 1 << 18
 
 
 class FileChunk(Persistent):
