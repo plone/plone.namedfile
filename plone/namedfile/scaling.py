@@ -83,15 +83,14 @@ class ImageScale(BrowserView):
             css_class=None, title=_marker, **kwargs):
         """Create a tag including scale
         """
+
         if height is _marker:
             height = getattr(self, 'height', self.data._height)
         if width is _marker:
             width = getattr(self, 'width', self.data._width)
 
         if alt is _marker:
-            alt = self.context.Title()
-        if title is _marker:
-            title = self.context.Title()
+            alt = getattr(self.context, 'alt_text', '')
 
         values = [
             ('src', self.url),
@@ -110,7 +109,7 @@ class ImageScale(BrowserView):
 
         parts = ['<img']
         for k, v in values:
-            if v is None:
+            if v in [None, _marker]:
                 continue
             if isinstance(v, int):
                 v = str(v)
@@ -334,7 +333,8 @@ class ImageScaling(BrowserView):
             return ImmutableTraverser(self.scale(name, furtherPath[-1]))
 
         if image is not None:
-            return image.tag()
+            alt_text = getattr(self.context, 'alt_text', '')
+            return image.tag(alt=alt_text, title=None)
         raise TraversalError(self, name)
 
     _sizes = {}

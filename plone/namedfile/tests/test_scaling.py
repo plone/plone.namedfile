@@ -123,7 +123,7 @@ class ImageScalingTests(unittest.TestCase):
         base = self.item.absolute_url()
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
+            r'alt="" height="(\d+)" width="(\d+)" />'.format(
                 base,
             )
         groups = re.match(expected, tag).groups()
@@ -145,7 +145,7 @@ class ImageScalingTests(unittest.TestCase):
             r'<img src="{0}'.format(base) +
             r'/@@images/([-0-9a-f]{36})'
             r'.(jpeg|gif|png)" '
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
+            r'alt="" height="(\d+)" width="(\d+)" '
             r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
             r'.(jpeg|gif|png)'
             r' 2x" />')
@@ -167,7 +167,7 @@ class ImageScalingTests(unittest.TestCase):
             r'<img src="{0}'.format(base) +
             r'/@@images/([-0-9a-f]{36})'
             r'.(jpeg|gif|png)" '
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
+            r'alt="" height="(\d+)" width="(\d+)" '
             r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
             r'.(jpeg|gif|png)'
             r' 2x" />')
@@ -189,7 +189,7 @@ class ImageScalingTests(unittest.TestCase):
             r'<img src="{0}'.format(base) +
             r'/@@images/([-0-9a-f]{36})'
             r'.(jpeg|gif|png)" '
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
+            r'alt="" height="(\d+)" width="(\d+)" '
             r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
             r'.(jpeg|gif|png)'
             r' 2x" />')
@@ -211,7 +211,7 @@ class ImageScalingTests(unittest.TestCase):
             r'<img src="{0}'.format(base) +
             r'/@@images/([-0-9a-f]{36})'
             r'.(jpeg|gif|png)" '
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
+            r'alt="" height="(\d+)" width="(\d+)" '
             r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
             r'.(jpeg|gif|png)'
             r' 2x" />')
@@ -282,7 +282,7 @@ class ImageScalingTests(unittest.TestCase):
         base = self.item.absolute_url()
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
+            r'alt="" height="(\d+)" width="(\d+)" />'.format(
                 base,
             )
         self.assertTrue(re.match(expected, tag).groups())
@@ -293,7 +293,7 @@ class ImageScalingTests(unittest.TestCase):
         base = self.item.absolute_url()
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
-            r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
+            r'alt="" height="(\d+)" width="(\d+)" />'.format(
                 base,
             )
         self.assertTrue(re.match(expected, tag).groups())
@@ -304,7 +304,7 @@ class ImageScalingTests(unittest.TestCase):
         base = self.item.absolute_url()
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
-            r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
+            r'alt="" height="(\d+)" width="(\d+)" />'.format(
                 base,
             )
         self.assertTrue(re.match(expected, tag).groups())
@@ -369,7 +369,7 @@ class ImageTraverseTests(unittest.TestCase):
         base = self.item.absolute_url()
         expected = \
             r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
-            r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
+            r'alt="" height="(\d+)" width="(\d+)" />'.format(
                 base,
             )
         groups = re.match(expected, tag).groups()
@@ -426,6 +426,59 @@ class ImageTraverseTests(unittest.TestCase):
         ImageScaling._sizes = {'foo': (42, 42)}
         self.assertRaises(Unauthorized, self.traverse, 'image/foo')
         self.item.__allow_access_to_unprotected_subobjects__ = 1
+
+
+class ImageScalingAltTextTests(unittest.TestCase):
+
+    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+
+    def setUp(self):
+        data = getFile('image.png')
+        item = DummyContent()
+        item.image = NamedImage(data, 'image/png', u'image.png')
+        item.alt_text = 'example alt'
+        self.layer['app']._setOb('item', item)
+        self.item = self.layer['app'].item
+        self.scaling = ImageScaling(self.item, None)
+
+    def testShowAltInScale(self):
+        self.scaling.available_sizes = {'foo': (60, 60)}
+        foo = self.scaling.scale('image', scale='foo')
+        tag = foo.tag()
+        base = self.item.absolute_url()
+        expected = \
+            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'alt="example alt" height="(\d+)" width="(\d+)" />'.format(
+                base,
+            )
+        groups = re.match(expected, tag).groups()
+        self.assertTrue(groups, tag)
+
+    def testShowCustomAltInScale(self):
+        self.scaling.available_sizes = {'foo': (60, 60)}
+        foo = self.scaling.scale('image', scale='foo')
+        tag = foo.tag(alt='custom alt')
+        base = self.item.absolute_url()
+        expected = \
+            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'alt="custom alt" height="(\d+)" width="(\d+)" />'.format(
+                base,
+            )
+        groups = re.match(expected, tag).groups()
+        self.assertTrue(groups, tag)
+    
+    def testShowTitleIfPassed(self):
+        self.scaling.available_sizes = {'foo': (60, 60)}
+        foo = self.scaling.scale('image', scale='foo')
+        tag = foo.tag(title='custom title')
+        base = self.item.absolute_url()
+        expected = \
+            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'alt="example alt" title="custom title" height="(\d+)" width="(\d+)" />'.format(
+                base,
+            )
+        groups = re.match(expected, tag).groups()
+        self.assertTrue(groups, tag)
 
 
 def test_suite():
