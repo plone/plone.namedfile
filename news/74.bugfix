@@ -1,1 +1,0 @@
-Increase static MAX_INFO_BYTES to fix an issue where the filesize was not extracted properly from an image with lots of metadata. [elioschmutz]

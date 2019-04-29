@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+5.0.3 (2019-04-29)
+------------------
+
+Bug fixes:
+
+
+- Increase static MAX_INFO_BYTES to fix an issue where the filesize was not extracted properly from an image with lots of metadata. [elioschmutz] (#74)
+
+
 5.0.2 (2018-11-13)
 ------------------
 
