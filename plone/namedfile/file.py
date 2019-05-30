@@ -409,7 +409,15 @@ class NamedBlobImage(NamedBlobFile):
             length = max(0, MAX_INFO_BYTES - start)
             firstbytes += self.getFirstBytes(start, length)
             res = getImageInfo(firstbytes)
+        
         contentType, self._width, self._height = res
+        
+        if (self._width, self._height) == (-1, -1):
+            # not enough information on firstbytes to guess width/height ?
+            # TODO: missing problematic file on tests
+            # see https://github.com/plone/plone.namedfile/pull/11
+            contentType, self._width, self._height = getImageInfo(data)
+
         if contentType:
             self.contentType = contentType
 
@@ -428,8 +436,4 @@ class NamedBlobImage(NamedBlobFile):
 
     def getImageSize(self):
         """See interface `IImage`"""
-        if (self._width, self._height) != (-1, -1):
-            return (self._width, self._height)
-
-        contentType, self._width, self._height = getImageInfo(self.data)
         return (self._width, self._height)
