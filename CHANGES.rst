@@ -40,9 +40,6 @@ Bug fixes:
 
 New features:
 
-- It is now possible to customize in an easier way the ``@@images`` view
-  [ale-rt]
-- Target Zope 4 (test changes only).
 - Target Zope 4 (test changes only).
 
 - Python 3 compatibility
