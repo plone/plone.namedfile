@@ -10,7 +10,7 @@ from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
 from plone.scale.interfaces import IScaledImageQuality
-from six import StringIO
+from six import BytesIO
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
 from zope.component import getGlobalSiteManager
@@ -34,7 +34,7 @@ class IHasImage(IImageScaleTraversable):
 
 
 def assertImage(testcase, data, format_, size):
-    image = PIL.Image.open(StringIO(data))
+    image = PIL.Image.open(BytesIO(data))
     testcase.assertEqual(image.format, format_)
     testcase.assertEqual(image.size, size)
 
@@ -63,7 +63,7 @@ class ImageScalingTests(unittest.TestCase):
     layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
 
     def setUp(self):
-        data = getFile('image.png').read()
+        data = getFile('image.png')
         item = DummyContent()
         item.image = NamedImage(data, 'image/png', u'image.png')
         self.layer['app']._setOb('item', item)
@@ -228,7 +228,7 @@ class ImageScalingTests(unittest.TestCase):
         foo1 = self.scaling.scale('image', scale='foo')
         wait_to_ensure_modified()
         # now upload a new one and make sure the scale has changed
-        data = getFile('image.jpg').read()
+        data = getFile('image.jpg')
         self.item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
         foo2 = self.scaling.scale('image', scale='foo')
         self.assertFalse(foo1.data == foo2.data, 'scale not updated?')
@@ -288,7 +288,7 @@ class ImageScalingTests(unittest.TestCase):
         self.assertTrue(re.match(expected, tag).groups())
 
     def testScaleOnItemWithNonASCIITitle(self):
-        self.item.title = '\xc3\xbc'
+        self.item.title = u'ü'
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
         expected = \
@@ -299,7 +299,7 @@ class ImageScalingTests(unittest.TestCase):
         self.assertTrue(re.match(expected, tag).groups())
 
     def testScaleOnItemWithUnicodeTitle(self):
-        self.item.Title = lambda: '\xc3\xbc'.decode('utf8')
+        self.item.Title = lambda: u'ü'
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
         expected = \
@@ -313,7 +313,7 @@ class ImageScalingTests(unittest.TestCase):
         """Test image quality setting for jpeg images.
         Image quality not available for PNG images.
         """
-        data = getFile('image.jpg').read()
+        data = getFile('image.jpg')
         item = DummyContent()
         item.image = NamedImage(data, 'image/png', u'image.jpg')
         scaling = ImageScaling(item, None)
@@ -349,7 +349,7 @@ class ImageTraverseTests(unittest.TestCase):
 
     def setUp(self):
         self.app = self.layer['app']
-        data = getFile('image.png').read()
+        data = getFile('image.png')
         item = DummyContent()
         item.image = NamedImage(data, 'image/png', u'image.png')
         self.app._setOb('item', item)
@@ -397,7 +397,7 @@ class ImageTraverseTests(unittest.TestCase):
         uid1, ext, width1, height1 = self.traverse('image/thumb')
         wait_to_ensure_modified()
         # now upload a new one and make sure the thumbnail has changed
-        data = getFile('image.jpg').read()
+        data = getFile('image.jpg')
         self.item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
         uid2, ext, width2, height2 = self.traverse('image/thumb')
         self.assertNotEqual(uid1, uid2, 'thumb not updated?')

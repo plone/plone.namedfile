@@ -5,7 +5,7 @@ from setuptools import setup
 import os
 
 
-version = '4.3.dev0'
+version = '5.0.4.dev0'
 description = 'File types and fields for images, files and blob files with ' \
               'filenames'
 long_description = ('\n\n'.join([
@@ -22,23 +22,26 @@ setup(
     long_description=long_description,
     classifiers=[
         "Framework :: Plone",
-        "Framework :: Plone :: 5.1",
+        "Framework :: Plone :: 5.2",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: BSD License",
     ],
     keywords='plone named file image blob',
     author='Laurence Rowe, Martin Aspeli',
     author_email='plone-developers@lists.sourceforge.net',
-    url='https://pypi.python.org/pypi/plone.namedfile',
+    url='https://pypi.org/project/plone.namedfile',
     license='BSD',
-    packages=find_packages(exclude=['ez_setup']),
+    packages=find_packages(),
     namespace_packages=['plone'],
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'plone.rfc822>=1.0b2',
+        'piexif',
+        'plone.rfc822>=2.0a1',
         'plone.scale[storage] >=1.4.999',
         'plone.schemaeditor',
         'plone.supermodel',
@@ -49,7 +52,6 @@ setup(
         'zope.copy',
         'zope.security',
         'zope.traversing',
-        'piexif',
     ],
     extras_require={
         'test': [

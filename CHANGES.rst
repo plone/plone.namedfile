@@ -1,23 +1,57 @@
 Changelog
 =========
 
-4.3 (unreleased)
+.. You should *NOT* be adding new change log entries to this file.
+   You should create a file in the news directory instead.
+   For helpful instructions, please see:
+   https://github.com/plone/plone.releaser/blob/master/ADD-A-NEWS-ITEM.rst
+
+.. towncrier release notes start
+
+5.0.3 (2019-04-29)
 ------------------
 
-Breaking changes:
+Bug fixes:
 
-- *add item here*
+
+- Increase static MAX_INFO_BYTES to fix an issue where the filesize was not extracted properly from an image with lots of metadata. [elioschmutz] (#74)
+
+
+5.0.2 (2018-11-13)
+------------------
+
+Bug fixes:
+
+
+- Do not fail image upload when Exif data is bad. [maurits] (#68)
+
+
+5.0.1 (2018-11-08)
+------------------
+
+Bug fixes:
+
+- Fix a forgotten change to BytesIO.
+  [pbauer]
+
+
+5.0 (2018-11-02)
+----------------
 
 New features:
 
 - It is now possible to customize in an easier way the ``@@images`` view
   [ale-rt]
 - Target Zope 4 (test changes only).
+- Target Zope 4 (test changes only).
+
+- Python 3 compatibility
+  [pbauer, matthewwilkes, fgrcon, jensens]
 
 Bug fixes:
 
 - Prepare for Python 2 / 3 compatibility
-  [ale-rt, pbauer]
+  [ale-rt, pbauer, MatthewWilkes, jensens]
 
 - remove mention of "retina" (https://github.com/plone/Products.CMFPlone/issues/2123)
   [tkimnguyen]

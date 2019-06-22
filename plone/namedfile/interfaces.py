@@ -9,10 +9,10 @@ HAVE_BLOBS = True
 
 class IFile(Interface):
 
-    contentType = schema.BytesLine(
+    contentType = schema.NativeStringLine(
         title=u'Content Type',
         description=u'The content type identifies the type of data.',
-        default=b'',
+        default='',
         required=False,
         missing_value=''
     )
