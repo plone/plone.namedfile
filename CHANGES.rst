@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+5.0.4 (2019-06-27)
+------------------
+
+Bug fixes:
+
+
+- It is now possible to customize in an easier way the ``@@images`` view [ale-rt] (#65)
+
+
 5.0.3 (2019-04-29)
 ------------------
 
