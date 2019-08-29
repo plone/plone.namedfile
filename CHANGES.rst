@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+4.2.7 (2019-08-29)
+------------------
+
+Bug fixes:
+
+
+- fix multiple write during image requests
+  [mamico] (#78)
+
+
 4.2.6 (2018-11-13)
 ------------------
 
