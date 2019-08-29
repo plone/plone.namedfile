@@ -20,6 +20,7 @@ setup(
     description=description,
     long_description=long_description,
     classifiers=[
+        "Development Status :: 6 - Mature",
         "Framework :: Plone",
         "Framework :: Plone :: 5.1",
         "Programming Language :: Python",
@@ -30,7 +31,7 @@ setup(
     keywords='plone named file image blob',
     author='Laurence Rowe, Martin Aspeli',
     author_email='plone-developers@lists.sourceforge.net',
-    url='https://pypi.python.org/pypi/plone.namedfile',
+    url='https://pypi.org/project/plone.namedfile/',
     license='BSD',
     packages=find_packages(exclude=['ez_setup']),
     namespace_packages=['plone'],
