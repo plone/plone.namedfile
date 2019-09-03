@@ -362,10 +362,9 @@ class NamedBlobFile(Persistent):
     def size(self):
         if 'size' in self.__dict__:
             return self.__dict__['size']
-        reader = self._blob.open()
-        reader.seek(0, 2)
-        size = int(reader.tell())
-        reader.close()
+        with self._blob.open() as reader:
+            reader.seek(0, 2)
+            size = int(reader.tell())
         self.__dict__['size'] = size
         return size
 
@@ -426,10 +425,9 @@ class NamedBlobImage(NamedBlobFile):
 
         Returns an amount which is sufficient to determine the image type.
         """
-        fp = self.open('r')
-        fp.seek(start)
-        firstbytes = fp.read(length)
-        fp.close()
+        with self.open('r') as fp:
+            fp.seek(start)
+            firstbytes = fp.read(length)
         return firstbytes
 
     def getImageSize(self):
