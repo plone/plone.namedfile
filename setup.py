@@ -21,6 +21,7 @@ setup(
     description=description,
     long_description=long_description,
     classifiers=[
+        "Development Status :: 5 - Production/Stable",
         "Framework :: Plone",
         "Framework :: Plone :: 5.2",
         "Programming Language :: Python",
