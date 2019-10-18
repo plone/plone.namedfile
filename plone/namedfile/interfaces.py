@@ -59,6 +59,26 @@ except ImportError:
         """
 
 
+class IPluggableBinaryFieldValidation(Interface):
+
+    def validate(field, value):
+        """validates field and value.
+
+        raises zope.schema.ValidationError
+        returns None
+        """
+
+
+class IPluggableFileFieldValidation(IPluggableBinaryFieldValidation):
+    """pluggable validation for binary File fields
+    """
+
+
+class IPluggableImageFieldValidation(IPluggableBinaryFieldValidation):
+    """pluggable validation for binary Image fields
+    """
+
+
 # Values
 
 class INamed(Interface):
