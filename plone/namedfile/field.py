@@ -74,7 +74,7 @@ class NamedFile(Object):
         super(NamedFile, self).__init__(schema=self.schema, **kw)
 
     def _validate(self, value):
-        super(NamedBlobImage, self)._validate(value)
+        super(NamedFile, self)._validate(value)
         validate_file_field(self, value)
 
 
@@ -110,7 +110,7 @@ class NamedBlobFile(Object):
         super(NamedBlobFile, self).__init__(schema=self.schema, **kw)
 
     def _validate(self, value):
-        super(NamedBlobImage, self)._validate(value)
+        super(NamedBlobFile, self)._validate(value)
         validate_file_field(self, value)
 
 
