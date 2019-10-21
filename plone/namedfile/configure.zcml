@@ -22,5 +22,6 @@
   <include file="marshaler.zcml" />
   <include file="scaling.zcml" />
   <include file="editor.zcml" />
+  <include file="field.zcml" />
 
 </configure>

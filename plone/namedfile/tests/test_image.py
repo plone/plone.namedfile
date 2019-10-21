@@ -5,6 +5,7 @@ from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import get_contenttype
+from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from zope.interface.verify import verifyClass
 
 import unittest
@@ -79,10 +80,21 @@ class TestImage(unittest.TestCase):
                        filename=u'notimage.doc')),
             'application/msword')
 
-    def testImageValidation(self):
-        from plone.namedfile.field import InvalidImageFile,\
-            validate_image_field
 
+class TestValidation(unittest.TestCase):
+
+    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+
+    def _makeImage(self, *args, **kw):
+        return NamedImage(*args, **kw)
+
+    def testImageValidation(self):
+        from plone.namedfile.field import InvalidImageFile
+        from plone.namedfile.field import validate_image_field
+        from plone.namedfile.interfaces import INamedImageField
+        from zope.interface import implementer
+
+        @implementer(INamedImageField)
         class FakeField(object):
             __name__ = 'logo'
 
