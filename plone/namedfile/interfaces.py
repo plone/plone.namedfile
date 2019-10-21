@@ -61,7 +61,7 @@ except ImportError:
 
 class IPluggableBinaryFieldValidation(Interface):
 
-    def validate(field, value):
+    def __call__(field, value):
         """validates field and value.
 
         raises zope.schema.ValidationError
