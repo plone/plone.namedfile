@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+5.0.5 (2019-10-12)
+------------------
+
+Bug fixes:
+
+
+- fix ResourceWarnings for unclosed files
+  [mamico] (#80)
+
+
 5.0.4 (2019-06-27)
 ------------------
 

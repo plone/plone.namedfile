@@ -6,6 +6,7 @@ import os
 
 
 version = '5.1.0.dev0'
+
 description = 'File types and fields for images, files and blob files with ' \
               'filenames'
 long_description = ('\n\n'.join([
@@ -21,6 +22,7 @@ setup(
     description=description,
     long_description=long_description,
     classifiers=[
+        "Development Status :: 5 - Production/Stable",
         "Framework :: Plone",
         "Framework :: Plone :: 5.2",
         "Programming Language :: Python",
