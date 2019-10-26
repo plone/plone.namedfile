@@ -1,0 +1,33 @@
+# AppVeyor CI settings (Windows Machine CI Tests)
+
+environment:
+  matrix:
+    - PROFILE: conventions
+      PYTHON_VERSION: "3.6"
+      TOXENV: "docs,lint"
+    - PROFILE: py27
+      PYTHON_VERSION: "2.7"
+      TOXENV: "py27"
+    - PROFILE: py35
+      PYTHON_VERSION: "3.5"
+      TOXENV: "py35"
+    - PROFILE: py36
+      PYTHON_VERSION: "3.6"
+      TOXENV: "py36"
+    - PROFILE: py37
+      PYTHON_VERSION: "3.7"
+      TOXENV: "py37"
+
+
+cache:
+  - '%LOCALAPPDATA%\pip\Cache'
+
+version: '{branch}.{build}'
+
+install:
+  - "python.exe -m pip install tox"
+
+build: off
+
+test_script:
+  - "tox.exe"
