@@ -23,12 +23,16 @@ setup(
     long_description=long_description,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
+        "Framework :: Zope",
+        "Framework :: Zope :: 4",
+        "Framework :: Zope :: 5",
         "Framework :: Plone",
         "Framework :: Plone :: 5.2",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: BSD License",
     ],
@@ -43,6 +47,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'piexif',
+        'Pillow',
         'plone.rfc822>=2.0a1',
         'plone.scale[storage] >=1.4.999',
         'plone.schemaeditor',
@@ -58,7 +63,6 @@ setup(
     extras_require={
         'test': [
             'lxml',
-            'Pillow',
             'plone.testing[z2]',
         ],
         # BBB - remove in version 5

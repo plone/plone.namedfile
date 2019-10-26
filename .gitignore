@@ -1,10 +1,41 @@
+# Python
+*.py[cod]
+.cache
+/.Python
+
+#PyENV
+/.python-version
+
+# Packages / zc.buildout
 *.egg-info
-*.pyc
 .project
 .pydevproject
 .installed.cfg
-bin
-lib
-include
-parts
-develop-eggs
+/bin/
+/lib/
+/include/
+/parts/
+/develop-eggs/
+/_build/
+
+# Installer logs
+pip-log.txt
+pip-selfcheck.json
+.plone.versioncheck.cache
+.plone.versioncheck.tracked.json
+pip-wheel-metadata/
+
+# Unit test / coverage reports
+/.coverage*
+/coverage.xml
+/.tox
+.pytest_cache
+
+
+# Editors specific
+/.idea/
+/.Python
+/.ropeproject/
+/.project
+/.pydevproject
+.mypy_cache/
