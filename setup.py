@@ -46,14 +46,15 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'setuptools',
+        'six',
         'piexif',
         'Pillow',
         'plone.rfc822>=2.0a1',
         'plone.scale[storage] >=1.4.999',
         'plone.schemaeditor',
         'plone.supermodel',
-        'setuptools',
-        'six',
+        'plone.registry',
         'zope.browserpage',
         'zope.component',
         'zope.copy',
@@ -64,6 +65,8 @@ setup(
         'test': [
             'lxml',
             'plone.testing[z2]',
+            'plone.memoize',
+            'plone.app.testing',
         ],
         # BBB - remove in version 5
         'blobs': [],

@@ -86,8 +86,7 @@ def set_headers(file, response, filename=None):
 
 
 def stream_data(file):
-    """Return the given file as a stream if possible.
-    """
+    """Return the given file as a stream if possible."""
 
     if IBlobby.providedBy(file):
         if file._blob._p_blob_uncommitted:

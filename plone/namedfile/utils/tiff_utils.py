@@ -9,16 +9,16 @@ log = getLogger(__name__)
 
 
 def process_tiff(data):
-    """handle Tiff Images
-    --> Doc http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
+    """Handle Tiff Images:
 
+    see: http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
     """
     content_type = None
     w = -1
     h = -1
     # check for '42' as flag for tiff:
     # TODO: implement correct Image Length and Image Width lookup --> Page 14ff
-    # Page 18: Tags:
+    # Page 18 - Tags:
     # ImageLength: Tag: 257 (101.H) Short or Long
     # ImageWidth: Tag: 256 (100.H) Short or Long
 
@@ -74,9 +74,10 @@ def process_tiff(data):
 
 
 translate_field_type = {
-    """handle Tiff Image File Directory Types
-    --> Doc http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
-    page 14-16
+    """Handle Tiff Image File Directory Types.
+
+    See documentation at http://partners.adobe.com/public/developer/en/tiff/TIFF6.pdf
+    page 14-16 for details.
     """
     # TODO: translate to correct python struct mapping
     # TODO: check mappings
