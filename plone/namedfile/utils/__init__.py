@@ -3,6 +3,7 @@ from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
+from plone.namedfile.utils.svg_utils import process_svg
 from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
 from six import BytesIO
@@ -140,6 +141,10 @@ def getImageInfo(data):
     elif (size >= 4) and data[:4] in [b'MM\x00*', b'II*\x00']:
         # handle TIFFs
         content_type, width, height = process_tiff(data)
+
+    elif size and b'http://www.w3.org/2000/svg' in data:
+        # handle SVGs
+        content_type, width, height = process_svg(data)
 
     else:
         # Use PIL / Pillow to determ Image Information
