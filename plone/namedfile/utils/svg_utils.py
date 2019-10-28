@@ -3,6 +3,7 @@
 from io import BytesIO
 from logging import getLogger
 
+import re
 import xml.etree.cElementTree as et
 
 
@@ -22,8 +23,8 @@ def process_svg(data):
             _w = el.attrib.get("width")
             _h = el.attrib.get("height")
             if len(_w) and len(_h):
-                w = int(float(_w.replace("px", "")))
-                h = int(float(_h.replace("px", "")))
+                w = int(float(re.sub(r"[^\d\.]", "", _w)))
+                h = int(float(re.sub(r"[^\d\.]", "", _h)))
             break
     except et.ParseError:
         pass
