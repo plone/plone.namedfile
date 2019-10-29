@@ -1,0 +1,2 @@
+- Load SVG files.
+  [balavec]

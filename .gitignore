@@ -1,6 +1,7 @@
 *.egg-info
 *.pyc
 .project
+.idea
 .pydevproject
 .installed.cfg
 bin
