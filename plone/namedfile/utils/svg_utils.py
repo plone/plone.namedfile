@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from io import BytesIO
-from logging import getLogger
-
 import re
 import xml.etree.cElementTree as et
-
+from io import BytesIO
+from logging import getLogger
 
 log = getLogger(__name__)
 
@@ -20,11 +18,8 @@ def process_svg(data):
     try:
         for event, el in et.iterparse(BytesIO(data), ("start",)):
             tag = el.tag
-            _w = el.attrib.get("width")
-            _h = el.attrib.get("height")
-            if len(_w) and len(_h):
-                w = int(float(re.sub(r"[^\d\.]", "", _w)))
-                h = int(float(re.sub(r"[^\d\.]", "", _h)))
+            w = dimension_int(el.attrib.get("width"))
+            h = dimension_int(el.attrib.get("height"))
             break
     except et.ParseError:
         pass
@@ -33,7 +28,23 @@ def process_svg(data):
         size == 1024 and b"http://www.w3.org/2000/svg" in data
     ):
         content_type = "image/svg+xml"
-        w = w if isinstance(w, int) and w > 1 else 1
-        h = h if isinstance(h, int) and h > 1 else 1
+        w = w if w > 1 else 1
+        h = h if h > 1 else 1
 
     return content_type, w, h
+
+
+def dimension_int(dimension) -> int:
+    if isinstance(dimension, str):
+        try:
+            _dimension = int(float(re.sub(r"[^\d\.]", "", dimension)))
+        except ValueError:
+            _dimension = 0
+    elif isinstance(dimension, int):
+        _dimension = dimension
+    elif isinstance(dimension, float):
+        _dimension = int(dimension)
+    else:
+        _dimension = 0
+
+    return _dimension
