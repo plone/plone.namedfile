@@ -34,7 +34,7 @@ def process_svg(data):
     return content_type, w, h
 
 
-def dimension_int(dimension) -> int:
+def dimension_int(dimension):
     if isinstance(dimension, str):
         try:
             _dimension = int(float(re.sub(r"[^\d\.]", "", dimension)))
