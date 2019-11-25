@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+5.2.0 (2019-11-25)
+------------------
+
+New features:
+
+
+- Load SVG files.
+  [balavec] (#63)
+
+
 5.1.0 (2019-10-21)
 ------------------
 
