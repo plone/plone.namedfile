@@ -75,6 +75,12 @@ class TestImage(unittest.TestCase):
                     getFile('image.gif'),
                     filename=u'image.gif')),
             'image/gif')
+        self.assertEqual(
+            get_contenttype(
+                NamedImage(
+                    getFile('image.tif'),
+                    filename=u'image.tif')),
+            'image/tiff')
         self.assertEqual(get_contenttype(
             NamedImage(getFile('notimage.doc'),
                        filename=u'notimage.doc')),
