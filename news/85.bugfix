@@ -1,0 +1,5 @@
+Fix tiff support. Remove process_tiff and let the PIL do the work.
+[mamico]
+
+Fix content_type in getImageInfo when using PIL.
+[mamicp]

@@ -4,7 +4,6 @@ from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.svg_utils import process_svg
-from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
 from six import BytesIO
 from six.moves import urllib
@@ -138,10 +137,6 @@ def getImageInfo(data):
             content_type = 'image/x-ms-bmp'
             width, height = struct.unpack('<LL', data[18:26])
 
-    elif (size >= 4) and data[:4] in [b'MM\x00*', b'II*\x00']:
-        # handle TIFFs
-        content_type, width, height = process_tiff(data)
-
     elif size and b'http://www.w3.org/2000/svg' in data:
         # handle SVGs
         content_type, width, height = process_svg(data)
@@ -151,7 +146,7 @@ def getImageInfo(data):
         try:
             img = PIL.Image.open(BytesIO(data))
             width, height = img.size
-            content_type = img.format
+            content_type = PIL.Image.MIME[img.format]
         except Exception:
             # TODO: determ wich error really happens
             # Should happen if data is to short --> first_bytes
