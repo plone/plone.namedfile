@@ -29,9 +29,36 @@ except ImportError:
 
 try:
     # use this to stream data if we can
+    from ZPublisher.Iterators import IStreamIterator
     from ZPublisher.Iterators import filestream_iterator
 except ImportError:
     filestream_iterator = None
+
+
+if filestream_iterator is not None:
+    class filestream_range_iterator(filestream_iterator):
+        """
+        A FileIO subclass which implements an iterator that returns a
+        fixed-sized sequence of bytes.
+        """
+
+        def __init__(self, name, mode='rb', bufsize=-1, streamsize=1 << 16, start=0, end=None):
+            super(filestream_iterator, self).__init__(name, mode, bufsize, streamsize)
+            self.start = start
+            self.end = end
+            self.seek(start, 0)
+
+        def __next__(self):
+            if self.end is None:
+                bytes = self.streamsize
+            else:
+                bytes = max(min(self.end - self.tell(), self.streamsize), 0)
+            data = self.read(bytes)
+            if not data:
+                raise StopIteration
+            return data
+
+        next = __next__
 
 
 def safe_basename(filename):
@@ -74,6 +101,7 @@ def set_headers(file, response, filename=None):
 
     response.setHeader('Content-Type', contenttype)
     response.setHeader('Content-Length', file.getSize())
+    response.setHeader('Accept-Ranges', 'bytes')
 
     if filename is not None:
         if not isinstance(filename, unicode):
@@ -85,17 +113,15 @@ def set_headers(file, response, filename=None):
         )
 
 
-def stream_data(file):
+def stream_data(file, start=0, end=None):
     """Return the given file as a stream if possible.
     """
-
     if IBlobby.providedBy(file):
         if file._blob._p_blob_uncommitted:
-            return file.data
+            return file.data[start:end]
         if filestream_iterator is not None:
-            return filestream_iterator(file._blob.committed(), 'rb')
-
-    return file.data
+            return filestream_range_iterator(file._blob.committed(), 'rb', start, end)
+    return file.data[start:end]
 
 
 def _ensure_data(image):
