@@ -8,6 +8,18 @@ Changelog
 
 .. towncrier release notes start
 
+5.2.1 (2019-12-11)
+------------------
+
+Bug fixes:
+
+
+- Fix tiff support. Remove process_tiff and let the PIL do the work.
+  [mamico] (#85)
+- Fix content_type in getImageInfo when using PIL.
+  [mamicp] (#85)
+
+
 5.2.0 (2019-11-25)
 ------------------
 
