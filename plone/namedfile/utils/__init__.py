@@ -9,6 +9,7 @@ from plone.registry.interfaces import IRegistry
 from StringIO import StringIO
 from zope.component import queryUtility
 from zope.deprecation import deprecate
+from zope.interface import implementer
 
 import mimetypes
 import os.path
@@ -36,6 +37,7 @@ except ImportError:
 
 
 if filestream_iterator is not None:
+    @implementer(IStreamIterator)
     class filestream_range_iterator(filestream_iterator):
         """
         A FileIO subclass which implements an iterator that returns a
@@ -43,7 +45,7 @@ if filestream_iterator is not None:
         """
 
         def __init__(self, name, mode='rb', bufsize=-1, streamsize=1 << 16, start=0, end=None):
-            super(filestream_iterator, self).__init__(name, mode, bufsize, streamsize)
+            super(filestream_range_iterator, self).__init__(name, mode, bufsize, streamsize)
             self.start = start
             self.end = end
             self.seek(start, 0)
@@ -120,7 +122,7 @@ def stream_data(file, start=0, end=None):
         if file._blob._p_blob_uncommitted:
             return file.data[start:end]
         if filestream_iterator is not None:
-            return filestream_range_iterator(file._blob.committed(), 'rb', start, end)
+            return filestream_range_iterator(file._blob.committed(), 'rb', start=start, end=end)
     return file.data[start:end]
 
 
