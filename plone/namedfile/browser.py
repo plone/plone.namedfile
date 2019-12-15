@@ -49,8 +49,8 @@ class Download(BrowserView):
     def handle_request_range(self, file):
         # check if we have a range in the request
         ranges = None
-        range = self.request.headers.get('Range', None)
-        if_range = self.request.headers.get('If-Range', None)
+        range = self.request.getHeader('Range', None)
+        if_range = self.request.getHeader('If-Range', None)
         if range is not None:
             ranges = parseRange(range)
             if if_range is not None:
