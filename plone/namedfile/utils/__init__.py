@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from io import FileIO
 from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
@@ -7,6 +7,7 @@ from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
 from StringIO import StringIO
+from ZPublisher.Iterators import IStreamIterator
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import implementer
@@ -28,39 +29,43 @@ except ImportError:
     log.info('IImagingSchema for high pixel density scales not available.')
 
 
-try:
-    # use this to stream data if we can
-    from ZPublisher.Iterators import IStreamIterator
-    from ZPublisher.Iterators import filestream_iterator
-except ImportError:
-    filestream_iterator = None
+@implementer(IStreamIterator)
+class filestream_range_iterator(object):
+    """
+    A class that mimics FileIO and implements an iterator that returns a
+    fixed-sized sequence of bytes. Beginning from `start` to `end`.
 
+    BBB: due to a possible bug in Zope>4, <=4.1.3, couldn't be subclass of FileIO
+         as Iterators.filestream_iterator
+    """
 
-if filestream_iterator is not None:
-    @implementer(IStreamIterator)
-    class filestream_range_iterator(filestream_iterator):
-        """
-        A FileIO subclass which implements an iterator that returns a
-        fixed-sized sequence of bytes.
-        """
+    def __init__(self, name, mode='rb', bufsize=-1, streamsize=1 << 16, start=0, end=None):
+        self._io = FileIO(name, mode=mode)
+        self.streamsize = streamsize
+        self.start = start
+        self.end = end
+        self._io.seek(start, 0)
 
-        def __init__(self, name, mode='rb', bufsize=-1, streamsize=1 << 16, start=0, end=None):
-            super(filestream_range_iterator, self).__init__(name, mode, bufsize, streamsize)
-            self.start = start
-            self.end = end
-            self.seek(start, 0)
+    def __next__(self):
+        if self.end is None:
+            bytes = self.streamsize
+        else:
+            bytes = max(min(self.end - self._io.tell(), self.streamsize), 0)
+        data = self._io.read(bytes)
+        if not data:
+            raise StopIteration
+        return data
 
-        def __next__(self):
-            if self.end is None:
-                bytes = self.streamsize
-            else:
-                bytes = max(min(self.end - self.tell(), self.streamsize), 0)
-            data = self.read(bytes)
-            if not data:
-                raise StopIteration
-            return data
+    next = __next__
 
-        next = __next__
+    def close(self):
+        self._io.close()
+
+    # BBB: is it necessary to implement __len__ ?
+    # def __len__(self)
+
+    def read(self, size=-1):
+        return self._io.read(size)
 
 
 def safe_basename(filename):
@@ -121,8 +126,7 @@ def stream_data(file, start=0, end=None):
     if IBlobby.providedBy(file):
         if file._blob._p_blob_uncommitted:
             return file.data[start:end]
-        if filestream_iterator is not None:
-            return filestream_range_iterator(file._blob.committed(), 'rb', start=start, end=end)
+        return filestream_range_iterator(file._blob.committed(), 'rb', start=start, end=end)
     return file.data[start:end]
 
 
