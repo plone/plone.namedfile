@@ -43,6 +43,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'piexif',
+        'plone.app.caching',
         'plone.rfc822>=2.0a1',
         'plone.scale[storage] >=1.4.999',
         'plone.schemaeditor',
