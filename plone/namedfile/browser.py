@@ -1,14 +1,31 @@
 # -*- coding: utf-8 -*-
 from AccessControl.ZopeGuards import guarded_getattr
+from plone.app.caching.operations.utils import ETAG_ANNOTATION_KEY
+from plone.app.caching.operations.utils import formatDateTime
+from plone.app.caching.operations.utils import getLastModifiedAnnotation
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from Products.Five.browser import BrowserView
+from zope.annotation.interfaces import IAnnotations
 from zope.interface import implementer
 from zope.publisher.interfaces import IPublishTraverse
 from zope.publisher.interfaces import NotFound
 from ZPublisher.HTTPRangeSupport import expandRanges
 from ZPublisher.HTTPRangeSupport import parseRange
+
+
+_marker = object()
+
+
+def getEtagAnnotation(request):
+    # try to get etag from p.a.caching annotation
+    annotations = IAnnotations(request, None)
+    if annotations is not None:
+        etag = annotations.get(ETAG_ANNOTATION_KEY, _marker)
+        if etag is not _marker:
+            return etag
+    return None
 
 
 @implementer(IPublishTraverse)
@@ -49,40 +66,22 @@ class Download(BrowserView):
     def handle_request_range(self, file):
         # check if we have a range in the request
         ranges = None
-        range = self.request.getHeader('Range', None)
+        header_range = self.request.getHeader('Range', None)
         if_range = self.request.getHeader('If-Range', None)
-        if range is not None:
-            ranges = parseRange(range)
+        if header_range is not None:
+            ranges = parseRange(header_range)
             if if_range is not None:
-                # TODO: if_range not yet implemented
-                ranges = None
+                if_range = if_range.strip('"')
                 # Only send ranges if the data isn't modified, otherwise send
                 # the whole object. Support both ETags and Last-Modified dates!
-            #     if len(if_range) > 1 and if_range[:2] == 'ts':
-            #         # ETag:
-            #         if if_range != instance.http__etag():
-            #             # Modified, so send a normal response. We delete
-            #             # the ranges, which causes us to skip to the 200
-            #             # response.
-            #             ranges = None
-            #     else:
-            #         # Date
-            #         date = if_range.split(';')[0]
-            #         try:
-            #             mod_since = long(DateTime(date).timeTime())
-            #         except Exception:
-            #             mod_since = None
-            #         if mod_since is not None:
-            #             if instance._p_mtime:
-            #                 last_mod = long(instance._p_mtime)
-            #             else:
-            #                 last_mod = 0
-            #             if last_mod > mod_since:
-            #                 # Modified, so send a normal response. We delete
-            #                 # the ranges, which causes us to skip to the 200
-            #                 # response.
-            #                 ranges = None
-            #     RESPONSE.setHeader('Accept-Ranges', 'bytes')
+                etag = getEtagAnnotation(self.request)
+                lastModified = getLastModifiedAnnotation(self.context, self.request)
+                if lastModified:
+                    lastModified = formatDateTime(lastModified)
+                if if_range != lastModified and if_range != etag:
+                    # We delete the ranges, which causes us to skip to the 200
+                    # response.
+                    ranges = None
             # XXX: multipart ranges not implemented
             if ranges and len(ranges) == 1:
                 try:

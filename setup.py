@@ -38,6 +38,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'plone.app.caching',
         'plone.rfc822>=1.0b2',
         'plone.scale[storage] >=1.4.999',
         'plone.schemaeditor',
