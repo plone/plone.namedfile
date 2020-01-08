@@ -18,6 +18,7 @@ import piexif
 import PIL.Image
 import struct
 import urllib
+from collections import Iterable
 
 
 log = getLogger(__name__)
@@ -30,7 +31,7 @@ except ImportError:
 
 
 @implementer(IStreamIterator)
-class filestream_range_iterator(object):
+class filestream_range_iterator(Iterable):
     """
     A class that mimics FileIO and implements an iterator that returns a
     fixed-sized sequence of bytes. Beginning from `start` to `end`.
@@ -45,6 +46,11 @@ class filestream_range_iterator(object):
         self.start = start
         self.end = end
         self._io.seek(start, 0)
+
+    def __iter__(self):
+        if self._io.closed:
+            raise ValueError("I/O operation on closed file.")
+        return self
 
     def __next__(self):
         if self.end is None:
