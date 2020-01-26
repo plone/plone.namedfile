@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 from AccessControl.ZopeGuards import guarded_getattr
-from plone.app.caching.operations.utils import ETAG_ANNOTATION_KEY
-from plone.app.caching.operations.utils import formatDateTime
-from plone.app.caching.operations.utils import getLastModifiedAnnotation
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
@@ -13,19 +10,6 @@ from zope.publisher.interfaces import IPublishTraverse
 from zope.publisher.interfaces import NotFound
 from ZPublisher.HTTPRangeSupport import expandRanges
 from ZPublisher.HTTPRangeSupport import parseRange
-
-
-_marker = object()
-
-
-def getEtagAnnotation(request):
-    # try to get etag from p.a.caching annotation
-    annotations = IAnnotations(request, None)
-    if annotations is not None:
-        etag = annotations.get(ETAG_ANNOTATION_KEY, _marker)
-        if etag is not _marker:
-            return etag
-    return None
 
 
 @implementer(IPublishTraverse)
@@ -71,17 +55,9 @@ class Download(BrowserView):
         if header_range is not None:
             ranges = parseRange(header_range)
             if if_range is not None:
-                if_range = if_range.strip('"')
-                # Only send ranges if the data isn't modified, otherwise send
-                # the whole object. Support both ETags and Last-Modified dates!
-                etag = getEtagAnnotation(self.request)
-                lastModified = getLastModifiedAnnotation(self.context, self.request)
-                if lastModified:
-                    lastModified = formatDateTime(lastModified)
-                if if_range != lastModified and if_range != etag:
-                    # We delete the ranges, which causes us to skip to the 200
-                    # response.
-                    ranges = None
+                # We delete the ranges, which causes us to skip to the 200
+                # response.
+                return {}
             # XXX: multipart ranges not implemented
             if ranges and len(ranges) == 1:
                 try:
