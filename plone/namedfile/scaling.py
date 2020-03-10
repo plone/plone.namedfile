@@ -236,21 +236,18 @@ class DefaultImageScalingFactory(object):
             if quality:
                 parameters['quality'] = quality
 
-        try:
-            result = self.create_scale(
-                orig_data,
-                direction=direction,
-                height=height,
-                width=width,
-                **parameters
-            )
-        except (ConflictError, KeyboardInterrupt):
-            raise
-        except IOError:
-            if getattr(orig_value, 'contentType', '') == 'image/svg+xml':
-                orig_data.seek(0)
-                result = orig_data.read(), 'svg+xml', (width, height)
-            else:
+        if not getattr(orig_value, 'contentType', '') == 'image/svg+xml':
+            try:
+                result = self.create_scale(
+                    orig_data,
+                    direction=direction,
+                    height=height,
+                    width=width,
+                    **parameters
+                )
+            except (ConflictError, KeyboardInterrupt):
+                raise
+            except Exception:
                 logger.exception(
                     'Could not scale "{0!r}" of {1!r}'.format(
                         orig_value,
@@ -258,16 +255,10 @@ class DefaultImageScalingFactory(object):
                     ),
                 )
                 return
-        except Exception:
-            logger.exception(
-                'Could not scale "{0!r}" of {1!r}'.format(
-                    orig_value,
-                    self.context.absolute_url(),
-                ),
-            )
-            return
-        if result is None:
-            return
+            if result is None:
+                return
+        else:
+            result = orig_data.read(), 'svg+xml', (width, height)
 
         data, format_, dimensions = result
         mimetype = 'image/{0}'.format(format_.lower())
