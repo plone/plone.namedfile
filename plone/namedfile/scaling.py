@@ -2,6 +2,7 @@
 from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
+from io import BytesIO
 from plone.memoize import ram
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
@@ -15,6 +16,7 @@ from plone.scale.interfaces import IImageScaleFactory
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.scale import scaleImage
 from plone.scale.storage import AnnotationStorage
+from Products.CMFPlone.utils import safe_encode
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from zExceptions import Unauthorized
@@ -30,11 +32,6 @@ from zope.traversing.interfaces import TraversalError
 
 import logging
 import six
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import BytesIO as StringIO
 
 
 logger = logging.getLogger(__name__)
@@ -261,8 +258,11 @@ class DefaultImageScalingFactory(object):
             if result is None:
                 return
         else:
-            if isinstance(orig_data, (bytes, str)):
-                orig_data = StringIO(orig_data)
+            if isinstance(orig_data, (six.text_type)):
+                orig_data = safe_encode(orig_data)
+            if isinstance(orig_data, (bytes)):
+                orig_data = BytesIO(orig_data)
+
             result = orig_data.read(), "svg+xml", (width, height)
 
         data, format_, dimensions = result
