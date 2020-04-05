@@ -271,6 +271,12 @@ class DefaultImageScalingFactory(object):
             data, contentType=mimetype, filename=orig_value.filename,
         )
         value.fieldname = fieldname
+
+        # make sure the file is closed to avoid error:
+        # ZODB-5.5.1-py3.7.egg/ZODB/blob.py:339: ResourceWarning:
+        # unclosed file <_io.FileIO ... mode='rb' closefd=True>
+        orig_data.close()
+
         return value, format_, dimensions
 
 
