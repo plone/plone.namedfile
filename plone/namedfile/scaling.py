@@ -20,6 +20,7 @@ from Products.CMFPlone.utils import safe_encode
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from zExceptions import Unauthorized
+from ZODB.blob import BlobFile
 from ZODB.POSException import ConflictError
 from zope.component import queryUtility
 from zope.deprecation import deprecate
@@ -275,7 +276,8 @@ class DefaultImageScalingFactory(object):
         # make sure the file is closed to avoid error:
         # ZODB-5.5.1-py3.7.egg/ZODB/blob.py:339: ResourceWarning:
         # unclosed file <_io.FileIO ... mode='rb' closefd=True>
-        orig_data.close()
+        if isinstance(orig_data, BlobFile):
+            orig_data.close()
 
         return value, format_, dimensions
 
