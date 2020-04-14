@@ -8,6 +8,17 @@ Changelog
 
 .. towncrier release notes start
 
+5.2.2 (2020-04-14)
+------------------
+
+Bug fixes:
+
+
+- Close BlobFile in DefaultImageScalingFactory. [timo] (#89)
+- Implement the handling of SVG files before passing it to Pillow, fixes #3063
+  [sneridagh] (#3063)
+
+
 5.2.1 (2019-12-11)
 ------------------
 

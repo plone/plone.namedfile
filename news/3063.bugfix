@@ -1,2 +1,0 @@
-Implement the handling of SVG files before passing it to Pillow, fixes #3063
-[sneridagh]
