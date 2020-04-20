@@ -50,6 +50,10 @@ class DummyContent(SimpleItem):
         return self.title
 
 
+class MockNamedImage(NamedImage):
+    _p_mtime = DateTime().millis()
+
+
 @implementer(IScaledImageQuality)
 class DummyQualitySupplier(object):
     """ fake utility for plone.app.imaging's scaling quality """
@@ -65,7 +69,7 @@ class ImageScalingTests(unittest.TestCase):
     def setUp(self):
         data = getFile('image.png')
         item = DummyContent()
-        item.image = NamedImage(data, 'image/png', u'image.png')
+        item.image = MockNamedImage(data, 'image/png', u'image.png')
         self.layer['app']._setOb('item', item)
         self.item = self.layer['app'].item
         self.scaling = ImageScaling(self.item, None)
@@ -223,15 +227,30 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo, None)
 
     def testScaleInvalidation(self):
-        # first get the scale of the original image
-        self.scaling.available_sizes = {'foo': (23, 23)}
-        foo1 = self.scaling.scale('image', scale='foo')
-        wait_to_ensure_modified()
-        # now upload a new one and make sure the scale has changed
-        data = getFile('image.jpg')
-        self.item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
-        foo2 = self.scaling.scale('image', scale='foo')
-        self.assertFalse(foo1.data == foo2.data, 'scale not updated?')
+        dt = self.item.modified()
+
+        # Test that different parameters give different scale
+        self.item.modified = lambda: dt
+        self.item.image._p_mtime = dt.millis()
+        scale1a = self.scaling.scale('image', width=100, height=80)
+        scale2a = self.scaling.scale('image', width=80, height=60)
+        self.assertNotEqual(scale1a.data, scale2a.data)
+
+        # Test that bare object modification does not invalidate scales
+        self.item.modified = lambda: dt + 1
+        scale1b = self.scaling.scale('image', width=100, height=80)
+        scale2b = self.scaling.scale('image', width=80, height=60)
+        self.assertNotEqual(scale1b.data, scale2b.data)
+        self.assertEqual(scale1a.data, scale1b.data)
+        self.assertEqual(scale2a.data, scale2b.data)
+
+        # Test that field modification invalidates scales
+        self.item.image._p_mtime = (dt + 1).millis()
+        scale1b = self.scaling.scale('image', width=100, height=80)
+        scale2b = self.scaling.scale('image', width=80, height=60)
+        self.assertNotEqual(scale1b.data, scale2b.data)
+        self.assertNotEqual(scale1a.data, scale1b.data, 'scale not updated?')
+        self.assertNotEqual(scale2a.data, scale2b.data, 'scale not updated?')
 
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
