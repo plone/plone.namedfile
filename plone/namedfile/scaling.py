@@ -31,6 +31,7 @@ from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import ITraversable
 from zope.traversing.interfaces import TraversalError
 
+import functools
 import logging
 import six
 
@@ -390,12 +391,17 @@ class ImageScaling(BrowserView):
     def getHighPixelDensityScales(self):
         return getHighPixelDensityScales()
 
-    def modified(self):
+    def modified(self, fieldname=None):
         """Provide a callable to return the modification time of content
         items, so stored image scales can be invalidated.
         """
         context = aq_base(self.context)
-        date = DateTime(context._p_mtime)
+        if fieldname is not None:
+            field = getattr(context, fieldname, None)
+            field_p_mtime = getattr(field, "_p_mtime", None)
+            date = DateTime(field_p_mtime or context._p_mtime)
+        else:
+            date = DateTime(context._p_mtime)
         return date.millis()
 
     def scale(
@@ -425,7 +431,10 @@ class ImageScaling(BrowserView):
             width, height = available[scale]
         if IDisableCSRFProtection and self.request is not None:
             alsoProvides(self.request, IDisableCSRFProtection)
-        storage = AnnotationStorage(self.context, self.modified)
+        storage = AnnotationStorage(
+            self.context,
+            functools.partial(self.modified, fieldname)
+        )
         info = storage.scale(
             fieldname=fieldname,
             height=height,
