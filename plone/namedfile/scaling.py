@@ -25,6 +25,7 @@ from zExceptions import Redirect
 from zExceptions import Unauthorized
 from ZODB.blob import BlobFile
 from ZODB.POSException import ConflictError
+from zope.component import hooks
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import alsoProvides
@@ -209,7 +210,7 @@ class DefaultImageScalingFactory(object):
         storage_oid = getattr(storage.storage, "_p_oid", None)
         if storage_oid is None:
             # Reserve oid for new storage
-            self.context._p_jar.add(storage.storage)
+            hooks.getSite()._p_jar.add(storage.storage)
             storage_oid = storage.storage._p_oid
         if isinstance(data, BlobFile):
             path = getattr(data, "name", None)
