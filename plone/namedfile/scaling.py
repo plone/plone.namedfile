@@ -79,6 +79,11 @@ def createImageScales(event):
             images = getMultiAdapter((context, event.request), name="images")
             for name, actual_width, actual_height in get_scale_infos():
                 images.scale(fieldname, scale=name)
+            image = getattr(context, fieldname, None)
+            if image:  # REST API uses this scale as original URL
+                width, height = image.getImageSize()
+                images.scale(fieldname,
+                             width=width, height=height, direction="thumbnail")
             msg = "/".join(filter(bool, ["/".join(context.getPhysicalPath()),
                                          "@@images", fieldname]))
             t.note(msg)
