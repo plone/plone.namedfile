@@ -10,6 +10,7 @@ from plone.scale.scale import scaleImage
 from six.moves import queue
 from transaction import TransactionManager
 from transaction.interfaces import IDataManager
+from ZODB.blob import Blob
 from zope.interface import implementer
 
 import atexit
@@ -44,9 +45,9 @@ class SetQueue(queue.Queue):
         return self.queue.pop()
 
 
-def scaleImageTask(data, **parameters):
+def scaleImageTask(path, **parameters):
     """Concurrent executor task for scaling image"""
-    with open(data, "rb") as fp:
+    with open(path, "rb") as fp:
         return scaleImage(fp, **parameters)
 
 
@@ -79,12 +80,12 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         """Convert dict to sorted (hashable) tuple. Not recursive."""
         return tuple(sorted(d.items()))
 
-    def put(self, storage_oid, data, filename, klass, context, **parameters):
+    def put(self, storage_oid, data_oid, filename, klass, context, **parameters):
         """Queue asynchronous image scaling into plone.scale annotation storage"""
         # This is public API and is called outside the thread
         task = self.tuple({
             "storage_oid": storage_oid,
-            "data": data,
+            "data_oid": data_oid,
             "filename": filename,
             "klass": klass,
             "context": context,
@@ -167,6 +168,7 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         assert isinstance(task, tuple)
         task = dict(task)
         storage = self._conn.get(task["storage_oid"])
+        data = self._conn.get(task["data_oid"])
 
         key = dict(task["parameters"])
         key.pop("quality", None)  # not part of key
@@ -175,14 +177,14 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         values = [scale for scale in storage.values()
                   if scale.get("key") == key
                   and scale.get("data") is None]
-        if values:
+        if values and isinstance(data, Blob):
             parameters = dict(task["parameters"])
             parameters.pop("fieldname", None)
             parameters.pop("scale", None)
-            future = self._executor.submit(
-                scaleImageTask,
-                task["data"], **parameters
-            )
+            fp = data.open()
+            path = fp.name
+            fp.close()
+            future = self._executor.submit(scaleImageTask, path, **parameters)
             return future
         return None
 

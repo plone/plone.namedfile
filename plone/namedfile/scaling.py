@@ -205,18 +205,23 @@ class DefaultImageScalingFactory(object):
 
     def get_queue(self, data):
         """Get image scaling queue """
-        queue = queryUtility(IImageScalingQueue)
-        storage = AnnotationStorage(self.context)
-        storage_oid = getattr(storage.storage, "_p_oid", None)
-        if storage_oid is None:
-            # Reserve oid for new storage
-            hooks.getSite()._p_jar.add(storage.storage)
-            storage_oid = storage.storage._p_oid
+        # TODO: support basic NamedFile, not only blob
         if isinstance(data, BlobFile):
-            path = getattr(data, "name", None)
-            exists = os.path.isfile(path) if path else None
-            if all([queue, storage_oid, path, exists]):
-                return functools.partial(queue.put, storage_oid, path)
+            queue = queryUtility(IImageScalingQueue)
+            storage = AnnotationStorage(self.context)
+            storage_oid = getattr(storage.storage, "_p_oid", None)
+            data_oid = getattr(data.blob, "_p_oid", None)
+            # Reserve OIDs for new objects
+            if storage_oid is None or data_oid is None:
+                site = hooks.getSite()
+                if storage_oid is None:
+                    site._p_jar.add(storage.storage)
+                    storage_oid = storage.storage._p_oid
+                if data_oid is None:
+                    site._p_jar.add(data.blob)
+                    data_oid = data.blob._p_oid
+            if all([queue, storage_oid, data_oid]):
+                return functools.partial(queue.put, storage_oid, data_oid)
         return None
 
     def create_scale(self, data, direction, height, width, **parameters):
