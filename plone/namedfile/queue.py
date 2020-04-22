@@ -17,6 +17,8 @@ import transaction
 
 logger = logging.getLogger(__name__)
 
+MAX_RETRY = 10
+
 
 def imageScalingQueueFactory():
     """Create scaling queue processor thread utility instance"""
@@ -80,7 +82,7 @@ class ImageScalingQueueProcessorThread(threading.Thread):
             except Exception as e:  # noqa: never break the loop
                 task.setdefault("retry", 0)
                 task["retry"] += 1
-                if task["retry"] > 10:
+                if task["retry"] > MAX_RETRY:
                     logger.exception(str(e))
                 else:
                     self.retry.put(task)
