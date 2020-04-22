@@ -79,6 +79,11 @@ class IPluggableImageFieldValidation(IPluggableBinaryFieldValidation):
     """
 
 
+class ICreateImageScalesOnCommit(Interface):
+    """Marker interface on request for creating scales on commit
+    """
+
+
 class IImageScalingQueue(Interface):
     """Asynchronous image scaling queue
     """
