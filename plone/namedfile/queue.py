@@ -3,6 +3,8 @@
 This module contains the image scaling queue processor thread.
 """
 from App.config import getConfiguration
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import TimeoutError
 from plone.namedfile.interfaces import IImageScalingQueue
 from plone.scale.scale import scaleImage
 from six.moves import queue
@@ -42,6 +44,12 @@ class SetQueue(queue.Queue):
         return self.queue.pop()
 
 
+def scaleImageTask(data, **parameters):
+    """Concurrent executor task for scaling image"""
+    with open(data, "rb") as fp:
+        return scaleImage(fp, **parameters)
+
+
 @implementer(IImageScalingQueue)
 class ImageScalingQueueProcessorThread(threading.Thread):
     """This thread is started at execution time once the first scaling has
@@ -54,82 +62,157 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         threading.Thread.__init__(
             self, name="plone.namedfile.queue.ScalingQueueProcessorThread")
         config = getConfiguration()
-        self._lock = threading.Lock()
         self.setDaemon(True)
-        self.queue = SetQueue()
-        self.retry = SetQueue()
+        self._lock = threading.Lock()
+        self._queue = SetQueue()
+        self._retry = SetQueue()
+        self._retries = {}  # must be accessed with lock
+        self._retries_lock = threading.Lock()
         self._tm = TransactionManager()
         self._db = config.dbtab.getDatabase("/", is_root=1)
         self._conn = self._db.open(transaction_manager=self._tm)
         self._conn._cache.cache_size = ZODB_CACHE_SIZE  # minimal cache
+        self._executor = ProcessPoolExecutor()
+        self._futures = []
+
+    def tuple(self, d):
+        """Convert dict to sorted (hashable) tuple. Not recursive."""
+        return tuple(sorted(d.items()))
 
     def put(self, storage_oid, data, filename, klass, context, **parameters):
-        task = {
+        """Queue asynchronous image scaling into plone.scale annotation storage"""
+        # This is public API and is called outside the thread
+        task = self.tuple({
             "storage_oid": storage_oid,
             "data": data,
             "filename": filename,
             "klass": klass,
             "context": context,
-            "parameters": tuple(sorted(parameters.items())),
-        }
-        self.queue.put(tuple(sorted(task.items())))
+            "parameters": self.tuple(parameters),
+        })
+        with self._retries_lock:
+            if task not in self._retries:
+                self._retries[task] = 0
+                self._queue.put(task)
+
+    def _retry_task(self, task, exception):
+        """Retry task because of exception"""
+        assert isinstance(task, tuple)
+        error = False
+        with self._retries_lock:
+            if self._retries[task] > MAX_RETRY:
+                del self._retries[task]
+                error = True
+            else:
+                self._retry.put(task)
+        if error:
+            logger.exception(str(exception))
 
     def run(self, forever=True):
         atexit.register(self.stop)
         while not self._stopped:
+
+            # check for new results
+            for task, future in self._futures:
+                assert isinstance(task, tuple)
+                try:
+                    result = future.result(timeout=0)
+                    self._futures.remove((task, future))
+                except TimeoutError:
+                    continue
+                except Exception as e:  # noqa: never break the loop
+                    self._retry_task(task, e)
+                    continue
+                with self._tm as t:
+                    try:
+                        self._store_scale_result(task, result, t)
+                        with self._retries_lock:
+                            del self._retries[task]
+                    except Exception as e:  # noqa: never break the loop
+                        self._retry_task(task, e)
+                        continue
+
+            # check for new task
             try:
-                task = dict(self.queue.get(timeout=QUEUE_INTERVAL))
+                task = self._queue.get(timeout=QUEUE_INTERVAL)
+                assert isinstance(task, tuple)
             except queue.Empty:
                 # on empty queue, flush retry queue back to main queue
-                while self.retry.qsize() > 0:
+                while self._retry.qsize() > 0:
                     try:
-                        self.queue.put(self.retry.get(timeout=0))
-                        self.retry.task_done()
+                        self._queue.put(self._retry.get(timeout=0))
+                        self._retry.task_done()
                     except queue.Empty:
                         break
                 continue
+
             # if we are asked to stop while scaling images, do so
             if self._stopped:
                 break
-            # process task
+
+            # queue execution of new task
             try:
-                with self._tm as t:
-                    self._process_one_scale(task, t)
+                with self._tm:
+                    future = self._queue_scale_execution(task)
+                    if future is not None:
+                        self._futures.append((task, future))
             except Exception as e:  # noqa: never break the loop
-                task.setdefault("retry", 0)
-                task["retry"] += 1
-                if task["retry"] > MAX_RETRY:
-                    logger.exception(str(e))
-                else:
-                    self.retry.put(tuple(sorted(task.items())))
-            self.queue.task_done()
+                self._retry_task(task, e)
+
             # A testing plug
             if not forever:
                 break
 
-    def _process_one_scale(self, task, t):
+    def _queue_scale_execution(self, task):
+        assert isinstance(task, tuple)
+        task = dict(task)
         storage = self._conn.get(task["storage_oid"])
-        # build plone.scale storage key
+
         key = dict(task["parameters"])
         key.pop("quality", None)  # not part of key
         key = tuple(sorted(key.items()))
-        values = [v for v in storage.values() if v["key"] == key]
+
+        values = [scale for scale in storage.values()
+                  if scale.get("key") == key
+                  and scale.get("data") is None]
         if values:
             parameters = dict(task["parameters"])
-            fieldname = parameters.pop("fieldname", None)
-            scale_name = parameters.pop("scale", None)
-            with open(task["data"], "rb") as fp:
-                data, format_, dimensions = scaleImage(fp, **parameters)
-            mimetype = "image/{0}".format(format_.lower())
-            value = task["klass"](
-                data, contentType=mimetype, filename=task["filename"],
+            parameters.pop("fieldname", None)
+            parameters.pop("scale", None)
+            future = self._executor.submit(
+                scaleImageTask,
+                task["data"], **parameters
             )
-            value.fieldname = fieldname
-            for scale in values:
-                scale["data"] = value
-                storage[scale["uid"]] = scale
-            logger.info('/'.join(filter(bool, [task["context"], '@@images', fieldname, scale_name])))
-            t.note('/'.join(filter(bool, [task["context"], '@@images', fieldname, scale_name])))
+            return future
+        return None
+
+    def _store_scale_result(self, task, result, t):
+        assert isinstance(task, tuple)
+        task = dict(task)
+        storage = self._conn.get(task["storage_oid"])
+
+        key = dict(task["parameters"])
+        key.pop("quality", None)  # not part of key
+        key = tuple(sorted(key.items()))
+
+        parameters = dict(task["parameters"])
+        fieldname = parameters.pop("fieldname", None)
+        scale_name = parameters.pop("scale", None)
+
+        data, format_, dimensions = result
+        mimetype = "image/{0}".format(format_.lower())
+        value = task["klass"](
+            data, contentType=mimetype, filename=task["filename"],
+        )
+        for scale in [value for value in storage.values()
+                      if value.get("key") == key
+                      and value.get("data") is None]:
+            scale["data"] = value
+            storage[scale["uid"]] = scale
+            msg = '/'.join(filter(bool, [task["context"],
+                                         '@@images', fieldname, scale_name]))
+            logger.info(msg)
+            t.note(msg)
 
     def stop(self):
         self._stopped = True
