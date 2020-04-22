@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 MAX_RETRY = 10
 ZODB_CACHE_SIZE = 100
+QUEUE_INTERVAL = 1
 
 
 def imageScalingQueueFactory():
@@ -26,6 +27,19 @@ def imageScalingQueueFactory():
     thread = ImageScalingQueueProcessorThread()
     thread.start()
     return thread
+
+
+class SetQueue(queue.Queue):
+    """Unordered queue that only holds the same task once"""
+
+    def _init(self, maxsize):
+        self.queue = set()  # order does not really matter
+
+    def _put(self, item):
+        self.queue.add(item)
+
+    def _get(self):
+        return self.queue.pop()
 
 
 @implementer(IImageScalingQueue)
@@ -42,8 +56,8 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         config = getConfiguration()
         self._lock = threading.Lock()
         self.setDaemon(True)
-        self.queue = queue.Queue()
-        self.retry = queue.Queue()
+        self.queue = SetQueue()
+        self.retry = SetQueue()
         self._tm = TransactionManager()
         self._db = config.dbtab.getDatabase("/", is_root=1)
         self._conn = self._db.open(transaction_manager=self._tm)
@@ -56,20 +70,21 @@ class ImageScalingQueueProcessorThread(threading.Thread):
             "filename": filename,
             "klass": klass,
             "context": context,
-            "parameters": parameters,
+            "parameters": tuple(sorted(parameters.items())),
         }
-        self.queue.put(task)
+        self.queue.put(tuple(sorted(task.items())))
 
     def run(self, forever=True):
         atexit.register(self.stop)
         while not self._stopped:
             try:
-                task = self.queue.get(timeout=1)
+                task = dict(self.queue.get(timeout=QUEUE_INTERVAL))
             except queue.Empty:
                 # on empty queue, flush retry queue back to main queue
                 while self.retry.qsize() > 0:
                     try:
                         self.queue.put(self.retry.get(timeout=0))
+                        self.retry.task_done()
                     except queue.Empty:
                         break
                 continue
@@ -86,7 +101,8 @@ class ImageScalingQueueProcessorThread(threading.Thread):
                 if task["retry"] > MAX_RETRY:
                     logger.exception(str(e))
                 else:
-                    self.retry.put(task)
+                    self.retry.put(tuple(sorted(task.items())))
+            self.queue.task_done()
             # A testing plug
             if not forever:
                 break
@@ -94,12 +110,12 @@ class ImageScalingQueueProcessorThread(threading.Thread):
     def _process_one_scale(self, task, t):
         storage = self._conn.get(task["storage_oid"])
         # build plone.scale storage key
-        key = task["parameters"].copy()
+        key = dict(task["parameters"])
         key.pop("quality", None)  # not part of key
         key = tuple(sorted(key.items()))
         values = [v for v in storage.values() if v["key"] == key]
         if values:
-            parameters = task["parameters"].copy()
+            parameters = dict(task["parameters"])
             fieldname = parameters.pop("fieldname", None)
             scale_name = parameters.pop("scale", None)
             with open(task["data"], "rb") as fp:
