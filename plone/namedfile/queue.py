@@ -18,6 +18,7 @@ import transaction
 logger = logging.getLogger(__name__)
 
 MAX_RETRY = 10
+ZODB_CACHE_SIZE = 100
 
 
 def imageScalingQueueFactory():
@@ -46,7 +47,7 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         self._tm = TransactionManager()
         self._db = config.dbtab.getDatabase("/", is_root=1)
         self._conn = self._db.open(transaction_manager=self._tm)
-        self._conn._cache.cache_size = 100  # minimal cache
+        self._conn._cache.cache_size = ZODB_CACHE_SIZE  # minimal cache
 
     def put(self, storage_oid, data, filename, klass, context, **parameters):
         task = {
