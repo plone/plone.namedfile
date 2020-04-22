@@ -20,9 +20,9 @@ import transaction
 
 logger = logging.getLogger(__name__)
 
-MAX_RETRY = 10
 ZODB_CACHE_SIZE = 100
-QUEUE_INTERVAL = 1
+MAX_QUEUE_GET_TIMEOUT = 1
+MAX_TASK_RETRY_COUNT = 10
 
 
 def imageScalingQueueFactory():
@@ -65,6 +65,7 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         config = getConfiguration()
         self.setDaemon(True)
         self._lock = threading.Lock()
+        self._timeout = 0.0
         self._queue = SetQueue()
         self._retry = SetQueue()
         self._retries = {}  # must be accessed with lock
@@ -101,7 +102,7 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         assert isinstance(task, tuple)
         error = False
         with self._retries_lock:
-            if self._retries[task] > MAX_RETRY:
+            if self._retries[task] > MAX_TASK_RETRY_COUNT:
                 del self._retries[task]
                 error = True
             else:
@@ -118,6 +119,7 @@ class ImageScalingQueueProcessorThread(threading.Thread):
                 assert isinstance(task, tuple)
                 try:
                     result = future.result(timeout=0)
+                    self._timeout = 0.0
                     self._futures.remove((task, future))
                 except TimeoutError:
                     continue
@@ -135,13 +137,16 @@ class ImageScalingQueueProcessorThread(threading.Thread):
 
             # check for new task
             try:
-                task = self._queue.get(timeout=QUEUE_INTERVAL)
+                task = self._queue.get(timeout=self._timeout)
+                self._timeout = 0.0
                 assert isinstance(task, tuple)
             except queue.Empty:
+                if self._timeout < MAX_QUEUE_GET_TIMEOUT:
+                    self._timeout += 0.1
                 # on empty queue, flush retry queue back to main queue
                 while self._retry.qsize() > 0:
                     try:
-                        self._queue.put(self._retry.get(timeout=0))
+                        self._queue.put(self._retry.get(timeout=self._timeout))
                         self._retry.task_done()
                     except queue.Empty:
                         break
