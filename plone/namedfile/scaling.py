@@ -438,7 +438,7 @@ class ImageScaling(BrowserView):
                 # scale has not been generated yet; redirect
                 name = info["fieldname"]
                 base = self.context.absolute_url()
-                url = u"{0}/@@images/{1}".format(base, name)
+                url = u"{0}/@@display-file/{1}".format(base, name)
                 raise Redirect(url)
             scale_view = self._scale_view_class(self.context, self.request, **info)
             alsoProvides(scale_view, IStableImageScale)
