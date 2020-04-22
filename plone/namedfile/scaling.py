@@ -6,7 +6,9 @@ from io import BytesIO
 from plone.memoize import ram
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
+from plone.namedfile.interfaces import IImageScalingQueue
 from plone.namedfile.interfaces import IStableImageScale
+from plone.namedfile.queue import ImageScalingQueueDataManager
 from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
@@ -19,6 +21,7 @@ from plone.scale.storage import AnnotationStorage
 from Products.CMFPlone.utils import safe_encode
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
+from zExceptions import Redirect
 from zExceptions import Unauthorized
 from ZODB.blob import BlobFile
 from ZODB.POSException import ConflictError
@@ -33,11 +36,16 @@ from zope.traversing.interfaces import TraversalError
 
 import functools
 import logging
+import os
 import six
+import transaction
 
 
 logger = logging.getLogger(__name__)
 _marker = object()
+
+
+QUEUE_PLACEHOLDER_SCALE = (object(), object(), object())
 
 
 class ImageScale(BrowserView):
@@ -194,7 +202,21 @@ class DefaultImageScalingFactory(object):
             return None
         return getScaledImageQuality()
 
+    def get_queue(self, data):
+        """Get image scaling queue """
+        queue = queryUtility(IImageScalingQueue)
+        storage = AnnotationStorage(self.context)
+        storage_oid = getattr(storage.storage, "_p_oid", None)
+        if isinstance(data, BlobFile):
+            path = getattr(data, "name", None)
+            exists = os.path.isfile(path) if path else None
+            if all([queue, storage_oid, path, exists]):
+                return functools.partial(queue.put, storage_oid, path)
+        return None
+
     def create_scale(self, data, direction, height, width, **parameters):
+        if self.get_queue(data) is not None:
+            return QUEUE_PLACEHOLDER_SCALE
         return scaleImage(
             data, direction=direction, height=height, width=width, **parameters
         )
@@ -267,6 +289,26 @@ class DefaultImageScalingFactory(object):
 
             result = orig_data.read(), "svg+xml", (width, height)
 
+        if result == QUEUE_PLACEHOLDER_SCALE:
+            orig_params = {
+                "klass": orig_value.__class__,
+                "context": '/'.join(self.context.getPhysicalPath()),
+                "filename": orig_value.filename,
+                "fieldname": fieldname,
+                "direction": direction,
+                "height": height,
+                "width": width,
+                "scale": scale,
+            }
+            orig_params.update(parameters)
+            transaction.get().join(ImageScalingQueueDataManager(
+                functools.partial(self.get_queue(orig_data), **orig_params)
+            ))
+            dummy, format_ = orig_value.contentType.split("/", 1)
+            if isinstance(orig_data, BlobFile):
+                orig_data.close()
+            return None, format_, (width, height)
+
         data, format_, dimensions = result
         mimetype = "image/{0}".format(format_.lower())
         value = orig_value.__class__(
@@ -310,6 +352,12 @@ class ImageScaling(BrowserView):
             info = storage.get(name)
             if info is None:
                 raise NotFound(self, name, self.request)
+            elif info["data"] is None:
+                # scale has not been generated yet; redirect
+                name = info["fieldname"]
+                base = self.context.absolute_url()
+                url = u"{0}/@@images/{1}".format(base, name)
+                raise Redirect(url)
             scale_view = self._scale_view_class(self.context, self.request, **info)
             alsoProvides(scale_view, IStableImageScale)
             return scale_view

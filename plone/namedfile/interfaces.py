@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from zope import schema
+from zope.interface import Attribute
 from zope.interface import Interface
 from zope.schema.interfaces import IObject
 
@@ -77,6 +78,14 @@ class IPluggableFileFieldValidation(IPluggableBinaryFieldValidation):
 class IPluggableImageFieldValidation(IPluggableBinaryFieldValidation):
     """pluggable validation for binary Image fields
     """
+
+
+class IImageScalingQueue(Interface):
+    """Asynchronous image scaling queue
+    """
+
+    def put(storage_oid, data, **parameters):
+        """Queue asynchronous image scaling into plone.scale annotation storage"""
 
 
 # Values
