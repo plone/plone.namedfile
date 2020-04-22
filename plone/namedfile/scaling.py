@@ -207,6 +207,10 @@ class DefaultImageScalingFactory(object):
         queue = queryUtility(IImageScalingQueue)
         storage = AnnotationStorage(self.context)
         storage_oid = getattr(storage.storage, "_p_oid", None)
+        if storage_oid is None:
+            # Reserve oid for new storage
+            self.context._p_jar.add(storage.storage)
+            storage_oid = storage.storage._p_oid
         if isinstance(data, BlobFile):
             path = getattr(data, "name", None)
             exists = os.path.isfile(path) if path else None
