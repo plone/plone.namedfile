@@ -18,7 +18,7 @@ import logging
 import threading
 import transaction
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("plone.namedfile.queue")
 
 ZODB_CACHE_SIZE = 100
 MAX_QUEUE_GET_TIMEOUT = 1
@@ -30,19 +30,6 @@ def imageScalingQueueFactory():
     thread = ImageScalingQueueProcessorThread()
     thread.start()
     return thread
-
-
-class SetQueue(queue.Queue):
-    """Unordered queue that only holds the same task once"""
-
-    def _init(self, maxsize):
-        self.queue = set()  # order does not really matter
-
-    def _put(self, item):
-        self.queue.add(item)
-
-    def _get(self):
-        return self.queue.pop()
 
 
 def scaleImageTask(path, **parameters):
@@ -66,8 +53,8 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         self.setDaemon(True)
         self._lock = threading.Lock()
         self._timeout = 0.0
-        self._queue = SetQueue()
-        self._retry = SetQueue()
+        self._queue = queue.Queue()
+        self._retry = queue.Queue()
         self._retries = {}  # must be accessed with lock
         self._retries_lock = threading.Lock()
         self._tm = TransactionManager()
@@ -179,10 +166,14 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         key.pop("quality", None)  # not part of key
         key = tuple(sorted(key.items()))
 
-        values = [scale for scale in storage.values()
-                  if scale.get("key") == key
-                  and scale.get("data") is None]
-        if values and isinstance(data, Blob):
+        anon_key = dict(task["parameters"])
+        anon_key.pop("scale", None)  # not part of key
+        anon_key = tuple(sorted(anon_key.items()))
+
+        matches = [info for info in storage.values()
+                   if info.get("key") in [key, anon_key]
+                   and info.get("data") is None]
+        if matches and isinstance(data, Blob):
             parameters = dict(task["parameters"])
             parameters.pop("fieldname", None)
             parameters.pop("scale", None)
@@ -191,6 +182,7 @@ class ImageScalingQueueProcessorThread(threading.Thread):
             fp.close()
             future = self._executor.submit(scaleImageTask, path, **parameters)
             return future
+
         return None
 
     def _store_scale_result(self, task, result, t):
@@ -202,24 +194,34 @@ class ImageScalingQueueProcessorThread(threading.Thread):
         key.pop("quality", None)  # not part of key
         key = tuple(sorted(key.items()))
 
+        anon_key = dict(task["parameters"])
+        anon_key.pop("scale", None)  # not part of key
+        anon_key = tuple(sorted(anon_key.items()))
+
         parameters = dict(task["parameters"])
         fieldname = parameters.pop("fieldname", None)
-        scale_name = parameters.pop("scale", None)
+        scale_name = parameters.pop("scale", None) or ""
 
         data, format_, dimensions = result
         mimetype = "image/{0}".format(format_.lower())
         value = task["klass"](
             data, contentType=mimetype, filename=task["filename"],
         )
-        for scale in [value for value in storage.values()
-                      if value.get("key") == key
-                      and value.get("data") is None]:
-            scale["data"] = value
-            storage[scale["uid"]] = scale
-            msg = '/'.join(filter(bool, [task["context"],
-                                         '@@images', fieldname, scale_name]))
-            logger.info(msg)
-            t.note(msg)
+        value.fieldname = fieldname
+        for info in [info for info in storage.values()
+                     if info.get("key") in [key, anon_key]
+                     and info.get("data") is None]:
+            info["data"] = value
+            storage[info["uid"]] = info
+            note = "/".join(filter(bool, [
+                task["context"], "@@images", fieldname, scale_name]))
+            details = "x".join(filter(bool, [
+                str(parameters.get("width") or ""),
+                str(parameters.get("height") or ""),
+                str(parameters.get("quality") or ""),
+            ]))
+            logger.info(" ".join([note, details, info["uid"]]))
+            t.note(note)
 
     def stop(self):
         self._stopped = True
