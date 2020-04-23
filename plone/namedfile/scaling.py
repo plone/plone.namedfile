@@ -441,7 +441,9 @@ class ImageScaling(BrowserView):
                 raise NotFound(self, name, self.request)
             elif info["data"] is None:
                 # scale has not been generated yet; redirect
-                name = info["fieldname"]
+                name = (info.get("fieldname") or
+                        dict(info.get("key") or []).get("fieldname") or
+                        "image")
                 base = self.context.absolute_url()
                 url = u"{0}/@@display-file/{1}".format(base, name)
                 raise Redirect(url)
