@@ -7,9 +7,9 @@ from plone.memoize import ram
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import ICreateImageScalesOnCommit
-from plone.namedfile.interfaces import IImageScalingQueue
 from plone.namedfile.interfaces import IStableImageScale
-from plone.namedfile.queue import ImageScalingQueueDataManager
+from plone.namedfile.queue import queue_scale
+from plone.namedfile.queue import get_queue
 from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
@@ -27,7 +27,6 @@ from zExceptions import Unauthorized
 from ZODB.blob import BlobFile
 from ZODB.POSException import ConflictError
 from zope.annotation.interfaces import IAnnotations
-from zope.component import hooks
 from zope.component import getMultiAdapter
 from zope.component import getUtility
 from zope.component import queryUtility
@@ -42,6 +41,7 @@ from zope.traversing.interfaces import TraversalError
 import functools
 import logging
 import six
+import time
 import transaction
 
 try:
@@ -55,7 +55,7 @@ else:
 logger = logging.getLogger(__name__)
 _marker = object()
 
-QUEUE_PLACEHOLDER_SCALE = (object(), object(), object())
+ASYNCHRONOUS_SCALE = (object(), object(), object())
 ANNOTATION_KEY = "plone.namedfile.scaling"
 
 
@@ -275,29 +275,10 @@ class DefaultImageScalingFactory(object):
             return None
         return getScaledImageQuality()
 
-    def get_queue(self, data):
-        """Get image scaling queue for Blobs"""
-        if isinstance(data, BlobFile):
-            queue = queryUtility(IImageScalingQueue)
-            storage = AnnotationStorage(self.context)
-            storage_oid = getattr(storage.storage, "_p_oid", None)
-            data_oid = getattr(data.blob, "_p_oid", None)
-            # Reserve OIDs for new objects
-            if storage_oid is None or data_oid is None:
-                site = hooks.getSite()
-                if storage_oid is None:
-                    site._p_jar.add(storage.storage)
-                    storage_oid = storage.storage._p_oid
-                if data_oid is None:
-                    site._p_jar.add(data.blob)
-                    data_oid = data.blob._p_oid
-            if all([queue, storage_oid, data_oid]):
-                return functools.partial(queue.put, storage_oid, data_oid)
-        return None
-
     def create_scale(self, data, direction, height, width, **parameters):
-        if self.get_queue(data) is not None:
-            return QUEUE_PLACEHOLDER_SCALE
+        if isinstance(data, BlobFile)\
+                and get_queue(self.context, data.blob) is not None:
+            return ASYNCHRONOUS_SCALE
         return scaleImage(
             data, direction=direction, height=height, width=width, **parameters
         )
@@ -374,37 +355,19 @@ class DefaultImageScalingFactory(object):
 
             result = orig_data.read(), "svg+xml", (width, height)
 
-        if result == QUEUE_PLACEHOLDER_SCALE:
-            orig_params = {
-                "klass": orig_value.__class__,
-                "context": '/'.join(self.context.getPhysicalPath()),
-                "filename": orig_value.filename,
-                "fieldname": fieldname,
-                "direction": direction,
-                "height": height,
-                "width": width,
-                "scale": scale,
-            }
-            orig_params.update(parameters)
-            transaction.get().join(ImageScalingQueueDataManager(
-                functools.partial(self.get_queue(orig_data), **orig_params)
-            ))
+        if result is ASYNCHRONOUS_SCALE:
+            queue_scale(self.context, orig_value, fieldname, height, width,
+                        direction, scale, transaction, **parameters)
+            value = None
+            dimensions = (width, height)
             dummy, format_ = orig_value.contentType.split("/", 1)
-
-            # make sure the file is closed to avoid error:
-            # ZODB-5.5.1-py3.7.egg/ZODB/blob.py:339: ResourceWarning:
-            # unclosed file <_io.FileIO ... mode='rb' closefd=True>
-            if isinstance(orig_data, BlobFile):
-                orig_data.close()
-
-            return None, format_, (width, height)
-
-        data, format_, dimensions = result
-        mimetype = "image/{0}".format(format_.lower())
-        value = orig_value.__class__(
-            data, contentType=mimetype, filename=orig_value.filename,
-        )
-        value.fieldname = fieldname
+        else:
+            data, format_, dimensions = result
+            mimetype = "image/{0}".format(format_.lower())
+            value = orig_value.__class__(
+                data, contentType=mimetype, filename=orig_value.filename,
+            )
+            value.fieldname = fieldname
 
         # make sure the file is closed to avoid error:
         # ZODB-5.5.1-py3.7.egg/ZODB/blob.py:339: ResourceWarning:
@@ -443,7 +406,12 @@ class ImageScaling(BrowserView):
             if info is None:
                 raise NotFound(self, name, self.request)
             elif info["data"] is None:
-                # scale has not been generated yet; redirect
+                # this should only happen when asynchronous scaling has lost a task
+                if ((time.time() * 1000) - info["modified"]) / 1000 / 60 > 10:
+                    # requeue scale when scale info is 10 minutes old
+                    queue_scale(self.context, getattr(self.context, name, None),
+                                **dict(info["key"]))
+                # meanwhile, redirect to the original
                 name = (info.get("fieldname") or
                         dict(info.get("key") or []).get("fieldname") or
                         "image")

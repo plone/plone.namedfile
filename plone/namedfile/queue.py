@@ -5,20 +5,25 @@ This module contains the image scaling queue processor thread.
 from App.config import getConfiguration
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import TimeoutError
+from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.interfaces import IImageScalingQueue
 from plone.scale.scale import scaleImage
+from plone.scale.storage import AnnotationStorage
 from six.moves import queue
 from transaction import TransactionManager
 from transaction.interfaces import IDataManager
 from ZODB.blob import Blob
+from zope.component import hooks
+from zope.component import queryUtility
 from zope.interface import implementer
 
 import atexit
+import functools
 import logging
 import threading
 import transaction
 
-logger = logging.getLogger("plone.namedfile.queue")
+logger = logging.getLogger(__name__)
 
 ZODB_CACHE_SIZE = 100
 MAX_QUEUE_GET_TIMEOUT = 1
@@ -36,6 +41,58 @@ def scaleImageTask(path, **parameters):
     """Concurrent executor task for scaling image"""
     with open(path, "rb") as fp:
         return scaleImage(fp, **parameters)
+
+
+def get_queue(context, blob):
+    """Get image scaling queue callable for blobs"""
+
+    queue = queryUtility(IImageScalingQueue)
+    storage = AnnotationStorage(context)
+    storage_oid = getattr(storage.storage, "_p_oid", None)
+    data_oid = getattr(blob, "_p_oid", None)
+
+    # Reserve OIDs for new objects
+    if storage_oid is None or data_oid is None:
+        site = hooks.getSite()
+        if storage_oid is None:
+            site._p_jar.add(storage.storage)
+            storage_oid = storage.storage._p_oid
+        if data_oid is None:
+            site._p_jar.add(blob)
+            data_oid = blob._p_oid
+
+    if all([queue, storage_oid, data_oid]):
+        return functools.partial(queue.put, storage_oid, data_oid)
+
+    return None
+
+
+def queue_scale(context, value, fieldname=None, height=None, width=None,
+                direction=None, scale=None, transaction_manager=None,
+                **parameters):
+    if not isinstance(value, NamedBlobImage) or None in [fieldname, height, width]:
+        return
+
+    task_arguments = {
+        "klass": value.__class__,
+        "context": '/'.join(context.getPhysicalPath()),
+        "filename": value.filename,
+        "fieldname": fieldname,
+        "direction": direction,
+        "height": height,
+        "width": width,
+        "scale": scale,
+    }
+    task_arguments.update(parameters)
+    queue_put = get_queue(context, value._blob)
+
+    if queue_put is not None:
+        if transaction_manager:
+            transaction_manager.get().join(ImageScalingQueueDataManager(
+                functools.partial(queue_put, **task_arguments)
+            ))
+        else:
+            queue_put(**task_arguments)
 
 
 @implementer(IImageScalingQueue)
