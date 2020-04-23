@@ -85,6 +85,22 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.height, 80)
         assertImage(self, foo.data.data, 'PNG', (80, 80))
 
+    def testCreateExactScale(self):
+        foo = self.scaling.scale('image', width=100, height=80)
+        self.assertIsNot(foo.data, self.item.image)
+
+        # test that exact scale without parameters returns original
+        foo = self.scaling.scale('image',
+                                 width=self.item.image._width,
+                                 height=self.item.image._height)
+        self.assertIs(foo.data, self.item.image)
+
+        foo = self.scaling.scale('image',
+                                 width=self.item.image._width,
+                                 height=self.item.image._height,
+                                 quality=80)
+        self.assertIsNot(foo.data, self.item.image)
+
     def testCreateHighPixelDensityScale(self):
         self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
         foo = self.scaling.scale('image', width=100, height=80)
