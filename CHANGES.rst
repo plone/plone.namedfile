@@ -14,7 +14,7 @@ Changelog
 New features:
 
 
-- - Change to use field value _p_mtime instead of context object _p_mtime as image scale invalidation timestamp to fix issue where context object (e.g. a document with lead image) modification invalidated all its image field scales even the images itself were not modified. [datakurre] (#91)
+- Change to use field value _p_mtime instead of context object _p_mtime as image scale invalidation timestamp to fix issue where context object (e.g. a document with lead image) modification invalidated all its image field scales even the images itself were not modified. [datakurre] (#91)
 
 
 5.2.2 (2020-04-14)
