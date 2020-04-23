@@ -218,10 +218,11 @@ class DefaultImageScalingFactory(object):
         if height is None and width is None:
             dummy, format_ = orig_value.contentType.split("/", 1)
             return None, format_, (orig_value._width, orig_value._height)
-        elif height == orig_value._height and width == orig_value._width:
-            if not parameters:
-                dummy, format_ = orig_value.contentType.split("/", 1)
-                return orig_value, format_, (orig_value._width, orig_value._height)
+        elif not parameters and height and width \
+                and height == getattr(orig_value, "_height", None) \
+                and width == getattr(orig_value, "_width", None):
+            dummy, format_ = orig_value.contentType.split("/", 1)
+            return orig_value, format_, (orig_value._width, orig_value._height)
         orig_data = None
         try:
             orig_data = orig_value.open()
