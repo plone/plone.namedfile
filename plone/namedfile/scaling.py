@@ -80,7 +80,7 @@ def createImageScales(event):
             for name, actual_width, actual_height in get_scale_infos():
                 images.scale(fieldname, scale=name)
             image = getattr(context, fieldname, None)
-            if image:  # REST API uses this scale as original URL
+            if image:  # REST API requires this scale to refer the original
                 width, height = image.getImageSize()
                 images.scale(fieldname,
                              width=width, height=height, direction="thumbnail")
@@ -91,7 +91,7 @@ def createImageScales(event):
         except ConflictError:
             msg = "/".join(filter(bool, ["/".join(context.getPhysicalPath()),
                                          "@@images", fieldname]))
-            logger.warning("ConflictError prevented creating scales: " + msg)
+            logger.warning("ConflictError prevented scaling in advance: " + msg)
 
 
 def get_scale_infos():
@@ -276,8 +276,7 @@ class DefaultImageScalingFactory(object):
         return getScaledImageQuality()
 
     def get_queue(self, data):
-        """Get image scaling queue """
-        # TODO: support basic NamedFile, not only blob
+        """Get image scaling queue for Blobs"""
         if isinstance(data, BlobFile):
             queue = queryUtility(IImageScalingQueue)
             storage = AnnotationStorage(self.context)

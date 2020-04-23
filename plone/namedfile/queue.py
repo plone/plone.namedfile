@@ -183,6 +183,7 @@ class ImageScalingQueueProcessorThread(threading.Thread):
             future = self._executor.submit(scaleImageTask, path, **parameters)
             return future
 
+        logger.warning("Skipped scale without matching key: " + str(task))
         return None
 
     def _store_scale_result(self, task, result, t):
