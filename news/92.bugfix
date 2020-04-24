@@ -1,0 +1,1 @@
+- Fix image scaling to re-use the original image when scaling is not required to allow Plone REST API to use cacheable scale URL for the original image without performance penalty [datakurre]
