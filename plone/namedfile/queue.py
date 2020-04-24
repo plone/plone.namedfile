@@ -141,8 +141,8 @@ class ImageScalingQueueProcessorThread(threading.Thread):
                 self._retries[task] = 0
                 self._queue.put(task)
 
-    def _retry_task(self, task, exception):
-        """Retry task because of exception"""
+    def _retry_task(self, task, reason):
+        """Retry task because of exception or other reason"""
         assert isinstance(task, tuple)
         error = False
         with self._retries_lock:
@@ -151,8 +151,10 @@ class ImageScalingQueueProcessorThread(threading.Thread):
                 error = True
             else:
                 self._retry.put(task)
-        if error:
-            logger.exception(str(exception))
+        if error and isinstance(reason, Exception):
+            logger.exception(str(reason))
+        elif error:
+            logger.warning(str(reason))
 
     def run(self, forever=True):
         atexit.register(self.stop)
@@ -240,7 +242,8 @@ class ImageScalingQueueProcessorThread(threading.Thread):
             future = self._executor.submit(scaleImageTask, path, **parameters)
             return future
 
-        logger.warning("Skipped scale without matching key: " + str(task))
+        self._retry_task(
+            task, "Skipped scale without matching key: " + str(task))
         return None
 
     def _store_scale_result(self, task, result, t):
