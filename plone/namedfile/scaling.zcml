@@ -20,10 +20,6 @@
       factory=".scaling.DefaultImageScalingFactory"
       for="*"
   />
-  <subscriber
-      for="ZPublisher.interfaces.IPubSuccess"
-      handler=".scaling.createImageScales"
-  />
   <utility
       provides=".interfaces.IImageScalingQueue"
       factory=".queue.imageScalingQueueFactory"
