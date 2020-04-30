@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+5.3.1 (2020-04-30)
+------------------
+
+Bug fixes:
+
+
+- Fix image scaling to re-use the original image when scaling is not required to allow Plone REST API to use cacheable scale URL for the original image without performance penalty [datakurre] (#92)
+
+
 5.3.0 (2020-04-21)
 ------------------
 
