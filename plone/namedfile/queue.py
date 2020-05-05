@@ -281,7 +281,7 @@ class ImageScalingQueueProcessorThread(threading.Thread):
                 str(parameters.get("height") or ""),
                 str(parameters.get("quality") or ""),
             ]))
-            logger.info(" ".join([note, details, info["uid"]]))
+            logger.debug(" ".join([note, details, info["uid"]]))
             t.note(note)
 
     def stop(self):
