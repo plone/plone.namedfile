@@ -4,7 +4,7 @@ from setuptools import setup
 import os
 
 
-version = '4.2.8.dev0'
+version = '4.2.8.dev0+zest0'
 description = 'File types and fields for images, files and blob files with ' \
               'filenames'
 long_description = ('\n\n'.join([
@@ -39,7 +39,6 @@ setup(
     zip_safe=False,
     install_requires=[
         'plone.rfc822>=1.0b2',
-        'plone.rfc822>=2.0a1',
         'plone.scale[storage] >=1.4.999',
         'plone.schemaeditor',
         'plone.supermodel',
