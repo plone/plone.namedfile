@@ -5,7 +5,7 @@ from setuptools import setup
 import os
 
 
-version = '5.3.2.dev0'
+version = '5.4.0'
 
 description = 'File types and fields for images, files and blob files with ' \
               'filenames'

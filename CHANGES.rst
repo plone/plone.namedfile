@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+5.4.0 (2020-06-23)
+------------------
+
+New features:
+
+
+- - Range support (https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests)
+    [mamico] (#86)
+
+
 5.3.1 (2020-04-30)
 ------------------
 
