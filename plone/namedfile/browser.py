@@ -4,9 +4,12 @@ from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from Products.Five.browser import BrowserView
+from zope.annotation.interfaces import IAnnotations
 from zope.interface import implementer
 from zope.publisher.interfaces import IPublishTraverse
 from zope.publisher.interfaces import NotFound
+from ZPublisher.HTTPRangeSupport import expandRanges
+from ZPublisher.HTTPRangeSupport import parseRange
 
 
 @implementer(IPublishTraverse)
@@ -30,20 +33,46 @@ class Download(BrowserView):
         self.filename = None
 
     def publishTraverse(self, request, name):
-
         if self.fieldname is None:  # ../@@download/fieldname
             self.fieldname = name
         elif self.filename is None:  # ../@@download/fieldname/filename
             self.filename = name
         else:
             raise NotFound(self, name, request)
-
         return self
 
     def __call__(self):
         file = self._getFile()
         self.set_headers(file)
-        return stream_data(file)
+        request_range = self.handle_request_range(file)
+        return stream_data(file, **request_range)
+
+    def handle_request_range(self, file):
+        # check if we have a range in the request
+        ranges = None
+        header_range = self.request.getHeader('Range', None)
+        if_range = self.request.getHeader('If-Range', None)
+        if header_range is not None:
+            ranges = parseRange(header_range)
+            if if_range is not None:
+                # We delete the ranges, which causes us to skip to the 200
+                # response.
+                return {}
+            # XXX: multipart ranges not implemented
+            if ranges and len(ranges) == 1:
+                try:
+                    length = file.getSize()
+                    [(start, end)] = expandRanges(ranges, length)
+                    size = end - start
+                    self.request.response.setHeader('Content-Length', size)
+                    self.request.response.setHeader(
+                        'Content-Range',
+                        'bytes {0}-{1}/{2}'.format(start, end - 1, length))
+                    self.request.response.setStatus(206)  # Partial content
+                    return dict(start=start, end=end)
+                except ValueError:
+                    return {}
+        return {}
 
     def set_headers(self, file):
         if not self.filename:
