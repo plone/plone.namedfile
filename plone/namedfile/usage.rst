@@ -214,37 +214,6 @@ We will test this with a dummy request, faking traversal::
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''zpt.gif"
 
-Range support
--------------
-
-Checking for partial requests support::
-
-    >>> request = TestRequest()
-    >>> download = Download(container, request).publishTraverse(request, 'blobimage')
-    >>> data = download()
-    >>> request.response.getHeader('Content-Length')
-    '341'
-    >>> request.response.getHeader('Accept-Ranges')
-    'bytes'
-
-Request a specific range::
-
-    >>> request = TestRequest(environ={'HTTP_RANGE': 'bytes=0-99'})
-    >>> download = Download(container, request).publishTraverse(request, 'blobimage')
-    >>> data = download()
-    >>> request.response.getStatus()
-    206
-    >>> len(hasattr(data, 'read') and data.read() or data)
-    100
-
-The Content-Length header now indicates the size of the requested range (and not the full size of the image).
-The Content-Range response header indicates where in the full resource this partial message belongs.::
-
-    >>> request.response.getHeader('Content-Length')
-    '100'
-    >>> request.response.getHeader('Content-Range')
-    'bytes 0-99/341'
-
 
 Display-file view
 -----------------

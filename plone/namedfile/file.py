@@ -17,7 +17,6 @@ from ZODB.blob import Blob
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.fieldproperty import FieldProperty
-from ZPublisher import HTTPRangeSupport
 
 import piexif
 import transaction
@@ -306,7 +305,7 @@ class NamedImage(NamedFile):
     data = property(NamedFile._getData, _setData)
 
 
-@implementer(INamedBlobFile, HTTPRangeSupport.HTTPRangeInterface)
+@implementer(INamedBlobFile)
 class NamedBlobFile(Persistent):
     """A file stored in a ZODB BLOB, with a filename"""
 

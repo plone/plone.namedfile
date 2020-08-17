@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from io import FileIO
+
 from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
@@ -7,10 +7,8 @@ from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.tiff_utils import process_tiff
 from plone.registry.interfaces import IRegistry
 from StringIO import StringIO
-from ZPublisher.Iterators import IStreamIterator
 from zope.component import queryUtility
 from zope.deprecation import deprecate
-from zope.interface import implementer
 
 import mimetypes
 import os.path
@@ -18,7 +16,6 @@ import piexif
 import PIL.Image
 import struct
 import urllib
-from collections import Iterable
 
 
 log = getLogger(__name__)
@@ -30,48 +27,11 @@ except ImportError:
     log.info('IImagingSchema for high pixel density scales not available.')
 
 
-@implementer(IStreamIterator)
-class filestream_range_iterator(Iterable):
-    """
-    A class that mimics FileIO and implements an iterator that returns a
-    fixed-sized sequence of bytes. Beginning from `start` to `end`.
-
-    BBB: due to a possible bug in Zope>4, <=4.1.3, couldn't be subclass of FileIO
-         as Iterators.filestream_iterator
-    """
-
-    def __init__(self, name, mode='rb', bufsize=-1, streamsize=1 << 16, start=0, end=None):
-        self._io = FileIO(name, mode=mode)
-        self.streamsize = streamsize
-        self.start = start
-        self.end = end
-        self._io.seek(start, 0)
-
-    def __iter__(self):
-        if self._io.closed:
-            raise ValueError("I/O operation on closed file.")
-        return self
-
-    def __next__(self):
-        if self.end is None:
-            bytes = self.streamsize
-        else:
-            bytes = max(min(self.end - self._io.tell(), self.streamsize), 0)
-        data = self._io.read(bytes)
-        if not data:
-            raise StopIteration
-        return data
-
-    next = __next__
-
-    def close(self):
-        self._io.close()
-
-    # BBB: is it necessary to implement __len__ ?
-    # def __len__(self)
-
-    def read(self, size=-1):
-        return self._io.read(size)
+try:
+    # use this to stream data if we can
+    from ZPublisher.Iterators import filestream_iterator
+except ImportError:
+    filestream_iterator = None
 
 
 def safe_basename(filename):
@@ -114,7 +74,6 @@ def set_headers(file, response, filename=None):
 
     response.setHeader('Content-Type', contenttype)
     response.setHeader('Content-Length', file.getSize())
-    response.setHeader('Accept-Ranges', 'bytes')
 
     if filename is not None:
         if not isinstance(filename, unicode):
@@ -126,14 +85,17 @@ def set_headers(file, response, filename=None):
         )
 
 
-def stream_data(file, start=0, end=None):
+def stream_data(file):
     """Return the given file as a stream if possible.
     """
+
     if IBlobby.providedBy(file):
         if file._blob._p_blob_uncommitted:
-            return file.data[start:end]
-        return filestream_range_iterator(file._blob.committed(), 'rb', start=start, end=end)
-    return file.data[start:end]
+            return file.data
+        if filestream_iterator is not None:
+            return filestream_iterator(file._blob.committed(), 'rb')
+
+    return file.data
 
 
 def _ensure_data(image):
