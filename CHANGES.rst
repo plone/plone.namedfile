@@ -14,8 +14,8 @@ Changelog
 New features:
 
 
-- - Range support (https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests)
-    [mamico] (#86)
+- Range support (https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests)
+  [mamico] (#86)
 
 
 5.3.1 (2020-04-30)
