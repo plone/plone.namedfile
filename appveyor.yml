@@ -3,7 +3,7 @@
 environment:
   matrix:
     - PROFILE: conventions
-      PYTHON_VERSION: "3.6"
+      PYTHON_VERSION: "3"
       TOXENV: "docs,lint"
     - PROFILE: py27
       PYTHON_VERSION: "2.7"
@@ -17,6 +17,12 @@ environment:
     - PROFILE: py37
       PYTHON_VERSION: "3.7"
       TOXENV: "py37"
+    - PROFILE: py38
+      PYTHON_VERSION: "3.8"
+      TOXENV: "py38"
+    - PROFILE: py39
+      PYTHON_VERSION: "3.9"
+      TOXENV: "py39"
 
 
 cache:

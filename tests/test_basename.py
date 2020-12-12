@@ -6,7 +6,7 @@ def test_unix_style_filename():
 
 
 def test_windows_style_filename():
-    safe_basename('F:\FARMYARD\COWS\DAISY.TXT') == 'DAISY.TXT'
+    safe_basename('F:\\FARMYARD\\COWS\\DAISY.TXT') == 'DAISY.TXT'
 
 
 def test_macos_style_filename():
