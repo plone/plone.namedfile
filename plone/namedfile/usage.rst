@@ -289,7 +289,12 @@ We will test this with a dummy request, faking traversal::
     '341'
     >>> request.response.getHeader('Content-Type')
     'image/foo'
+
+Since the Content-Type is unknown, we do not trust it, and refuse to display inline.
+We download instead.
+
     >>> request.response.getHeader('Content-Disposition')
+    "attachment; filename*=UTF-8''zpt.gif"
 
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blobimage')
@@ -301,6 +306,7 @@ We will test this with a dummy request, faking traversal::
     >>> request.response.getHeader('Content-Type')
     'image/foo'
     >>> request.response.getHeader('Content-Disposition')
+    "attachment; filename*=UTF-8''zpt.gif"
 
 
 Specifying the primary field
