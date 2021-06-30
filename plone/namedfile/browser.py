@@ -11,6 +11,56 @@ from zope.publisher.interfaces import NotFound
 from ZPublisher.HTTPRangeSupport import expandRanges
 from ZPublisher.HTTPRangeSupport import parseRange
 
+import os
+
+
+# List of mimetypes that we allow to display inline.
+# This is mostly to avoid XSS (Cross Site Scripting).
+# We especially do not want image/svg+xml, text/html, application/javascript.
+# If a Manager has a use case for displaying those inline, there are other ways to create them,
+# for example in the ZMI as standard OFS File or maybe via the Resource Registries or Theming control panel.
+# ATContentTypes allows PDF and a few old MS Office formats to display inline.
+# But I think most browsers always ask what you want to do for each mimetype,
+# and you can let it remember your answer.
+# So: a few image mimetypes are likely enough here.
+# Note: a tag like `<img src="example.svg" />` loading an image/svg+xml mimetype will show up fine.
+# But when you visit example.svg as url, you will get a download.
+ALLOWED_INLINE_MIMETYPES = [
+    "image/gif",
+    # The mimetypes registry lists several for jpeg 2000:
+    "image/jp2",
+    "image/jpeg",
+    "image/jpeg2000-image",
+    "image/jpeg2000",
+    "image/jpx",
+    "image/png",
+    "image/webp",
+    "image/x-icon",
+    "image/x-jpeg2000-image",
+    "text/plain",
+    # By popular request we allow PDF:
+    "application/pdf",
+]
+
+# Perhaps a denylist is better.
+DISALLOWED_INLINE_MIMETYPES = [
+    "application/javascript",
+    "application/x-javascript",
+    "text/javascript",
+    "text/html",
+    "image/svg+xml",
+    "image/svg+xml-compressed",
+]
+
+# By default we use the allowlist.  We might change this when merging back to plone.namedfile.
+# We give integrators the option to choose the denylist via an environment variable.
+try:
+    # Look for sane name, and fall back to very specific name of hotfix.
+    USE_DENYLIST = os.environ.get("NAMEDFILE_USE_DENYLIST", os.environ.get("PLONEHOTFIX20210518_NAMEDFILE_USE_DENYLIST", 0))
+    USE_DENYLIST = bool(int(USE_DENYLIST))
+except (ValueError, TypeError, AttributeError):
+    USE_DENYLIST = False
+
 
 @implementer(IPublishTraverse)
 class Download(BrowserView):
@@ -75,8 +125,13 @@ class Download(BrowserView):
         return {}
 
     def set_headers(self, file):
+        # With filename None, set_headers will not add the download headers.
         if not self.filename:
-            self.filename = getattr(file, 'filename', self.fieldname)
+            self.filename = getattr(file, "filename", None)
+            if self.filename is None:
+                self.filename = self.fieldname
+                if self.filename is None:
+                    self.filename = "file.ext"
         set_headers(file, self.request.response, filename=self.filename)
 
     def _getFile(self):
@@ -108,5 +163,23 @@ class DisplayFile(Download):
     Same as Download, however in this case we don't set the filename so the
     browser can decide to display the file instead.
     """
+
+    # Make the configuration available on the class.
+    # Then subclasses can override this.
+    allowed_inline_mimetypes = ALLOWED_INLINE_MIMETYPES
+    disallowed_inline_mimetypes = DISALLOWED_INLINE_MIMETYPES
+    use_denylist = USE_DENYLIST
+
     def set_headers(self, file):
+        if hasattr(file, "contentType"):
+            mimetype = file.contentType
+            if self.use_denylist:
+                if mimetype in self.disallowed_inline_mimetypes:
+                    # Let the Download view handle this.
+                    return super(DisplayFile, self).set_headers(file)
+            else:
+                # Use the allowlist
+                if mimetype not in self.allowed_inline_mimetypes:
+                    # Let the Download view handle this.
+                    return super(DisplayFile, self).set_headers(file)
         set_headers(file, self.request.response)

@@ -1,0 +1,167 @@
+# -*- coding: utf-8 -*-
+from OFS.SimpleItem import SimpleItem
+from plone.app.testing import SITE_OWNER_NAME
+from plone.app.testing import SITE_OWNER_PASSWORD
+from plone.namedfile import field
+from plone.namedfile import file
+from plone.namedfile.interfaces import IImageScaleTraversable
+from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
+from plone.namedfile.tests import getFile
+from plone.testing.zope import Browser
+from Products.CMFPlone.utils import safe_unicode
+from zope.annotation import IAttributeAnnotatable
+from zope.interface import implementer
+
+import os
+import transaction
+import unittest
+
+
+class ISchema(IImageScaleTraversable):
+    image = field.NamedImage()
+    blob_image = field.NamedBlobImage()
+    file = field.NamedFile()
+    blob_file = field.NamedBlobFile()
+
+
+@implementer(IAttributeAnnotatable, ISchema)
+class DummyContent(SimpleItem):
+    # Adapted from test_scaling_functional.py
+    image = None
+    blob_image = None
+    file = None
+    blob_file = None
+    # modified = DateTime
+    id = __name__ = "item"
+    title = "foo"
+
+    def Title(self):
+        return self.title
+
+
+def get_disposition_header(browser):
+    # Could be CamelCase or all lowercase.
+    name = "Content-Disposition"
+    if name in browser.headers.keys():
+        return browser.headers.get(name)
+    name = name.lower()
+    return browser.headers.get(name, None)
+
+
+class TestAttackVectorNamedImage(unittest.TestCase):
+    layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
+    field_class = file.NamedImage
+    field_name = "image"
+
+    def setUp(self):
+        self.portal = self.layer["app"]
+        item = DummyContent()
+        self.layer["app"]._setOb("item", item)
+        self.item = self.layer["app"].item
+
+    def get_admin_browser(self):
+        browser = Browser(self.layer["app"])
+        browser.handleErrors = False
+        browser.addHeader(
+            "Authorization",
+            "Basic {0}:{1}".format(SITE_OWNER_NAME, SITE_OWNER_PASSWORD),
+        )
+        return browser
+
+    def get_anon_browser(self):
+        browser = Browser(self.layer["app"])
+        browser.handleErrors = False
+        return browser
+
+    def _named_file(self, name):
+        data = getFile(name)
+        return self.field_class(data, filename=safe_unicode(name))
+
+    def assert_download_works(self, base_url):
+        browser = self.get_anon_browser()
+        browser.open(base_url + "/@@download/{0}".format(self.field_name))
+        header = get_disposition_header(browser)
+        self.assertIsNotNone(header)
+        self.assertIn("attachment", header)
+        self.assertIn("filename", header)
+
+    def assert_display_inline_works(self, base_url):
+        # Test that displaying this file inline works.
+        browser = self.get_anon_browser()
+        browser.open(base_url + "/@@display-file/{0}".format(self.field_name))
+        self.assertIsNone(get_disposition_header(browser))
+
+    def assert_display_inline_is_download(self, base_url):
+        # Test that displaying this file inline turns into a download.
+        browser = self.get_anon_browser()
+        browser.open(base_url + "/@@display-file/{0}".format(self.field_name))
+        header = get_disposition_header(browser)
+        self.assertIsNotNone(header)
+        self.assertIn("attachment", header)
+        self.assertIn("filename", header)
+
+    def test_png_image(self):
+        setattr(self.item, self.field_name, self._named_file("image.png"))
+        transaction.commit()
+        base_url = self.item.absolute_url()
+        self.assert_download_works(base_url)
+        self.assert_display_inline_works(base_url)
+
+    def test_svg_image(self):
+        setattr(self.item, self.field_name, self._named_file("image.svg"))
+        transaction.commit()
+        base_url = self.item.absolute_url()
+        self.assert_download_works(base_url)
+        self.assert_display_inline_is_download(base_url)
+
+    def test_filename_none(self):
+        # A 'None' filename None probably does not happen during normal upload,
+        # but if an attacker manages this, even @@download will show inline.
+        data = self._named_file("image.svg")
+        data.filename = None
+        setattr(self.item, self.field_name, data)
+        transaction.commit()
+        base_url = self.item.absolute_url()
+        self.assert_download_works(base_url)
+        self.assert_display_inline_is_download(base_url)
+
+    def test_filename_empty(self):
+        # An empty filename is probably no problem, but let's check.
+        data = self._named_file("image.svg")
+        data.filename = u""
+        setattr(self.item, self.field_name, self._named_file("image.svg"))
+        transaction.commit()
+        base_url = self.item.absolute_url()
+        self.assert_download_works(base_url)
+        self.assert_display_inline_is_download(base_url)
+
+
+class TestAttackVectorNamedBlobImage(TestAttackVectorNamedImage):
+    field_class = file.NamedBlobImage
+
+
+class TestAttackVectorNamedFile(TestAttackVectorNamedImage):
+    field_class = file.NamedFile
+    field_name = "file"
+
+    def test_html_file(self):
+        data = self.field_class(
+            "<h1>Attacker</h1>", filename=safe_unicode("attacker.html")
+        )
+        setattr(self.item, self.field_name, data)
+        transaction.commit()
+        base_url = self.item.absolute_url()
+        self.assert_download_works(base_url)
+        self.assert_display_inline_is_download(base_url)
+
+    def test_pdf(self):
+        # By popular request we allow PDF.
+        setattr(self.item, self.field_name, self._named_file("file.pdf"))
+        transaction.commit()
+        base_url = self.item.absolute_url()
+        self.assert_download_works(base_url)
+        self.assert_display_inline_works(base_url)
+
+
+class TestAttackVectorNamedBlobFile(TestAttackVectorNamedFile):
+    field_class = file.NamedBlobFile
