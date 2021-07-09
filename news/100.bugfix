@@ -1,0 +1,5 @@
+Cache stable image scales strongly.
+When plone.app.imaging is available, this is already done.
+Otherwise, we should do this ourselves.
+Fixes `issue 100 <https://github.com/plone/plone.namedfile/issues/100>`_.
+[maurits]

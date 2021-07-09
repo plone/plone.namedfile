@@ -1,5 +1,7 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
+    xmlns:cache="http://namespaces.zope.org/cache"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
     xmlns:browser="http://namespaces.zope.org/browser">
   <include package="zope.annotation" />
   <browser:page
@@ -20,4 +22,21 @@
       factory=".scaling.DefaultImageScalingFactory"
       for="*"
   />
+
+  <!-- In plone.app.caching, image scales are weakly cached.
+       But stable (uid) image scales should be strongly cached.
+       When plone.app.imaging is available, this is already done.
+       Otherwise, we should do this ourselves.
+       See https://github.com/plone/plone.namedfile/issues/100 -->
+  <configure zcml:condition="not-installed plone.app.imaging">
+    <configure zcml:condition="installed z3c.caching">
+      <include package="z3c.caching" />
+      <include package="z3c.caching" file="meta.zcml" />
+      <cache:ruleset
+          for=".interfaces.IStableImageScale"
+          ruleset="plone.stableResource"
+          />
+    </configure>
+  </configure>
+
 </configure>
