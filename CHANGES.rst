@@ -8,6 +8,19 @@ Changelog
 
 .. towncrier release notes start
 
+5.5.1 (2021-07-28)
+------------------
+
+Bug fixes:
+
+
+- Cache stable image scales strongly.
+  When plone.app.imaging is available, this is already done.
+  Otherwise, we should do this ourselves.
+  Fixes `issue 100 <https://github.com/plone/plone.namedfile/issues/100>`_.
+  [maurits] (#100)
+
+
 5.5.0 (2021-06-30)
 ------------------
 
