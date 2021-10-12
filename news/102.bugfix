@@ -1,0 +1,2 @@
+use `mode` parameter instead of deprecated `direction` and warn user about it.
+[petschki]

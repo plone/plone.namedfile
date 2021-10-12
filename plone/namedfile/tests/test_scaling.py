@@ -307,7 +307,7 @@ class ImageScalingTests(unittest.TestCase):
 
     def testGetAvailableSizes(self):
         self.scaling.available_sizes = {'foo': (60, 60)}
-        assert self.scaling.getAvailableSizes('image') == {'foo': (60, 60)}
+        assert self.scaling.available_sizes == {'foo': (60, 60)}
 
     def testGetImageSize(self):
         assert self.scaling.getImageSize('image') == (200, 200)

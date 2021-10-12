@@ -34,7 +34,7 @@ from zope.traversing.interfaces import TraversalError
 import functools
 import logging
 import six
-
+import warnings
 
 logger = logging.getLogger(__name__)
 _marker = object()
@@ -194,15 +194,20 @@ class DefaultImageScalingFactory(object):
             return None
         return getScaledImageQuality()
 
-    def create_scale(self, data, direction, height, width, **parameters):
+    def create_scale(self, data, mode, height, width, **parameters):
+        if "direction" in parameters:
+            warnings.warn(
+                "the 'direction' option is deprecated, use 'mode' instead",
+                DeprecationWarning)
+            mode = parameters.pop("direction")
         return scaleImage(
-            data, direction=direction, height=height, width=width, **parameters
+            data, mode=mode, height=height, width=width, **parameters
         )
 
     def __call__(
         self,
         fieldname=None,
-        direction="thumbnail",
+        mode="scale",
         height=None,
         width=None,
         scale=None,
@@ -248,7 +253,7 @@ class DefaultImageScalingFactory(object):
             try:
                 result = self.create_scale(
                     orig_data,
-                    direction=direction,
+                    mode=mode,
                     height=height,
                     width=width,
                     **parameters
@@ -415,7 +420,7 @@ class ImageScaling(BrowserView):
         scale=None,
         height=None,
         width=None,
-        direction="thumbnail",
+        mode="scale",
         **parameters
     ):
         if fieldname is None:
@@ -444,7 +449,7 @@ class ImageScaling(BrowserView):
             fieldname=fieldname,
             height=height,
             width=width,
-            direction=direction,
+            mode=mode,
             scale=scale,
             **parameters
         )
@@ -455,7 +460,7 @@ class ImageScaling(BrowserView):
             fieldname=fieldname,
             height=height,
             width=width,
-            direction=direction,
+            mode=mode,
             scale=scale,
             storage=storage,
             **parameters
@@ -470,7 +475,7 @@ class ImageScaling(BrowserView):
         scale=None,
         height=None,
         width=None,
-        direction="thumbnail",
+        mode="scale",
         storage=None,
         **parameters
     ):
@@ -489,7 +494,7 @@ class ImageScaling(BrowserView):
                 fieldname=fieldname,
                 height=height * hdScale["scale"] if height else height,
                 width=width * hdScale["scale"] if width else width,
-                direction=direction,
+                mode=mode,
                 **parameters
             )
             scale_src["scale"] = hdScale["scale"]
@@ -503,10 +508,10 @@ class ImageScaling(BrowserView):
         scale=None,
         height=None,
         width=None,
-        direction="thumbnail",
+        mode="scale",
         **kwargs
     ):
-        scale = self.scale(fieldname, scale, height, width, direction)
+        scale = self.scale(fieldname, scale, height, width, mode)
         return scale.tag(**kwargs) if scale else None
 
 
