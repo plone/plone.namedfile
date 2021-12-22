@@ -36,6 +36,11 @@ import logging
 import six
 
 
+try:
+    from plone.tiles.interfaces import IPersistentTile
+except ImportError:
+    IPersistentTile = None
+
 logger = logging.getLogger(__name__)
 _marker = object()
 
@@ -186,6 +191,32 @@ class ImmutableTraverser(object):
 class DefaultImageScalingFactory(object):
     def __init__(self, context):
         self.context = context
+        # fieldname will be set for real in the __call__ method.
+        self.fieldname = None
+        if IPersistentTile is not None and IPersistentTile.providedBy(context):
+            self.is_tile = True
+            # We get data from the tile:
+            self.data_context = context.data
+            # This is the actual content item (Page, News Item, etc):
+            self.content_context = context.context
+        else:
+            self.is_tile = False
+            self.data_context = context
+            self.content_context = context
+
+    def get_original_value(self):
+        if self.fieldname is None:
+            return
+        if self.is_tile:
+            return self.data_context.get(self.fieldname)
+        return getattr(self.content_context, self.fieldname, None)
+
+    def url(self):
+        # The url is useful when logging a problem.
+        base = self.content_context.absolute_url()
+        if not self.is_tile:
+            return base
+        return "{}/@@{}/{}".format(base, self.context.__name__, self.context.id)
 
     def get_quality(self):
         """Get plone.app.imaging's quality setting"""
@@ -211,7 +242,15 @@ class DefaultImageScalingFactory(object):
 
         """Factory for image scales`.
         """
-        orig_value = getattr(self.context, fieldname, None)
+        if fieldname is None:
+            primary = IPrimaryFieldInfo(self.context, None)
+            if primary is None:
+                return
+            fieldname = primary.fieldname
+        # Safe self.fieldname for use in self.get_original_value.
+        self.fieldname = fieldname
+
+        orig_value = self.get_original_value()
         if orig_value is None:
             return
 
@@ -258,7 +297,7 @@ class DefaultImageScalingFactory(object):
             except Exception:
                 logger.exception(
                     'Could not scale "{0!r}" of {1!r}'.format(
-                        orig_value, self.context.absolute_url(),
+                        orig_value, self.url(),
                     ),
                 )
                 return
