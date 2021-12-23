@@ -36,11 +36,6 @@ import logging
 import six
 
 
-try:
-    from plone.tiles.interfaces import IPersistentTile
-except ImportError:
-    IPersistentTile = None
-
 logger = logging.getLogger(__name__)
 _marker = object()
 
@@ -193,30 +188,43 @@ class DefaultImageScalingFactory(object):
         self.context = context
         # fieldname will be set for real in the __call__ method.
         self.fieldname = None
-        if IPersistentTile is not None and IPersistentTile.providedBy(context):
-            self.is_tile = True
-            # We get data from the tile:
-            self.data_context = context.data
-            # This is the actual content item (Page, News Item, etc):
-            self.content_context = context.context
-        else:
-            self.is_tile = False
-            self.data_context = context
-            self.content_context = context
 
     def get_original_value(self):
+        """Get the image value.
+
+        In most cases this will be a NamedBlobImage field.
+        """
         if self.fieldname is None:
+            primary = IPrimaryFieldInfo(self.context, None)
+            if primary is None:
+                return
+            self.fieldname = primary.fieldname
+        return getattr(self.context, self.fieldname, None)
+
+    def get_raw_data(self, orig_value):
+        """Get the raw image data.
+
+        The result may be an open file, in which case it is the responsibility
+        of the caller to close it.  Or it may be a string.
+        """
+        orig_data = None
+        try:
+            orig_data = orig_value.open()
+        except AttributeError:
+            orig_data = getattr(aq_base(orig_value), "data", orig_value)
+        if not orig_data:
             return
-        if self.is_tile:
-            return self.data_context.get(self.fieldname)
-        return getattr(self.content_context, self.fieldname, None)
+        # Handle cases where large image data is stored in FileChunks instead
+        # of plain string
+        if isinstance(orig_data, tuple(FILECHUNK_CLASSES)):
+            # Convert data to 8-bit string
+            # (FileChunk does not provide read() access)
+            orig_data = str(orig_data)
+        return orig_data
 
     def url(self):
-        # The url is useful when logging a problem.
-        base = self.content_context.absolute_url()
-        if not self.is_tile:
-            return base
-        return "{}/@@{}/{}".format(base, self.context.__name__, self.context.id)
+        # url of the context
+        return self.context.absolute_url()
 
     def get_quality(self):
         """Get plone.app.imaging's quality setting"""
@@ -224,6 +232,15 @@ class DefaultImageScalingFactory(object):
         if getScaledImageQuality is None:
             return None
         return getScaledImageQuality()
+
+    def update_parameters(self, **parameters):
+        # If quality wasn't in the parameters, try the site's default scaling
+        # quality if it exists.
+        if "quality" not in parameters:
+            quality = self.get_quality()
+            if quality:
+                parameters["quality"] = quality
+        return parameters
 
     def create_scale(self, data, direction, height, width, **parameters):
         return scaleImage(
@@ -241,47 +258,39 @@ class DefaultImageScalingFactory(object):
     ):
 
         """Factory for image scales`.
-        """
-        if fieldname is None:
-            primary = IPrimaryFieldInfo(self.context, None)
-            if primary is None:
-                return
-            fieldname = primary.fieldname
-        # Safe self.fieldname for use in self.get_original_value.
-        self.fieldname = fieldname
 
+        Note: the 'scale' keyword argument is ignored.
+        You should pass a height and width.
+        """
+        # Save self.fieldname for use in self.get_original_value
+        # and other methods where we do not pass the fieldname explicitly.
+        self.fieldname = fieldname
         orig_value = self.get_original_value()
         if orig_value is None:
             return
 
         if height is None and width is None:
+            # We don't seem to want an image, so we return nothing
+            # as image value (the first argument).
             dummy, format_ = orig_value.contentType.split("/", 1)
             return None, format_, (orig_value._width, orig_value._height)
-        elif not parameters and height and width \
-                and height == getattr(orig_value, "_height", None) \
-                and width == getattr(orig_value, "_width", None):
+        if (
+            not parameters
+            and height
+            and width
+            and height == getattr(orig_value, "_height", None)
+            and width == getattr(orig_value, "_width", None)
+        ):
+            # No special wishes, and the original image already has the
+            # requested height and width.  Return the original.
             dummy, format_ = orig_value.contentType.split("/", 1)
             return orig_value, format_, (orig_value._width, orig_value._height)
-        orig_data = None
-        try:
-            orig_data = orig_value.open()
-        except AttributeError:
-            orig_data = getattr(aq_base(orig_value), "data", orig_value)
+
+        orig_data = self.get_raw_data(orig_value)
         if not orig_data:
             return
-        # Handle cases where large image data is stored in FileChunks instead
-        # of plain string
-        if isinstance(orig_data, tuple(FILECHUNK_CLASSES)):
-            # Convert data to 8-bit string
-            # (FileChunk does not provide read() access)
-            orig_data = str(orig_data)
 
-        # If quality wasn't in the parameters, try the site's default scaling
-        # quality if it exists.
-        if "quality" not in parameters:
-            quality = self.get_quality()
-            if quality:
-                parameters["quality"] = quality
+        parameters = self.update_parameters(**parameters)
 
         if not getattr(orig_value, "contentType", "") == "image/svg+xml":
             try:
@@ -311,12 +320,14 @@ class DefaultImageScalingFactory(object):
 
             result = orig_data.read(), "svg+xml", (width, height)
 
+        # Note: the format may differ from the original.
+        # For example a TIFF may have been turned into a PNG.
         data, format_, dimensions = result
         mimetype = "image/{0}".format(format_.lower())
         value = orig_value.__class__(
             data, contentType=mimetype, filename=orig_value.filename,
         )
-        value.fieldname = fieldname
+        value.fieldname = self.fieldname
 
         # make sure the file is closed to avoid error:
         # ZODB-5.5.1-py3.7.egg/ZODB/blob.py:339: ResourceWarning:

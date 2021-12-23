@@ -1,2 +1,2 @@
-Add support for tiles in DefaultImageScalingFactory.
+Make DefaultImageScalingFactory more flexible, with methods you can override.
 [maurits]
