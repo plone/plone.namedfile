@@ -247,6 +247,35 @@ class DefaultImageScalingFactory(object):
             data, direction=direction, height=height, width=width, **parameters
         )
 
+    def handle_image(
+        self, orig_value, orig_data, direction, height, width, **parameters
+    ):
+        """Return a scaled image, its mimetype format, and width and height."""
+        if getattr(orig_value, "contentType", "") == "image/svg+xml":
+            # No need to scale, we can simply use the original data,
+            # but report a different width and height.
+            if isinstance(orig_data, (six.text_type)):
+                orig_data = safe_encode(orig_data)
+            if isinstance(orig_data, (bytes)):
+                orig_data = BytesIO(orig_data)
+            result = orig_data.read(), "svg+xml", (width, height)
+            return result
+        try:
+            result = self.create_scale(
+                orig_data, direction=direction, height=height, width=width, **parameters
+            )
+        except (ConflictError, KeyboardInterrupt):
+            raise
+        except Exception:
+            logger.exception(
+                'Could not scale "{0!r}" of {1!r}'.format(
+                    orig_value,
+                    self.url(),
+                ),
+            )
+            return
+        return result
+
     def __call__(
         self,
         fieldname=None,
@@ -291,34 +320,18 @@ class DefaultImageScalingFactory(object):
             return
 
         parameters = self.update_parameters(**parameters)
-
-        if not getattr(orig_value, "contentType", "") == "image/svg+xml":
-            try:
-                result = self.create_scale(
-                    orig_data,
-                    direction=direction,
-                    height=height,
-                    width=width,
-                    **parameters
-                )
-            except (ConflictError, KeyboardInterrupt):
-                raise
-            except Exception:
-                logger.exception(
-                    'Could not scale "{0!r}" of {1!r}'.format(
-                        orig_value, self.url(),
-                    ),
-                )
-                return
-            if result is None:
-                return
-        else:
-            if isinstance(orig_data, (six.text_type)):
-                orig_data = safe_encode(orig_data)
-            if isinstance(orig_data, (bytes)):
-                orig_data = BytesIO(orig_data)
-
-            result = orig_data.read(), "svg+xml", (width, height)
+        try:
+            result = self.handle_image(
+                orig_value, orig_data, direction, height, width, **parameters
+            )
+        finally:
+            # Make sure the file is closed to avoid error:
+            # ZODB-5.5.1-py3.7.egg/ZODB/blob.py:339: ResourceWarning:
+            # unclosed file <_io.FileIO ... mode='rb' closefd=True>
+            if isinstance(orig_data, BlobFile):
+                orig_data.close()
+        if result is None:
+            return
 
         # Note: the format may differ from the original.
         # For example a TIFF may have been turned into a PNG.
@@ -328,12 +341,6 @@ class DefaultImageScalingFactory(object):
             data, contentType=mimetype, filename=orig_value.filename,
         )
         value.fieldname = self.fieldname
-
-        # make sure the file is closed to avoid error:
-        # ZODB-5.5.1-py3.7.egg/ZODB/blob.py:339: ResourceWarning:
-        # unclosed file <_io.FileIO ... mode='rb' closefd=True>
-        if isinstance(orig_data, BlobFile):
-            orig_data.close()
 
         return value, format_, dimensions
 
