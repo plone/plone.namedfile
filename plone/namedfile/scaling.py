@@ -186,43 +186,27 @@ class ImmutableTraverser(object):
 class DefaultImageScalingFactory(object):
     def __init__(self, context):
         self.context = context
+        # fieldname will be set for real in the __call__ method.
+        self.fieldname = None
 
-    def get_quality(self):
-        """Get plone.app.imaging's quality setting"""
-        getScaledImageQuality = queryUtility(IScaledImageQuality)
-        if getScaledImageQuality is None:
-            return None
-        return getScaledImageQuality()
+    def get_original_value(self):
+        """Get the image value.
 
-    def create_scale(self, data, direction, height, width, **parameters):
-        return scaleImage(
-            data, direction=direction, height=height, width=width, **parameters
-        )
-
-    def __call__(
-        self,
-        fieldname=None,
-        direction="thumbnail",
-        height=None,
-        width=None,
-        scale=None,
-        **parameters
-    ):
-
-        """Factory for image scales`.
+        In most cases this will be a NamedBlobImage field.
         """
-        orig_value = getattr(self.context, fieldname, None)
-        if orig_value is None:
-            return
+        if self.fieldname is None:
+            primary = IPrimaryFieldInfo(self.context, None)
+            if primary is None:
+                return
+            self.fieldname = primary.fieldname
+        return getattr(self.context, self.fieldname, None)
 
-        if height is None and width is None:
-            dummy, format_ = orig_value.contentType.split("/", 1)
-            return None, format_, (orig_value._width, orig_value._height)
-        elif not parameters and height and width \
-                and height == getattr(orig_value, "_height", None) \
-                and width == getattr(orig_value, "_width", None):
-            dummy, format_ = orig_value.contentType.split("/", 1)
-            return orig_value, format_, (orig_value._width, orig_value._height)
+    def get_raw_data(self, orig_value):
+        """Get the raw image data.
+
+        The result may be an open file, in which case it is the responsibility
+        of the caller to close it.  Or it may be a string.
+        """
         orig_data = None
         try:
             orig_data = orig_value.open()
@@ -236,54 +220,127 @@ class DefaultImageScalingFactory(object):
             # Convert data to 8-bit string
             # (FileChunk does not provide read() access)
             orig_data = str(orig_data)
+        return orig_data
 
+    def url(self):
+        # url of the context
+        return self.context.absolute_url()
+
+    def get_quality(self):
+        """Get plone.app.imaging's quality setting"""
+        getScaledImageQuality = queryUtility(IScaledImageQuality)
+        if getScaledImageQuality is None:
+            return None
+        return getScaledImageQuality()
+
+    def update_parameters(self, **parameters):
         # If quality wasn't in the parameters, try the site's default scaling
         # quality if it exists.
         if "quality" not in parameters:
             quality = self.get_quality()
             if quality:
                 parameters["quality"] = quality
+        return parameters
 
-        if not getattr(orig_value, "contentType", "") == "image/svg+xml":
-            try:
-                result = self.create_scale(
-                    orig_data,
-                    direction=direction,
-                    height=height,
-                    width=width,
-                    **parameters
-                )
-            except (ConflictError, KeyboardInterrupt):
-                raise
-            except Exception:
-                logger.exception(
-                    'Could not scale "{0!r}" of {1!r}'.format(
-                        orig_value, self.context.absolute_url(),
-                    ),
-                )
-                return
-            if result is None:
-                return
-        else:
+    def create_scale(self, data, direction, height, width, **parameters):
+        return scaleImage(
+            data, direction=direction, height=height, width=width, **parameters
+        )
+
+    def handle_image(
+        self, orig_value, orig_data, direction, height, width, **parameters
+    ):
+        """Return a scaled image, its mimetype format, and width and height."""
+        if getattr(orig_value, "contentType", "") == "image/svg+xml":
+            # No need to scale, we can simply use the original data,
+            # but report a different width and height.
             if isinstance(orig_data, (six.text_type)):
                 orig_data = safe_encode(orig_data)
             if isinstance(orig_data, (bytes)):
                 orig_data = BytesIO(orig_data)
-
             result = orig_data.read(), "svg+xml", (width, height)
+            return result
+        try:
+            result = self.create_scale(
+                orig_data, direction=direction, height=height, width=width, **parameters
+            )
+        except (ConflictError, KeyboardInterrupt):
+            raise
+        except Exception:
+            logger.exception(
+                'Could not scale "{0!r}" of {1!r}'.format(
+                    orig_value,
+                    self.url(),
+                ),
+            )
+            return
+        return result
 
+    def __call__(
+        self,
+        fieldname=None,
+        direction="thumbnail",
+        height=None,
+        width=None,
+        scale=None,
+        **parameters
+    ):
+
+        """Factory for image scales`.
+
+        Note: the 'scale' keyword argument is ignored.
+        You should pass a height and width.
+        """
+        # Save self.fieldname for use in self.get_original_value
+        # and other methods where we do not pass the fieldname explicitly.
+        self.fieldname = fieldname
+        orig_value = self.get_original_value()
+        if orig_value is None:
+            return
+
+        if height is None and width is None:
+            # We don't seem to want an image, so we return nothing
+            # as image value (the first argument).
+            dummy, format_ = orig_value.contentType.split("/", 1)
+            return None, format_, (orig_value._width, orig_value._height)
+        if (
+            not parameters
+            and height
+            and width
+            and height == getattr(orig_value, "_height", None)
+            and width == getattr(orig_value, "_width", None)
+        ):
+            # No special wishes, and the original image already has the
+            # requested height and width.  Return the original.
+            dummy, format_ = orig_value.contentType.split("/", 1)
+            return orig_value, format_, (orig_value._width, orig_value._height)
+
+        orig_data = self.get_raw_data(orig_value)
+        if not orig_data:
+            return
+
+        parameters = self.update_parameters(**parameters)
+        try:
+            result = self.handle_image(
+                orig_value, orig_data, direction, height, width, **parameters
+            )
+        finally:
+            # Make sure the file is closed to avoid error:
+            # ZODB-5.5.1-py3.7.egg/ZODB/blob.py:339: ResourceWarning:
+            # unclosed file <_io.FileIO ... mode='rb' closefd=True>
+            if isinstance(orig_data, BlobFile):
+                orig_data.close()
+        if result is None:
+            return
+
+        # Note: the format may differ from the original.
+        # For example a TIFF may have been turned into a PNG.
         data, format_, dimensions = result
         mimetype = "image/{0}".format(format_.lower())
         value = orig_value.__class__(
             data, contentType=mimetype, filename=orig_value.filename,
         )
-        value.fieldname = fieldname
-
-        # make sure the file is closed to avoid error:
-        # ZODB-5.5.1-py3.7.egg/ZODB/blob.py:339: ResourceWarning:
-        # unclosed file <_io.FileIO ... mode='rb' closefd=True>
-        if isinstance(orig_data, BlobFile):
-            orig_data.close()
+        value.fieldname = self.fieldname
 
         return value, format_, dimensions
 
