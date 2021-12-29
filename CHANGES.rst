@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+5.6.0 (2021-12-29)
+------------------
+
+New features:
+
+
+- Make DefaultImageScalingFactory more flexible, with methods you can override.
+  [maurits] (#104)
+
+
 5.5.1 (2021-07-28)
 ------------------
 
