@@ -4,7 +4,6 @@ from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from Products.Five.browser import BrowserView
-from zope.annotation.interfaces import IAnnotations
 from zope.interface import implementer
 from zope.publisher.interfaces import IPublishTraverse
 from zope.publisher.interfaces import NotFound
