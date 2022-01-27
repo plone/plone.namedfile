@@ -67,11 +67,5 @@ setup(
             'Pillow',
             'plone.testing[z2]',
         ],
-        # BBB - remove in version 5
-        'blobs': [],
-        'editor': [],
-        'marshaler': [],
-        'scales': [],
-        'supermodel': [],
     },
 )
