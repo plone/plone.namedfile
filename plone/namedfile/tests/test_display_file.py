@@ -12,7 +12,6 @@ from Products.CMFPlone.utils import safe_unicode
 from zope.annotation import IAttributeAnnotatable
 from zope.interface import implementer
 
-import os
 import transaction
 import unittest
 

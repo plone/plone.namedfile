@@ -5,7 +5,7 @@ from setuptools import setup
 import os
 
 
-version = '5.6.1.dev0'
+version = '6.0.0a1.dev0'
 
 description = 'File types and fields for images, files and blob files with ' \
               'filenames'
@@ -28,11 +28,11 @@ setup(
         "Framework :: Plone :: 6.0",
         "Framework :: Plone :: Core",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: BSD License",
     ],
@@ -46,9 +46,10 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'persistent',
         'piexif',
-        'plone.rfc822>=2.0a1',
-        'plone.scale[storage] >=1.4.999',
+        'plone.rfc822>=2.0.0',
+        'plone.scale[storage] >=3.0',
         'plone.schemaeditor',
         'plone.supermodel',
         'setuptools',
@@ -61,6 +62,7 @@ setup(
     ],
     extras_require={
         'test': [
+            'plone.app.testing',
             'lxml',
             'Pillow',
             'plone.testing[z2]',

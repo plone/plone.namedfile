@@ -65,8 +65,8 @@ class FileChunkStorable(object):
 class FileDescriptorStorable(object):
 
     def store(self, data, blob):
-        if not isinstance(data, file):
-            raise NotStorable('Could not store data (not of "file").')
+        if not isinstance(data, io.IOBase):
+            raise NotStorable('Could not store data: not of io.IOBase ("file").')
 
         filename = getattr(data, 'name', None)
         if filename is not None:

@@ -1,0 +1,4 @@
+Drop support for Python 2.7.
+Main target is now Plone 6, but we try to keep it running on Plone 5.2 with Python 3.
+See discussion in `plone.scale <https://github.com/plone/plone.scale/issues/44>`_.
+[maurits]

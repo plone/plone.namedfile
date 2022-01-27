@@ -1,0 +1,4 @@
+-e .[test]
+zope.testrunner
+--pre
+-c https://dist.plone.org/release/5.2-dev/constraints.txt
