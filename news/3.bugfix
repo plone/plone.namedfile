@@ -1,1 +1,0 @@
-Fixed NameError `file` on Python 3. Use `io.IOBase` instead.

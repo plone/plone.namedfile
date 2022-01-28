@@ -8,6 +8,24 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0a1 (2022-01-28)
+--------------------
+
+Breaking changes:
+
+
+- Drop support for Python 2.7.
+  Main target is now Plone 6, but we try to keep it running on Plone 5.2 with Python 3.
+  See discussion in `plone.scale issue 44 <https://github.com/plone/plone.scale/issues/44>`_.
+  [maurits] (#44)
+
+
+Bug fixes:
+
+
+- Fixed NameError `file` on Python 3. Use `io.IOBase` instead. (#3)
+
+
 5.6.0 (2021-12-29)
 ------------------
 
