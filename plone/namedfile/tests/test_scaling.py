@@ -10,12 +10,15 @@ from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
 from plone.scale.interfaces import IScaledImageQuality
+from plone.scale.storage import IImageScaleStorage
 from six import BytesIO
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
 from zope.component import getGlobalSiteManager
 from zope.component import getSiteManager
 from zope.interface import implementer
+from zope.interface import Interface
+from zope.publisher.interfaces import NotFound
 
 import PIL
 import re
@@ -60,6 +63,109 @@ class DummyQualitySupplier(object):
 
     def getQuality(self):
         return 1  # as bad as it gets
+
+
+class FakeImage:
+    def __init__(self, value, format, key=None, uid="image"):
+        self.value = value
+        self.format = format
+        self._width = len(value)
+        self._height = len(format)
+        self.contentType = f"image/{format}"
+        # variables for scales:
+        self._scales = {}
+        self.key = key
+        self.uid = uid
+
+    @property
+    def data(self):
+        return self
+
+    @property
+    def info(self):
+        return dict(
+            data=self.data,
+            width=self._width,
+            height=self._height,
+            mimetype=f'image/{self.format.lower()}',
+            key=self.key,
+            uid=self.uid
+        )
+
+    def absolute_url(self):
+        return "http://fake.image"
+
+    def Title(self):
+        # used for tag
+        return "Image Title"
+
+
+@implementer(IImageScaleStorage)
+class FakeImageScaleStorage:
+    """Storage class for FakeImages."""
+
+    def __init__(self, context, modified=None):
+        """ Adapt the given context item and optionally provide a callable
+            to return a representation of the last modification date, which
+            can be used to invalidate stored scale data on update. """
+        self.context = context
+        self.modified = modified
+        self.storage = context._scales
+
+    def scale(self, factory=None, **parameters):
+        """Find image scale data for the given parameters or create it.
+
+        In our version, we only support height and width.
+        """
+        stripped_parameters = {
+            "target_height": parameters.get("height"),
+            "target_width": parameters.get("width"),
+        }
+        key = self.hash(**stripped_parameters)
+        storage = self.storage
+        info = self.get_info_by_hash(key)
+        if info is not None:
+            # Note: we could do something with self.modified here,
+            # but we choose to ignore it.
+            return info
+        return self.create_scale(**stripped_parameters)
+
+    def create_scale(self, target_height=None, target_width=None):
+        if target_height is None and target_width is None:
+            # Return the original.
+            return self.context.info
+
+        # We have a funny way of scaling.
+        value = self.context.value[:target_height]
+        format = self.context.format[:target_width]
+
+        # Get uid and key.
+        # Our implementation never throws away scales, so we can use uid-0, uid-1, etc.
+        # Note: in ImageScaling.publishTraverse a dash in the url means it is a scale uid.
+        uid = f"uid-{len(self.storage)}"
+        key = self.hash(target_height=target_height, target_width=target_width)
+
+        # Create a new fake image for this scale.
+        scale = FakeImage(value, format, key=key, uid=uid)
+
+        # Store the scale and return the info.
+        self.storage[uid] = scale.info
+        return scale.info
+
+    def __getitem__(self, uid):
+        """ Find image scale data based on its uid. """
+        return self.storage[uid]
+
+    def get(self, uid, default=None):
+        return self.storage.get(uid, default)
+
+    def hash(self, **parameters):
+        return tuple(parameters.values())
+
+    def get_info_by_hash(self, hash):
+        for value in self.storage.values():
+            if value["key"] == hash:
+                return value
 
 
 class ImageScalingTests(unittest.TestCase):
@@ -461,6 +567,104 @@ class ImageTraverseTests(unittest.TestCase):
         ImageScaling._sizes = {'foo': (42, 42)}
         self.assertRaises(Unauthorized, self.traverse, 'image/foo')
         self.item.__allow_access_to_unprotected_subobjects__ = 1
+
+
+class StorageTests(unittest.TestCase):
+    """Test the scale storage.
+
+    Especially test that we get an adapter for IImageScaleStorage
+    instead of defaulting to plone.scale.storage.AnnotationStorage.
+    """
+
+    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+
+    def setUp(self):
+        sm = getSiteManager()
+        sm.registerAdapter(FakeImageScaleStorage, (FakeImage, Interface))
+
+    def tearDown(self):
+        sm = getSiteManager()
+        sm.unregisterAdapter(FakeImageScaleStorage, (FakeImage, Interface))
+
+    def test_original(self):
+        item = FakeImage("abcdef", "jpeg")
+        scaling = ImageScaling(item, None)
+        original = scaling.scale("image")
+        self.assertEqual(original.data.value, "abcdef")
+        self.assertIs(original.data, item)
+        self.assertEqual(original.mimetype, "image/jpeg")
+        self.assertIsInstance(original.mimetype, str)
+        self.assertEqual(original.data.contentType, "image/jpeg")
+        self.assertIsInstance(original.data.contentType, str)
+        self.assertEqual(original.width, 6)
+        self.assertEqual(original.height, 4)
+
+        # Try the tag
+        self.assertEqual(
+            scaling.tag("image"),
+            '<img src="http://fake.image/@@images/image.jpeg" alt="Image Title" title="Image Title" height="4" width="6" />',
+        )
+
+        # Try to access the item via uid.
+        # This should fail, because we only have the original, not a scale.
+        with self.assertRaises(NotFound):
+            scaling.publishTraverse(self.layer["request"], "uid-0")
+
+    def test_width(self):
+        # For FakeImage scales, the width changes the mimetype/format.
+        item = FakeImage("abcdef", "jpeg")
+        scaling = ImageScaling(item, None)
+        scale = scaling.scale("image", width=2)
+        self.assertEqual(scale.data.value, "abcdef")
+        self.assertIsInstance(scale.data, FakeImage)
+        self.assertEqual(scale.mimetype, "image/jp")
+        self.assertEqual(scale.data.contentType, "image/jp")
+        self.assertEqual(scale.width, 6)
+        self.assertEqual(scale.height, 2)
+
+        # Ask for the same scale and you get the same FakeImage.
+        scale2 = scaling.scale("image", width=2)
+        self.assertIs(scale.data, scale2.data)
+
+        # Try the tag.  It should have a uid.
+        self.assertEqual(
+            scaling.tag("image", width=2),
+            '<img src="http://fake.image/@@images/uid-0.jp" alt="Image Title" title="Image Title" height="2" width="6" />',
+        )
+
+        # Access the item via uid.
+        scale_uid = scaling.publishTraverse(self.layer["request"], "uid-0")
+        self.assertEqual(scale_uid.data.uid, "uid-0")
+        self.assertEqual(scale_uid.data.info["uid"], "uid-0")
+        self.assertIs(scale_uid.data, scale2.data)
+
+    def test_height(self):
+        # For FakeImage scales, the height changes the value.
+        item = FakeImage("abcdef", "jpeg")
+        scaling = ImageScaling(item, None)
+        scale = scaling.scale("image", height=3)
+        self.assertEqual(scale.data.value, "abc")
+        self.assertIsInstance(scale.data, FakeImage)
+        self.assertEqual(scale.mimetype, "image/jpeg")
+        self.assertEqual(scale.data.contentType, "image/jpeg")
+        self.assertEqual(scale.width, 3)
+        self.assertEqual(scale.height, 4)
+
+        # Ask for the same scale and you get the same FakeImage.
+        scale2 = scaling.scale("image", height=3)
+        self.assertIs(scale.data, scale2.data)
+
+        # Try the tag.  It should have a uid.
+        self.assertEqual(
+            scaling.tag("image", height=3),
+            '<img src="http://fake.image/@@images/uid-0.jpeg" alt="Image Title" title="Image Title" height="4" width="3" />',
+        )
+
+        # Access the item via uid.
+        scale_uid = scaling.publishTraverse(self.layer["request"], "uid-0")
+        self.assertEqual(scale_uid.data.uid, "uid-0")
+        self.assertEqual(scale_uid.data.info["uid"], "uid-0")
+        self.assertIs(scale_uid.data, scale2.data)
 
 
 def test_suite():
