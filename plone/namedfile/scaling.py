@@ -15,13 +15,14 @@ from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IImageScaleFactory
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.scale import scaleImage
-from plone.scale.storage import AnnotationStorage
+from plone.scale.storage import IImageScaleStorage
 from Products.CMFPlone.utils import safe_encode
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from zExceptions import Unauthorized
 from ZODB.blob import BlobFile
 from ZODB.POSException import ConflictError
+from zope.component import getMultiAdapter
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import alsoProvides
@@ -368,7 +369,7 @@ class ImageScaling(BrowserView):
             # we got a uid...
             if "." in name:
                 name, ext = name.rsplit(".", 1)
-            storage = AnnotationStorage(self.context)
+            storage = getMultiAdapter((self.context, None), IImageScaleStorage)
             info = storage.get(name)
             if info is None:
                 raise NotFound(self, name, self.request)
@@ -493,9 +494,9 @@ class ImageScaling(BrowserView):
             width, height = available[scale]
         if IDisableCSRFProtection and self.request is not None:
             alsoProvides(self.request, IDisableCSRFProtection)
-        storage = AnnotationStorage(
-            self.context,
-            functools.partial(self.modified, fieldname)
+        storage = getMultiAdapter(
+            (self.context, functools.partial(self.modified, fieldname)),
+            IImageScaleStorage
         )
         info = storage.scale(
             fieldname=fieldname,
