@@ -1,4 +1,0 @@
-Removed deprecated extras from setup.py.
-These ones are gone now: ``blobs``, ``editor``, ``marshaler``, ``scales``, ``supermodel``.
-See `issue 106 <https://github.com/plone/plone.namedfile/issues/106>`_.
-[maurits]

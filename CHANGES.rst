@@ -8,6 +8,27 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0a2 (2022-02-23)
+--------------------
+
+Breaking changes:
+
+
+- Removed deprecated extras from setup.py.
+  These ones are gone now: ``blobs``, ``editor``, ``marshaler``, ``scales``, ``supermodel``.
+  See `issue 106 <https://github.com/plone/plone.namedfile/issues/106>`_.
+  [maurits] (#106)
+
+
+New features:
+
+
+- Register ``AnnotationStorage`` as ``IImageScaleStorage`` multi adapter.
+  Both from ``plone.scale``.
+  Use this adapter in our scaling functions when we store or get an image scale.
+  [maurits] (#44)
+
+
 6.0.0a1 (2022-01-28)
 --------------------
 
