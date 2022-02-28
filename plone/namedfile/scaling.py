@@ -380,7 +380,7 @@ class ImageScaling(BrowserView):
             # otherwise `name` must refer to a field...
             if "." in name:
                 name, ext = name.rsplit(".", 1)
-            value = getattr(self.context, name)
+            value = self.guarded_orig_image(name)
             scale_view = self._scale_view_class(
                 self.context, self.request, data=value, fieldname=name,
             )
