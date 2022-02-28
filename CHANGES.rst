@@ -8,6 +8,17 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0a3 (2022-02-28)
+--------------------
+
+Bug fixes:
+
+
+- ``ImageScaling`` view: use ``guarded_orig_image`` to get field from a url.
+  Mostly, this makes the view easier to customize.
+  [maurits] (#104)
+
+
 6.0.0a2 (2022-02-23)
 --------------------
 

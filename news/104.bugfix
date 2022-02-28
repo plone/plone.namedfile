@@ -1,3 +1,0 @@
-``ImageScaling`` view: use ``guarded_orig_image`` to get field from a url.
-Mostly, this makes the view easier to customize.
-[maurits]
