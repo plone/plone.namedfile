@@ -248,7 +248,7 @@ class ImageURLGeneratorTests(unittest.TestCase):
         now = int(time.time() * 1000)
         transaction.commit()
         ImageScaling._sizes = {"thumb": (128, 128)}
-        url = self.view.url(field="image", scale="thumb")
+        url = self.view.url(fieldname="image", scale="thumb")
         prefix = "http://nohost/item/@@images/image/thumb/"
         postfix = "/image.png"
         self.assertTrue(url.startswith(prefix))
