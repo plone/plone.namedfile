@@ -370,7 +370,7 @@ class ImageScaling(BrowserView):
             if "." in name:
                 name, ext = name.rsplit(".", 1)
             storage = getMultiAdapter((self.context, None), IImageScaleStorage)
-            info = storage.get(name)
+            info = storage.get_or_generate(name)
             if info is None:
                 raise NotFound(self, name, self.request)
             scale_view = self._scale_view_class(self.context, self.request, **info)
@@ -498,7 +498,7 @@ class ImageScaling(BrowserView):
             (self.context, functools.partial(self.modified, fieldname)),
             IImageScaleStorage
         )
-        info = storage.scale(
+        info = storage.pre_scale(
             fieldname=fieldname,
             height=height,
             width=width,
@@ -543,7 +543,7 @@ class ImageScaling(BrowserView):
             ):
                 continue
             parameters["quality"] = hdScale["quality"]
-            scale_src = storage.scale(
+            scale_src = storage.pre_scale(
                 fieldname=fieldname,
                 height=height * hdScale["scale"] if height else height,
                 width=width * hdScale["scale"] if width else width,
