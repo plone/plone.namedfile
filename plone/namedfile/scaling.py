@@ -568,20 +568,22 @@ class ImageScaling(BrowserView):
         scale = self.scale(fieldname, scale, height, width, direction)
         return scale.tag(**kwargs) if scale else None
 
-    def url(self, fieldname=None, scale=None):
+    def url(self, fieldname=None, scale=None) -> str:
         if fieldname is not None:
-            value = getattr(self.context, field, None)
+            value = getattr(self.context, fieldname, None)
         else:
             # try to find a primary field
             primary = IPrimaryFieldInfo(self.context, None)
             if primary is None:
-                return
+                raise ValueError(f"No field given and no primary field found.")
             fieldname = primary.fieldname
             value = primary.value
         if not value:
-            return
+            ValueError(f"No namedfile found for fieldname={fieldname}.")
         mtime = int(value.modified * 1000)
-        return f"{self.context.absolute_url()}/@@images/{fieldname}/{scale}/{mtime}/{value.filename}"
+        if scale:
+            return f"{self.context.absolute_url()}/@@images/{fieldname}/{scale}/{mtime}/{value.filename}"
+        return f"{self.context.absolute_url()}/@@images/{fieldname}/{mtime}/{value.filename}"
 
 
 class NavigationRootScaling(ImageScaling):

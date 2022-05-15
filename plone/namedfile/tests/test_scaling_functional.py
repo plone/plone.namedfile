@@ -244,12 +244,22 @@ class ImageURLGeneratorTests(unittest.TestCase):
     def tearDown(self):
         ImageScaling._sizes = self._orig_sizes
 
-    def testURLGeneration(self):
+    def testURLGenerationWithScale(self):
         now = int(time.time() * 1000)
         transaction.commit()
         ImageScaling._sizes = {"thumb": (128, 128)}
         url = self.view.url(fieldname="image", scale="thumb")
         prefix = "http://nohost/item/@@images/image/thumb/"
+        postfix = "/image.png"
+        self.assertTrue(url.startswith(prefix))
+        self.assertTrue(int(url[len(prefix):-len(postfix)]) >= now)
+        self.assertTrue(url.endswith(postfix))
+
+    def testURLGenerationWithoutScale(self):
+        now = int(time.time() * 1000)
+        transaction.commit()
+        url = self.view.url(fieldname="image")
+        prefix = "http://nohost/item/@@images/image/"
         postfix = "/image.png"
         self.assertTrue(url.startswith(prefix))
         self.assertTrue(int(url[len(prefix):-len(postfix)]) >= now)
