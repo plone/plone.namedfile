@@ -5,6 +5,7 @@ from plone.app.testing import TEST_USER_NAME
 from plone.app.testing import TEST_USER_PASSWORD
 from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
+from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
@@ -16,6 +17,7 @@ from zope.interface import implementer
 
 import PIL
 import six
+import time
 import transaction
 import unittest
 
@@ -219,6 +221,39 @@ class ImagePublisherTests(unittest.TestCase):
         self.assertEqual("image/svg+xml", self.browser.headers["content-type"])
         self.assertEqual(self.browser.contents, data)
 
+
+class ImageURLGeneratorTests(unittest.TestCase):
+
+    layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
+
+    def setUp(self):
+        if six.PY2:
+            raise unittest.SkipTest("Disabled in py2 for now.")
+        data = getFile("image.png")
+        item = DummyContent()
+        item.image = NamedBlobImage(data, "image/png", u"image.png")
+        self.layer["app"]._setOb("item", item)
+        self.item = self.layer["app"].item
+        self.view = self.item.unrestrictedTraverse("@@images")
+        self._orig_sizes = ImageScaling._sizes
+
+        self.browser = Browser(self.layer["app"])
+        self.browser.handleErrors = False
+        self.browser.addHeader("Referer", self.layer["app"].absolute_url())
+
+    def tearDown(self):
+        ImageScaling._sizes = self._orig_sizes
+
+    def testURLGeneration(self):
+        now = int(time.time() * 1000)
+        transaction.commit()
+        ImageScaling._sizes = {"thumb": (128, 128)}
+        url = self.view.url(field="image", scale="thumb")
+        prefix = "http://nohost/item/@@images/image/thumb/"
+        postfix = "/image.png"
+        self.assertTrue(url.startswith(prefix))
+        self.assertTrue(int(url[len(prefix):-len(postfix)]) >= now)
+        self.assertTrue(url.endswith(postfix))
 
 def test_suite():
     from unittest import defaultTestLoader

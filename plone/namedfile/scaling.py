@@ -362,6 +362,7 @@ class ImageScaling(BrowserView):
         if stack and stack[-1] not in self._ignored_stacks:
             # field and scale name were given...
             scale = stack.pop()
+            request["TraversalRequestNameStack"] = []
             image = self.scale(name, scale)  # this is an aq-wrapped scale_view
             if image:
                 return image
@@ -391,15 +392,15 @@ class ImageScaling(BrowserView):
         """ used for path traversal, i.e. in zope page templates """
         # validate access
         value = self.guarded_orig_image(name)
-        if not furtherPath:
-            image = self._scale_view_class(
-                self.context, self.request, data=value, fieldname=name,
-            )
-        else:
-            return ImmutableTraverser(self.scale(name, furtherPath[-1]))
 
+        if furtherPath:
+            return ImmutableTraverser(self.scale(name, furtherPath[-1]))
+        image = self._scale_view_class(
+            self.context, self.request, data=value, fieldname=name,
+        )
         if image is not None:
             return image.tag()
+
         raise TraversalError(self, name)
 
     _sizes = {}
@@ -566,6 +567,21 @@ class ImageScaling(BrowserView):
     ):
         scale = self.scale(fieldname, scale, height, width, direction)
         return scale.tag(**kwargs) if scale else None
+
+    def url(self, field=None, scale=None):
+        if field is not None:
+            value = getattr(self.context, field, None)
+        else:
+            # try to find a primary field
+            primary = IPrimaryFieldInfo(self.context, None)
+            if primary is None:
+                return
+            field = primary.fieldname
+            value = primary.value
+        if not value:
+            return
+        mtime = int(value.modified * 1000)
+        return f"{self.context.absolute_url()}/@@images/{field}/{scale}/{mtime}/{value.filename}"
 
 
 class NavigationRootScaling(ImageScaling):

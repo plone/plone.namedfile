@@ -372,6 +372,10 @@ class NamedBlobFile(Persistent):
     def getSize(self):
         return self.size
 
+    @property
+    def modified(self):
+        return self._blob._p_mtime
+
 
 @implementer(INamedBlobImage)
 class NamedBlobImage(NamedBlobFile):
