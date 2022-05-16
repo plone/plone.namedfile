@@ -396,7 +396,7 @@ class ImageScaling(BrowserView):
                 self.context, self.request, data=value, fieldname=name,
             )
         else:
-            return ImmutableTraverser(self.scale(name, furtherPath[-1]))
+            return ImmutableTraverser(self.scale(name, furtherPath[-1], pre=True))
 
         if image is not None:
             return image.tag()
@@ -474,6 +474,7 @@ class ImageScaling(BrowserView):
         height=None,
         width=None,
         direction="thumbnail",
+        pre=False,
         **parameters
     ):
         if fieldname is None:
@@ -498,7 +499,11 @@ class ImageScaling(BrowserView):
             (self.context, functools.partial(self.modified, fieldname)),
             IImageScaleStorage
         )
-        info = storage.pre_scale(
+        if pre:
+            scale_method = storage.pre_scale
+        else:
+            scale_method = storage.scale
+        info = scale_method(
             fieldname=fieldname,
             height=height,
             width=width,
@@ -564,7 +569,7 @@ class ImageScaling(BrowserView):
         direction="thumbnail",
         **kwargs
     ):
-        scale = self.scale(fieldname, scale, height, width, direction)
+        scale = self.scale(fieldname, scale, height, width, direction, pre=True)
         return scale.tag(**kwargs) if scale else None
 
 
