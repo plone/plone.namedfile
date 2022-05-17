@@ -538,9 +538,8 @@ class ImageScaling(BrowserView):
         (orig_width, orig_height) = self.getImageSize(fieldname)
         for hdScale in self.getHighPixelDensityScales():
             # Don't create retina scales larger than the source image.
-            if (height and orig_height and orig_height < height * hdScale["scale"]) or (
-                width and orig_width and orig_width < width * hdScale["scale"]
-            ):
+            # We only care about the width, because height might be 65536.
+            if width and orig_width and orig_width < width * hdScale["scale"]:
                 continue
             parameters["quality"] = hdScale["quality"]
             scale_src = storage.scale(

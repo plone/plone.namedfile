@@ -1,0 +1,3 @@
+Only look at the width when checking if a HiDPI image would be larger than the original.
+Otherwise HiDPI srcsets are never included when the scale is defined with a height of 65536.
+[maurits]
