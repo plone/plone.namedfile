@@ -4,6 +4,7 @@ from Acquisition import aq_base
 from DateTime import DateTime
 from io import BytesIO
 from plone.memoize import ram
+from plone.protect import PostOnly
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
@@ -597,3 +598,24 @@ class NavigationRootScaling(ImageScaling):
         images = obj.restrictedTraverse("@@images")
         tag = images.tag(fieldname, **kwargs)
         return tag
+
+
+class ImagesTest(BrowserView):
+    """View for Editors to check how images look and what scales are stored."""
+
+    @property
+    def storage(self):
+        return getMultiAdapter((self.context, None), IImageScaleStorage)
+
+    def stored_scales(self):
+        return sorted(self.storage.items())
+
+    def clear(self):
+        """Clear the scales.
+        """
+        PostOnly(self.request)
+        self.storage.clear()
+        url = self.context.absolute_url()
+        logger.info("Scale storage cleared for %s", url)
+        self.request.response.redirect(f"{url}/@@images-test")
+        return "cleared"
