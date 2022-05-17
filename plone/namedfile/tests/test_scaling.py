@@ -26,6 +26,12 @@ import time
 import unittest
 
 
+# Unique scale name used to be a uuid.uui4(),
+# which is a combination of hexadecimal digits with dashes, total 36.
+# Now it is 'imagescalename-width-hash', where hash is 32.
+PAT_UID_SCALE = r"[0-9a-z]*-[0-9]*-[0-9a-f]{32}"
+
+
 def wait_to_ensure_modified():
     # modified is measured in milliseconds
     # wait 5ms to ensure modified will have changed
@@ -112,6 +118,23 @@ class FakeImageScaleStorage:
         self.modified = modified
         self.storage = context._scales
 
+    def pre_scale(self, factory=None, **parameters):
+        """Find image scale data for the given parameters or pre-create it.
+
+        In our version, we only support height and width.
+        """
+        stripped_parameters = {
+            "target_height": parameters.get("height"),
+            "target_width": parameters.get("width"),
+        }
+        key = self.hash(**stripped_parameters)
+        info = self.get_info_by_hash(key)
+        if info is not None:
+            # Note: we could do something with self.modified here,
+            # but we choose to ignore it.
+            return info
+        return self.create_scale(no_scale=True, **stripped_parameters)
+
     def scale(self, factory=None, **parameters):
         """Find image scale data for the given parameters or create it.
 
@@ -122,7 +145,6 @@ class FakeImageScaleStorage:
             "target_width": parameters.get("width"),
         }
         key = self.hash(**stripped_parameters)
-        storage = self.storage
         info = self.get_info_by_hash(key)
         if info is not None:
             # Note: we could do something with self.modified here,
@@ -130,7 +152,7 @@ class FakeImageScaleStorage:
             return info
         return self.create_scale(**stripped_parameters)
 
-    def create_scale(self, target_height=None, target_width=None):
+    def create_scale(self, target_height=None, target_width=None, no_scale=False):
         if target_height is None and target_width is None:
             # Return the original.
             return self.context.info
@@ -145,11 +167,22 @@ class FakeImageScaleStorage:
         uid = f"uid-{len(self.storage)}"
         key = self.hash(target_height=target_height, target_width=target_width)
 
-        # Create a new fake image for this scale.
-        scale = FakeImage(value, format, key=key, uid=uid)
+        if no_scale:
+            info = dict(
+                placeholder=True,
+                width=self._width,
+                height=self._height,
+                mimetype=f'image/{self.format.lower()}',
+                key=self.key,
+                uid=self.uid
+            )
+        else:
+            # Create a new fake image for this scale.
+            scale = FakeImage(value, format, key=key, uid=uid)
+            info = scale.info
 
-        # Store the scale and return the info.
-        self.storage[uid] = scale.info
+        # Store the real scale or placeholder scale and return the info.
+        self.storage[uid] = info
         return scale.info
 
     def __getitem__(self, uid):
@@ -158,6 +191,19 @@ class FakeImageScaleStorage:
 
     def get(self, uid, default=None):
         return self.storage.get(uid, default)
+
+    def get_or_generate(self, uid, default=None):
+        info = self.storage.get(uid, default)
+        if info is None:
+            return
+        if info.get("data"):
+            return info
+        # We have a placeholder. Get real data.
+        stripped_parameters = {
+            "target_height": info.get("height"),
+            "target_width": info.get("width"),
+        }
+        return self.create_scale(**stripped_parameters)
 
     def hash(self, **parameters):
         return tuple(parameters.values())
@@ -241,16 +287,16 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.height, 60)
         assertImage(self, foo.data.data, 'PNG', (60, 60))
         expected_url = re.compile(
-            r'http://nohost/item/@@images/[-a-z0-9]{36}\.png')
+            r'http://nohost/item/@@images/{0}.png'.format(PAT_UID_SCALE))
         self.assertTrue(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
 
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base,
+                base, PAT_UID_SCALE
             )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
@@ -269,10 +315,10 @@ class ImageScalingTests(unittest.TestCase):
         base = self.item.absolute_url()
         expected = (
             r'<img src="{0}'.format(base) +
-            r'/@@images/([-0-9a-f]{36})'
+            r'/@@images/({0})'.format(PAT_UID_SCALE) +
             r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
+            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE) +
             r'.(jpeg|gif|png)'
             r' 2x" />')
         groups = re.match(expected, tag).groups()
@@ -291,10 +337,10 @@ class ImageScalingTests(unittest.TestCase):
         base = self.item.absolute_url()
         expected = (
             r'<img src="{0}'.format(base) +
-            r'/@@images/([-0-9a-f]{36})'
+            r'/@@images/({0})'.format(PAT_UID_SCALE) +
             r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
+            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE) +
             r'.(jpeg|gif|png)'
             r' 2x" />')
         groups = re.match(expected, tag).groups()
@@ -313,10 +359,10 @@ class ImageScalingTests(unittest.TestCase):
         base = self.item.absolute_url()
         expected = (
             r'<img src="{0}'.format(base) +
-            r'/@@images/([-0-9a-f]{36})'
+            r'/@@images/({0})'.format(PAT_UID_SCALE) +
             r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
+            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE) +
             r'.(jpeg|gif|png)'
             r' 2x" />')
         groups = re.match(expected, tag).groups()
@@ -335,10 +381,10 @@ class ImageScalingTests(unittest.TestCase):
         base = self.item.absolute_url()
         expected = (
             r'<img src="{0}'.format(base) +
-            r'/@@images/([-0-9a-f]{36})'
+            r'/@@images/({0})'.format(PAT_UID_SCALE) +
             r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
+            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE) +
             r'.(jpeg|gif|png)'
             r' 2x" />')
         groups = re.match(expected, tag).groups()
@@ -422,9 +468,9 @@ class ImageScalingTests(unittest.TestCase):
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
         expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base,
+                base, PAT_UID_SCALE
             )
         self.assertTrue(re.match(expected, tag).groups())
 
@@ -433,9 +479,9 @@ class ImageScalingTests(unittest.TestCase):
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
         expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" ' \
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
-                base,
+                base, PAT_UID_SCALE
             )
         self.assertTrue(re.match(expected, tag).groups())
 
@@ -444,9 +490,9 @@ class ImageScalingTests(unittest.TestCase):
         tag = self.scaling.tag('image')
         base = self.item.absolute_url()
         expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" ' \
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
-                base,
+                base, PAT_UID_SCALE
             )
         self.assertTrue(re.match(expected, tag).groups())
 
@@ -509,7 +555,7 @@ class ImageTraverseTests(unittest.TestCase):
         tag = static_traverser.traverse(scale, stack)
         base = self.item.absolute_url()
         expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+            r'<img src="{0}/@@images/([0-9a-z]*-[0-9]*-[0-9a-f]{{32}}).(jpeg|gif|png)" ' \
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
                 base,
             )
