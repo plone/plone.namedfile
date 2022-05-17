@@ -10,4 +10,5 @@ develop-eggs
 include
 lib
 parts
+pyvenv.cfg
 requirements-*-mxdev.txt
