@@ -4,7 +4,7 @@
     xmlns:zcml="http://namespaces.zope.org/zcml"
     xmlns:browser="http://namespaces.zope.org/browser">
   <include package="zope.annotation" />
-  <include package="Products.CMFCore" />
+  <include package="Products.CMFCore" file="permissions.zcml" />
   <browser:page
       allowed_attributes="scale tag"
       class=".scaling.ImageScaling"
