@@ -475,6 +475,7 @@ class ImageScaling(BrowserView):
         width=None,
         direction="thumbnail",
         pre=False,
+        include_srcset=None,
         **parameters
     ):
         if fieldname is None:
@@ -514,15 +515,22 @@ class ImageScaling(BrowserView):
         if info is None:
             return  # 404
 
-        info["srcset"] = self.calculate_srcset(
-            fieldname=fieldname,
-            height=height,
-            width=width,
-            direction=direction,
-            scale=scale,
-            storage=storage,
-            **parameters
-        )
+        # Do we want to include srcset info for HiDPI?
+        # If there is no explicit True/False given, we look at the value of 'pre'.
+        # When 'pre' is False, the visitor is requesting a scale via a url,
+        # so we only want a single image and not any fancy extras.
+        if include_srcset is None and pre:
+            include_srcset = True
+        if include_srcset:
+            info["srcset"] = self.calculate_srcset(
+                fieldname=fieldname,
+                height=height,
+                width=width,
+                direction=direction,
+                scale=scale,
+                storage=storage,
+                **parameters
+            )
         info["fieldname"] = fieldname
         scale_view = self._scale_view_class(self.context, self.request, **info)
         return scale_view
