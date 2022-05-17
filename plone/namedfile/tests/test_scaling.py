@@ -255,7 +255,7 @@ class ImageScalingTests(unittest.TestCase):
 
     def testCreateHighPixelDensityScale(self):
         self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        foo = self.scaling.scale('image', width=100, height=80)
+        foo = self.scaling.scale('image', width=100, height=80, include_srcset=True)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['height'], 160)
@@ -304,7 +304,7 @@ class ImageScalingTests(unittest.TestCase):
     def testGetHighPixelDensityScaleByName(self):
         self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
         self.scaling.available_sizes = {'foo': (60, 60)}
-        foo = self.scaling.scale('image', scale='foo')
+        foo = self.scaling.scale('image', scale='foo', include_srcset=True)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['width'], 120)
@@ -326,7 +326,7 @@ class ImageScalingTests(unittest.TestCase):
 
     def testGetRetinaScaleByWidthAndHeight(self):
         self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        foo = self.scaling.scale('image', width=60, height=60)
+        foo = self.scaling.scale('image', width=60, height=60, include_srcset=True)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['width'], 120)
@@ -348,7 +348,7 @@ class ImageScalingTests(unittest.TestCase):
 
     def testGetRetinaScaleByWidthOnly(self):
         self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        foo = self.scaling.scale('image', width=60)
+        foo = self.scaling.scale('image', width=60, include_srcset=True)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['width'], 120)
@@ -370,7 +370,7 @@ class ImageScalingTests(unittest.TestCase):
 
     def testGetRetinaScaleByHeightOnly(self):
         self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        foo = self.scaling.scale('image', height=60)
+        foo = self.scaling.scale('image', height=60, include_srcset=True)
         self.assertTrue(foo.srcset)
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['width'], 120)
@@ -525,7 +525,9 @@ class ImageScalingTests(unittest.TestCase):
         self.scaling.getHighPixelDensityScales = lambda: [
             {'scale': 2, 'quality': 66},
             {'scale': 3, 'quality': 66}]
-        foo = self.scaling.scale('image', width=scale_size, height=scale_size)
+        foo = self.scaling.scale(
+            'image', width=scale_size, height=scale_size, include_srcset=True
+        )
         self.assertEqual(len(foo.srcset), 1)
         self.assertEqual(foo.srcset[0]['scale'], 2)
 
