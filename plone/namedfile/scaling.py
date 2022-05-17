@@ -10,7 +10,6 @@ from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
-from plone.protect.utils import safeWrite
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IImageScaleFactory
 from plone.scale.interfaces import IScaledImageQuality
@@ -520,8 +519,6 @@ class ImageScaling(BrowserView):
             )
         if "fieldname" not in info:
             info["fieldname"] = fieldname
-        if self.request is not None:
-            safeWrite(info, self.request)
         scale_view = self._scale_view_class(self.context, self.request, **info)
         return scale_view
 
