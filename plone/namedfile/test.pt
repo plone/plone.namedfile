@@ -13,12 +13,12 @@
                          size context/image/getSize;
                          image_dimension context/image/getImageSize;
                          images context/@@images;
+                         context_url context/absolute_url;
                          use_MB python: size > 1024*1024;
                          dimension python: str(image_dimension[0])+'x'+str(image_dimension[1]);
                          filename python: context.image.filename;
                          mimetype_icon python: 'mimetype-' + content_type;
-                         download_url python: '{}/@@download/image/{}'.format(context.absolute_url(), filename)
-                                                     ">
+                         download_url python: '{}/@@download/image/{}'.format(context_url, filename)">
   <p>
     Go to:
     <a href="#examples">examples</a>,
@@ -31,7 +31,7 @@
     <h3>Thumb with info</h3>
     <p>Standard display of Image content type, but using thumb scale</p>
     <figure class="figure">
-      <a tal:attributes="href string:${context/@@plone_context_state/object_url}/image_view_fullscreen"
+      <a href="${context_url}/image_view_fullscreen"
          tal:define="img_tag python:images.tag('image', scale='thumb', css_class='figure-img img-fluid')"
          >
         <img tal:replace="structure img_tag" />
@@ -64,7 +64,7 @@
 
   <section class="section section-actions">
     <a class="btn btn-primary download" href="${python:download_url}" i18n:translate="">Download</a>
-    <a class="btn btn-primary fullscreen" href="${context/@@plone_context_state/object_url}/image_view_fullscreen"><span i18n:translate="label_click_to_view_full_image">View full-size image</span></a>
+    <a class="btn btn-primary fullscreen" href="${context_url}/image_view_fullscreen"><span i18n:translate="label_click_to_view_full_image">View full-size image</span></a>
   </section>
   <hr />
   <section id="examples">
@@ -113,6 +113,9 @@
               <br tal:condition="not:repeat/item/start" />
               <code>${python:item[0]}: ${python:item[1]}</code>
             </tal:block>
+            <br />
+            <a target="_blank"
+               href="${context_url}/@@images/${uid}">Open in new tab</a>
           </div>
         </div>
       </div>
