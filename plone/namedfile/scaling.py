@@ -599,6 +599,16 @@ class NavigationRootScaling(ImageScaling):
         return tag
 
 
+def _scale_sort_key(item):
+    key, value = item
+    try:
+        fieldname, width, uid = key.split("-")
+        width = int(width)
+    except (ValueError, IndexError, TypeError):
+        return (key, )
+    return (fieldname, width, uid)
+
+
 class ImagesTest(BrowserView):
     """View for Editors to check how images look and what scales are stored."""
 
@@ -607,7 +617,7 @@ class ImagesTest(BrowserView):
         return getMultiAdapter((self.context, None), IImageScaleStorage)
 
     def stored_scales(self):
-        return sorted(self.storage.items())
+        return sorted(self.storage.items(), key=_scale_sort_key)
 
     def clear(self):
         """Clear the scales.
