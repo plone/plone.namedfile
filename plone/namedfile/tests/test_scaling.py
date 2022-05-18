@@ -169,7 +169,7 @@ class FakeImageScaleStorage:
 
         if no_scale:
             info = dict(
-                placeholder=True,
+                data=None,
                 width=self._width,
                 height=self._height,
                 mimetype=f'image/{self.format.lower()}',
@@ -260,7 +260,11 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['height'], 160)
         self.assertEqual(foo.srcset[0]['width'], 160)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (160, 160))
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]['data'], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer['request'], foo.srcset[0]['uid'])
+        assertImage(self, bar.data.data, 'PNG', (160, 160))
 
     def testCreateScaleWithoutData(self):
         item = DummyContent()
@@ -309,7 +313,12 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['width'], 120)
         self.assertEqual(foo.srcset[0]['height'], 120)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]['data'], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer['request'], foo.srcset[0]['uid'])
+        assertImage(self, bar.data.data, 'PNG', (120, 120))
 
         tag = foo.tag()
         base = self.item.absolute_url()
@@ -331,7 +340,12 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['width'], 120)
         self.assertEqual(foo.srcset[0]['height'], 120)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]['data'], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer['request'], foo.srcset[0]['uid'])
+        assertImage(self, bar.data.data, 'PNG', (120, 120))
 
         tag = foo.tag()
         base = self.item.absolute_url()
@@ -353,7 +367,11 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['width'], 120)
         self.assertEqual(foo.srcset[0]['height'], 120)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]['data'], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer['request'], foo.srcset[0]['uid'])
+        assertImage(self, bar.data.data, 'PNG', (120, 120))
 
         tag = foo.tag()
         base = self.item.absolute_url()
@@ -375,7 +393,11 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
         self.assertEqual(foo.srcset[0]['width'], 120)
         self.assertEqual(foo.srcset[0]['height'], 120)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]['data'], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer['request'], foo.srcset[0]['uid'])
+        assertImage(self, bar.data.data, 'PNG', (120, 120))
 
         tag = foo.tag()
         base = self.item.absolute_url()
