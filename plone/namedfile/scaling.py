@@ -418,8 +418,7 @@ class ImageScaling(BrowserView):
         if self._sizes is None:
             sizes_util = queryUtility(IAvailableSizes)
             if sizes_util is None:
-                if self._sizes is None:
-                    self._sizes = {}
+                self._sizes = {}
             else:
                 self._sizes = sizes_util() or {}
         return self._sizes
