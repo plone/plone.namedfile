@@ -380,7 +380,7 @@ class ImageScaling(BrowserView):
             # otherwise `name` must refer to a field...
             if "." in name:
                 name, ext = name.rsplit(".", 1)
-            value = self.guarded_orig_image(name)
+            value = self.get_orig_image(name)
             scale_view = self._scale_view_class(
                 self.context, self.request, data=value, fieldname=name,
             )
@@ -445,7 +445,14 @@ class ImageScaling(BrowserView):
         return value.getImageSize()
 
     def guarded_orig_image(self, fieldname):
+        # Note: you must not call this from publishTraverse.
+        # No authentication has taken place there yet, so everyone is still anonymous.
         return guarded_getattr(self.context, fieldname, None)
+
+    def get_orig_image(self, fieldname):
+        # Get the image without doing permission checks.
+        # Use guarded_orig_image instead of you want permission checks.
+        return getattr(self.context, fieldname, None)
 
     @deprecate("use getHighPixelDensityScales instead")
     def getRetinaScales(self):
