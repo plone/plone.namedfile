@@ -322,6 +322,8 @@ class DefaultImageScalingFactory(object):
             return
 
         parameters = self.update_parameters(**parameters)
+        if "modified" in parameters:
+            del parameters["modified"]
         try:
             result = self.handle_image(
                 orig_value, orig_data, direction, height, width, **parameters
