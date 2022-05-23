@@ -198,7 +198,7 @@ class DefaultImageScalingFactory(object):
         """
         if self.fieldname is None:
             try:
-                primary = IPrimaryFieldInfo(self.context)
+                primary = IPrimaryFieldInfo(self.context, None)
             except TypeError:
                 return
             if primary is None:
@@ -486,7 +486,7 @@ class ImageScaling(BrowserView):
     ):
         if fieldname is None:
             try:
-                primary = IPrimaryFieldInfo(self.context)
+                primary = IPrimaryFieldInfo(self.context, None)
             except TypeError:
                 return
             if primary_field is None:
