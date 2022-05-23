@@ -204,6 +204,7 @@ class DefaultImageScalingFactory(object):
             if primary is None:
                 return
             self.fieldname = primary.fieldname
+            return primary.value
         return getattr(self.context, self.fieldname, None)
 
     def get_raw_data(self, orig_value):
