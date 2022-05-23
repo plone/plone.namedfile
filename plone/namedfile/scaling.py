@@ -572,9 +572,10 @@ class ImageScaling(BrowserView):
                 direction=direction,
                 **parameters
             )
+            if scale_src is None:
+                continue
             scale_src["scale"] = hdScale["scale"]
-            if scale_src is not None:
-                srcset.append(scale_src)
+            srcset.append(scale_src)
         return srcset
 
     def tag(
