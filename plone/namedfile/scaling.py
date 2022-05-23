@@ -490,9 +490,9 @@ class ImageScaling(BrowserView):
                 primary = IPrimaryFieldInfo(self.context, None)
             except TypeError:
                 return
-            if primary_field is None:
+            if primary is None:
                 return  # 404
-            fieldname = primary_field.fieldname
+            fieldname = primary.fieldname
         if scale is not None:
             if width is not None or height is not None:
                 logger.warn(
