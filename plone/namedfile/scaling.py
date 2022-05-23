@@ -197,7 +197,10 @@ class DefaultImageScalingFactory(object):
         In most cases this will be a NamedBlobImage field.
         """
         if self.fieldname is None:
-            primary = IPrimaryFieldInfo(self.context, None)
+            try:
+                primary = IPrimaryFieldInfo(self.context)
+            except TypeError:
+                return
             if primary is None:
                 return
             self.fieldname = primary.fieldname
@@ -482,7 +485,10 @@ class ImageScaling(BrowserView):
         **parameters
     ):
         if fieldname is None:
-            primary_field = IPrimaryFieldInfo(self.context, None)
+            try:
+                primary = IPrimaryFieldInfo(self.context)
+            except TypeError:
+                return
             if primary_field is None:
                 return  # 404
             fieldname = primary_field.fieldname
