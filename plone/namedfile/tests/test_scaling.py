@@ -9,11 +9,13 @@ from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
+from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.storage import IImageScaleStorage
 from six import BytesIO
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
+from zope.component import adapter
 from zope.component import getGlobalSiteManager
 from zope.component import getSiteManager
 from zope.interface import implementer
@@ -57,6 +59,19 @@ class DummyContent(SimpleItem):
 
     def Title(self):
         return self.title
+
+
+@implementer(IPrimaryFieldInfo)
+@adapter(DummyContent)
+class PrimaryFieldInfo(object):
+    def __init__(self, context):
+        self.context = context
+        self.fieldname = "image"
+        self.field = self.context.image
+
+    @property
+    def value(self):
+        return self.field
 
 
 class MockNamedImage(NamedImage):
@@ -219,12 +234,19 @@ class ImageScalingTests(unittest.TestCase):
     layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
 
     def setUp(self):
+        sm = getSiteManager()
+        sm.registerAdapter(PrimaryFieldInfo)
+
         data = getFile('image.png')
         item = DummyContent()
         item.image = MockNamedImage(data, 'image/png', u'image.png')
         self.layer['app']._setOb('item', item)
         self.item = self.layer['app'].item
         self.scaling = ImageScaling(self.item, None)
+
+    def tearDown(self):
+        sm = getSiteManager()
+        sm.unregisterAdapter(PrimaryFieldInfo)
 
     def testCreateScale(self):
         foo = self.scaling.scale('image', width=100, height=80)
@@ -559,6 +581,8 @@ class ImageTraverseTests(unittest.TestCase):
     layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 
     def setUp(self):
+        sm = getSiteManager()
+        sm.registerAdapter(PrimaryFieldInfo)
         self.app = self.layer['app']
         data = getFile('image.png')
         item = DummyContent()
@@ -569,6 +593,8 @@ class ImageTraverseTests(unittest.TestCase):
 
     def tearDown(self):
         ImageScaling._sizes = self._orig_sizes
+        sm = getSiteManager()
+        sm.unregisterAdapter(PrimaryFieldInfo)
 
     def traverse(self, path=''):
         view = self.item.unrestrictedTraverse('@@images')
