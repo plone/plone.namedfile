@@ -191,21 +191,22 @@ class DefaultImageScalingFactory(object):
         # fieldname will be set for real in the __call__ method.
         self.fieldname = None
 
-    def get_original_value(self):
+    def get_original_value(self, fieldname=None):
         """Get the image value.
 
         In most cases this will be a NamedBlobImage field.
         """
-        if self.fieldname is None:
-            try:
-                primary = IPrimaryFieldInfo(self.context, None)
-            except TypeError:
-                return
-            if primary is None:
-                return
-            self.fieldname = primary.fieldname
-            return primary.value
-        return getattr(self.context, self.fieldname, None)
+        fieldname = fieldname or self.fieldname
+        if fieldname is not None:
+            return getattr(self.context, fieldname, None)
+        try:
+            primary = IPrimaryFieldInfo(self.context, None)
+        except TypeError:
+            return
+        if primary is None:
+            return
+        self.fieldname = primary.fieldname
+        return primary.value
 
     def get_raw_data(self, orig_value):
         """Get the raw image data.

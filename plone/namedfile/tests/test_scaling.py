@@ -581,8 +581,6 @@ class ImageTraverseTests(unittest.TestCase):
     layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 
     def setUp(self):
-        sm = getSiteManager()
-        sm.registerAdapter(PrimaryFieldInfo)
         self.app = self.layer['app']
         data = getFile('image.png')
         item = DummyContent()
@@ -593,8 +591,6 @@ class ImageTraverseTests(unittest.TestCase):
 
     def tearDown(self):
         ImageScaling._sizes = self._orig_sizes
-        sm = getSiteManager()
-        sm.unregisterAdapter(PrimaryFieldInfo)
 
     def traverse(self, path=''):
         view = self.item.unrestrictedTraverse('@@images')
