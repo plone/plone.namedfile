@@ -1,0 +1,3 @@
+Fix Unauthorized when accessing @@image/image of private image, even as Manager.
+Fixes problem introduced in previous release.
+[maurits]
