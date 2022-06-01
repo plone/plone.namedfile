@@ -606,6 +606,32 @@ class ImageScaling(BrowserView):
         scale = self.scale(fieldname, scale, height, width, direction, pre=True)
         return scale.tag(**kwargs) if scale else None
 
+    def picture(
+        self,
+        fieldname=None,
+        picture_variant=None,
+        alt=_marker,
+        css_class=None,
+        title=_marker,
+        **kwargs,
+    ):
+        img2picturetag = Img2PictureTag()
+        picture_variant_config = img2picturetag.image_srcsets.get(picture_variant)
+        if not picture_variant_config:
+            # raise NotFound(self, picture_variant, self.request)
+            logger.warn(
+                "Could not find the given picture_variant {0}, leave tag untouched!".format(
+                    picture_variant
+                )
+            )
+            return
+        sourceset = picture_variant_config.get("sourceset")
+        scale = self.scale(fieldname, sourceset[-1].get("scale"), pre=True)
+        attributes = {}
+        attributes["class"] = css_class and [css_class] or []
+        attributes["src"] = scale.url
+        return img2picturetag.create_picture_tag(sourceset, attributes)
+
 
 class NavigationRootScaling(ImageScaling):
     def _scale_cachekey(method, self, brain, fieldname, **kwargs):

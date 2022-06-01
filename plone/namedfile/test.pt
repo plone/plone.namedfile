@@ -96,6 +96,13 @@
       <br /><code tal:content="img_tag" />
     </figure>
 
+    <h3 id="picture_tag">Picture Tag</h3>
+    <p>
+      Generate a picture tag from configured picture_variant.
+    </p>
+    <picture
+      tal:replace="structure python:images.picture('image', picture_variant='medium')" />
+
   </section>
 
   <section class="section" id="stored">
