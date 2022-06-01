@@ -32,6 +32,7 @@ from zope.publisher.interfaces import IPublishTraverse
 from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import ITraversable
 from zope.traversing.interfaces import TraversalError
+from plone.outputfilters.utils import Img2PictureTag
 
 import functools
 import logging
@@ -43,7 +44,7 @@ _marker = object()
 
 
 class ImageScale(BrowserView):
-    """ view used for rendering image scales """
+    """view used for rendering image scales"""
 
     # Grant full access to this view even if the object being viewed is
     # protected
@@ -68,8 +69,8 @@ class ImageScale(BrowserView):
             name = info["uid"]
         else:
             name = info["fieldname"]
-        self.__name__ = u"{0}.{1}".format(name, extension)
-        self.url = u"{0}/@@images/{1}".format(url, self.__name__)
+        self.__name__ = "{0}.{1}".format(name, extension)
+        self.url = "{0}/@@images/{1}".format(url, self.__name__)
         self.srcset = info.get("srcset", [])
 
     def absolute_url(self):
@@ -80,7 +81,7 @@ class ImageScale(BrowserView):
         extension = self.data.contentType.split("/")[-1].lower()
         for scale in self.srcset:
             _srcset_attr.append(
-                u"{0}/@@images/{1}.{2} {3}x".format(
+                "{0}/@@images/{1}.{2} {3}x".format(
                     self.context.absolute_url(), scale["uid"], extension, scale["scale"]
                 )
             )
@@ -94,10 +95,9 @@ class ImageScale(BrowserView):
         alt=_marker,
         css_class=None,
         title=_marker,
-        **kwargs
+        **kwargs,
     ):
-        """Create a tag including scale
-        """
+        """Create a tag including scale"""
         if height is _marker:
             height = getattr(self, "height", self.data._height)
         if width is _marker:
@@ -131,17 +131,17 @@ class ImageScale(BrowserView):
                 v = str(v)
             elif isinstance(v, six.binary_type):
                 v = six.text_type(v, "utf8")
-            parts.append(u"{0}={1}".format(k, quoteattr(v)))
+            parts.append("{0}={1}".format(k, quoteattr(v)))
         parts.append("/>")
 
-        return u" ".join(parts)
+        return " ".join(parts)
 
     def validate_access(self):
         fieldname = getattr(self.data, "fieldname", getattr(self, "fieldname", None))
         guarded_getattr(self.context, fieldname)
 
     def index_html(self):
-        """ download the image """
+        """download the image"""
         self.validate_access()
         set_headers(self.data, self.request.response)
         return stream_data(self.data)
@@ -159,8 +159,8 @@ class ImageScale(BrowserView):
         return self
 
     def HEAD(self, REQUEST, RESPONSE=None):
-        """ Obtain metainformation about the image implied by the request
-            without transfer of the image itself
+        """Obtain metainformation about the image implied by the request
+        without transfer of the image itself
         """
         self.validate_access()
         set_headers(self.data, REQUEST.response)
@@ -290,7 +290,7 @@ class DefaultImageScalingFactory(object):
         height=None,
         width=None,
         scale=None,
-        **parameters
+        **parameters,
     ):
 
         """Factory for image scales`.
@@ -347,7 +347,9 @@ class DefaultImageScalingFactory(object):
         data, format_, dimensions = result
         mimetype = "image/{0}".format(format_.lower())
         value = orig_value.__class__(
-            data, contentType=mimetype, filename=orig_value.filename,
+            data,
+            contentType=mimetype,
+            filename=orig_value.filename,
         )
         value.fieldname = self.fieldname
 
@@ -356,7 +358,7 @@ class DefaultImageScalingFactory(object):
 
 @implementer(ITraversable, IPublishTraverse)
 class ImageScaling(BrowserView):
-    """ view used for generating (and storing) image scales """
+    """view used for generating (and storing) image scales"""
 
     # Ignore some stacks to help with accessing via webdav, otherwise you get a
     # 404 NotFound error.
@@ -364,7 +366,7 @@ class ImageScaling(BrowserView):
     _scale_view_class = ImageScale
 
     def publishTraverse(self, request, name):
-        """ used for traversal via publisher, i.e. when using as a url """
+        """used for traversal via publisher, i.e. when using as a url"""
         stack = request.get("TraversalRequestNameStack")
         image = None
         if stack and stack[-1] not in self._ignored_stacks:
@@ -390,18 +392,24 @@ class ImageScaling(BrowserView):
                 name, ext = name.rsplit(".", 1)
             value = self.get_orig_image(name)
             scale_view = self._scale_view_class(
-                self.context, self.request, data=value, fieldname=name,
+                self.context,
+                self.request,
+                data=value,
+                fieldname=name,
             )
             return scale_view
         raise NotFound(self, name, self.request)
 
     def traverse(self, name, furtherPath):
-        """ used for path traversal, i.e. in zope page templates """
+        """used for path traversal, i.e. in zope page templates"""
         # validate access
         value = self.guarded_orig_image(name)
         if not furtherPath:
             image = self._scale_view_class(
-                self.context, self.request, data=value, fieldname=name,
+                self.context,
+                self.request,
+                data=value,
+                fieldname=name,
             )
         else:
             return ImmutableTraverser(self.scale(name, furtherPath[-1], pre=True))
@@ -491,7 +499,7 @@ class ImageScaling(BrowserView):
         direction="thumbnail",
         pre=False,
         include_srcset=None,
-        **parameters
+        **parameters,
     ):
         if fieldname is None:
             try:
@@ -516,7 +524,7 @@ class ImageScaling(BrowserView):
             alsoProvides(self.request, IDisableCSRFProtection)
         storage = getMultiAdapter(
             (self.context, functools.partial(self.modified, fieldname)),
-            IImageScaleStorage
+            IImageScaleStorage,
         )
         if pre:
             scale_method = storage.pre_scale
@@ -528,7 +536,7 @@ class ImageScaling(BrowserView):
             width=width,
             direction=direction,
             scale=scale,
-            **parameters
+            **parameters,
         )
         if info is None:
             return  # 404
@@ -547,7 +555,7 @@ class ImageScaling(BrowserView):
                 direction=direction,
                 scale=scale,
                 storage=storage,
-                **parameters
+                **parameters,
             )
         info["fieldname"] = fieldname
         scale_view = self._scale_view_class(self.context, self.request, **info)
@@ -561,7 +569,7 @@ class ImageScaling(BrowserView):
         width=None,
         direction="thumbnail",
         storage=None,
-        **parameters
+        **parameters,
     ):
         srcset = []
         if storage is None:
@@ -578,7 +586,7 @@ class ImageScaling(BrowserView):
                 height=height * hdScale["scale"] if height else height,
                 width=width * hdScale["scale"] if width else width,
                 direction=direction,
-                **parameters
+                **parameters,
             )
             if scale_src is None:
                 continue
@@ -593,7 +601,7 @@ class ImageScaling(BrowserView):
         height=None,
         width=None,
         direction="thumbnail",
-        **kwargs
+        **kwargs,
     ):
         scale = self.scale(fieldname, scale, height, width, direction, pre=True)
         return scale.tag(**kwargs) if scale else None
@@ -623,7 +631,7 @@ def _scale_sort_key(item):
         fieldname, width, uid = key.split("-")
         width = int(width)
     except (ValueError, IndexError, TypeError):
-        return (key, )
+        return (key,)
     return (fieldname, width, uid)
 
 
@@ -638,8 +646,7 @@ class ImagesTest(BrowserView):
         return sorted(self.storage.items(), key=_scale_sort_key)
 
     def clear(self):
-        """Clear the scales.
-        """
+        """Clear the scales."""
         PostOnly(self.request)
         self.storage.clear()
         url = self.context.absolute_url()
