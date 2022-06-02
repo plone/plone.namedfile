@@ -96,13 +96,33 @@
       <br /><code tal:content="img_tag" />
     </figure>
 
-    <h3 id="picture_tag">Picture Tag</h3>
+    <h3 id="picture_tag_large">Picture Tag Large</h3>
     <p>
-      Generate a picture tag from configured picture_variant.
+      Generate a picture tag from configured picture_variant `large`.
     </p>
-    <picture
-      tal:replace="structure python:images.picture('image', picture_variant='medium')" />
+    <p>
+      <picture
+        tal:replace="structure python:images.picture('image', picture_variant='large')" />
+    </p>
 
+    <h3 id="picture_tag_medium">Picture Tag Medium</h3>
+    <p>
+      Generate a picture tag from configured picture_variant `medium`.
+      This picture tag contains multiple source tags with media queries for art direction.
+    </p>
+    <p>
+      <picture
+        tal:replace="structure python:images.picture('image', picture_variant='medium')" />
+    </p>
+
+    <h3 id="picture_tag_small">Picture Tag Small</h3>
+    <p>
+      Generate a picture tag from configured picture_variant `small`.
+    </p>
+    <p>
+      <picture
+        tal:replace="structure python:images.picture('image', picture_variant='small')" />
+    </p>
   </section>
 
   <section class="section" id="stored">

@@ -630,6 +630,8 @@ class ImageScaling(BrowserView):
         attributes = {}
         attributes["class"] = css_class and [css_class] or []
         attributes["src"] = scale.url
+        attributes["width"] = scale.width
+        attributes["height"] = scale.height
         return img2picturetag.create_picture_tag(sourceset, attributes)
 
 
