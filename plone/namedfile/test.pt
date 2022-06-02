@@ -121,7 +121,16 @@
     </p>
     <p>
       <picture
-        tal:replace="structure python:images.picture('image', picture_variant='small')" />
+        tal:replace="structure python:images.picture('image', picture_variant='small', title='')" />
+    </p>
+
+    <h3 id="picture_tag_small">Picture Tag Small with title/alt</h3>
+    <p>
+      Generate a picture tag from configured picture_variant `small` wit title and alt attributess set.
+    </p>
+    <p>
+      <picture
+        tal:replace="structure python:images.picture('image', picture_variant='small', title='Custom picture title', alt='alternative picture text')" />
     </p>
   </section>
 

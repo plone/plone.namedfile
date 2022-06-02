@@ -610,7 +610,7 @@ class ImageScaling(BrowserView):
         self,
         fieldname=None,
         picture_variant=None,
-        alt=_marker,
+        alt=None,
         css_class=None,
         title=_marker,
         **kwargs,
@@ -632,6 +632,12 @@ class ImageScaling(BrowserView):
         attributes["src"] = scale.url
         attributes["width"] = scale.width
         attributes["height"] = scale.height
+        if title is _marker:
+            attributes["title"] = self.context.Title()
+        elif title:
+            attributes["title"] = title
+        if alt:
+            attributes["alt"] = alt
         return img2picturetag.create_picture_tag(sourceset, attributes)
 
 
