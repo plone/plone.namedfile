@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from contextlib import contextmanager
 from DateTime import DateTime
 from OFS.SimpleItem import SimpleItem
 from plone.namedfile.field import NamedImage as NamedImageField
@@ -13,6 +14,7 @@ from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.storage import IImageScaleStorage
 from six import BytesIO
+from unittest.mock import patch
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
 from zope.component import adapter
@@ -50,6 +52,14 @@ def assertImage(testcase, data, format_, size):
     testcase.assertEqual(image.size, size)
 
 
+@contextmanager
+def patch_uuidToObject(value=None):
+    import plone.namedfile.picture
+
+    with patch.object(plone.namedfile.picture, "uuidToObject", return_value=value):
+        yield
+
+
 @implementer(IAttributeAnnotatable, IHasImage)
 class DummyContent(SimpleItem):
     image = None
@@ -59,6 +69,9 @@ class DummyContent(SimpleItem):
 
     def Title(self):
         return self.title
+
+    def UID(self):
+        return "dummy_uuid"
 
 
 @implementer(IPrimaryFieldInfo)
@@ -435,7 +448,8 @@ class ImageScalingTests(unittest.TestCase):
         self.assertTrue(groups, tag)
 
     def testGetPictureTagByName(self):
-        tag = self.scaling.picture('image', picture_variant='medium', resolve_links=True)
+        with patch_uuidToObject(self.item):
+            tag = self.scaling.picture('image', picture_variant='medium', resolve_links=True)
         base = self.item.absolute_url()
         expected = (
             r'<picture>.*<source srcset=\"http://nohost/item/@@images'
