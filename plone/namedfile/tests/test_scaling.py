@@ -434,6 +434,16 @@ class ImageScalingTests(unittest.TestCase):
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
+    def testGetPictureTagByName(self):
+        tag = self.scaling.picture('image', picture_variant='medium', resolve_links=True)
+        base = self.item.absolute_url()
+        expected = (
+            r'<picture>.*<source srcset=\"http://nohost/item/@@images'
+        )
+        groups = re.match(expected, tag, flags=re.S|re.M).groups()
+        print(tag)
+        #self.assertTrue(groups, tag)
+
     def testGetUnknownScale(self):
         foo = self.scaling.scale('image', scale='foo?')
         self.assertEqual(foo, None)

@@ -638,7 +638,7 @@ class ImageScaling(BrowserView):
             attributes["title"] = title
         if alt:
             attributes["alt"] = alt
-        return img2picturetag.create_picture_tag(sourceset, attributes)
+        return img2picturetag.create_picture_tag(sourceset, attributes, resolve_urls=True, uid=scale.context.UID(), fieldname=fieldname).prettify()
 
 
 class NavigationRootScaling(ImageScaling):
