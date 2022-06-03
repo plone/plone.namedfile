@@ -11,6 +11,7 @@ from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
+from plone.namedfile.picture import Img2PictureTag
 from plone.protect.interfaces import IDisableCSRFProtection
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IImageScaleFactory
@@ -32,7 +33,6 @@ from zope.publisher.interfaces import IPublishTraverse
 from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import ITraversable
 from zope.traversing.interfaces import TraversalError
-from plone.outputfilters.utils import Img2PictureTag
 
 import functools
 import logging
