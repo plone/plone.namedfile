@@ -1,31 +1,35 @@
 # -*- coding: utf-8 -*-
-from plone.app.testing import applyProfile
-from plone.app.testing import FunctionalTesting
-from plone.app.testing import IntegrationTesting
-from plone.app.testing import PLONE_FIXTURE
-from plone.app.testing import PloneSandboxLayer
+from plone.testing import Layer
+from plone.testing import publisher
+from plone.testing import zca
+
+from plone.testing import zope
+from zope.configuration import xmlconfig
 
 
-class NamedFileTestLayer(PloneSandboxLayer):
+class NamedFileTestLayer(Layer):
 
-    defaultBases = (PLONE_FIXTURE,)
+    defaultBases = (zope.STARTUP, publisher.PUBLISHER_DIRECTIVES)
 
-    def setUpZope(self, app, configurationContext):
+    def setUp(self):
+        zca.pushGlobalRegistry()
+
         import plone.namedfile
-        self.loadZCML(package=plone.namedfile, name="testing.zcml")
+        xmlconfig.file('testing.zcml', plone.namedfile)
 
-    def setUpPloneSite(self, portal):
-        applyProfile(portal, 'plone.outputfilters:default')
+    def tearDown(self):
+        # Zap the stacked zca context
+        zca.popGlobalRegistry()
 
 
 PLONE_NAMEDFILE_FIXTURE = NamedFileTestLayer()
 
-PLONE_NAMEDFILE_INTEGRATION_TESTING = IntegrationTesting(
+PLONE_NAMEDFILE_INTEGRATION_TESTING = zope.IntegrationTesting(
     bases=(PLONE_NAMEDFILE_FIXTURE, ),
-    name='plone.namedfile:Integration',
+    name='plone.namedfile:NamedFileTestLayerIntegration',
 )
 
-PLONE_NAMEDFILE_FUNCTIONAL_TESTING = FunctionalTesting(
+PLONE_NAMEDFILE_FUNCTIONAL_TESTING = zope.FunctionalTesting(
     bases=(PLONE_NAMEDFILE_FIXTURE, ),
-    name='plone.namedfile:Functional',
+    name='plone.namedfile:NamedFileTestLayerFunctional',
 )
