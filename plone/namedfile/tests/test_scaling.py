@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from contextlib import contextmanager
 from DateTime import DateTime
+from doctest import _ellipsis_match
 from OFS.SimpleItem import SimpleItem
 from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IImageScaleTraversable
+from plone.namedfile.picture import Img2PictureTag
 from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
@@ -28,6 +30,19 @@ import PIL
 import re
 import time
 import unittest
+
+
+class Img2PictureTagMock(Img2PictureTag):
+
+    @property
+    def allowed_scales(self):
+        allowed_sizes = []
+        return allowed_sizes
+
+    @property
+    def image_srcsets(self):
+        image_srcsets
+        return image_srcsets
 
 
 # Unique scale name used to be a uuid.uui4(),
@@ -449,14 +464,33 @@ class ImageScalingTests(unittest.TestCase):
 
     def testGetPictureTagByName(self):
         with patch_uuidToObject(self.item):
-            tag = self.scaling.picture('image', picture_variant='medium', resolve_links=True)
+            tag = self.scaling.picture('image', picture_variant='medium')
         base = self.item.absolute_url()
-        expected = (
-            r'<picture>.*<source srcset=\"http://nohost/item/@@images'
-        )
-        groups = re.match(expected, tag, flags=re.S|re.M).groups()
-        print(tag)
-        #self.assertTrue(groups, tag)
+        expected = f"""<picture>
+ <source srcset="http://nohost/item/@@images/image-600-....png 600w,
+http://nohost/item/@@images/image-400-....png 400w,
+http://nohost/item/@@images/image-800-....png 800w,
+http://nohost/item/@@images/image-1000-....png 1000w,
+http://nohost/item/@@images/image-1200-....png 1200w"/>
+ <img height="200" loading="lazy" src="http://nohost/item/@@images/image-600-....png" title="foo" width="200"/>
+</picture>"""
+        self.assertTrue(_ellipsis_match(expected, tag))
+
+    def testGetPictureTagWithAltAndTitle(self):
+        with patch_uuidToObject(self.item):
+            tag = self.scaling.picture('image', picture_variant='medium', alt="Alternative text", title="Custom title")
+        base = self.item.absolute_url()
+        expected = f"""<picture>
+ <source srcset="http://nohost/item/@@images/image-600-....png 600w,
+http://nohost/item/@@images/image-400-....png 400w,
+http://nohost/item/@@images/image-800-....png 800w,
+http://nohost/item/@@images/image-1000-....png 1000w,
+http://nohost/item/@@images/image-1200-....png 1200w"/>
+ <img alt="Alternative text" height="200" loading="lazy" src="http://nohost/item/@@images/image-600-....png" title="Custom title" width="200"/>
+</picture>"""
+        print(f"{expected}")
+        print(f"{tag}")
+        self.assertTrue(_ellipsis_match(expected, tag))
 
     def testGetUnknownScale(self):
         foo = self.scaling.scale('image', scale='foo?')

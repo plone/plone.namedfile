@@ -7,9 +7,9 @@ from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
 from bs4 import BeautifulSoup
 
-logger = logging.getLogger("plone.outputfilter.image_srcset")
-appendix_re = re.compile('^(.*)([?#].*)$')
-resolveuid_re = re.compile('^[./]*resolve[Uu]id/([^/]*)/?(.*)$')
+logger = logging.getLogger("plone.outputfilter.picture_variant")
+appendix_re = re.compile("^(.*)([?#].*)$")
+resolveuid_re = re.compile("^[./]*resolve[Uu]id/([^/]*)/?(.*)$")
 
 
 class Img2PictureTag(object):
@@ -20,10 +20,10 @@ class Img2PictureTag(object):
         return settings.allowed_sizes
 
     @property
-    def image_srcsets(self):
+    def picture_variants(self):
         registry = getUtility(IRegistry)
         settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
-        return settings.image_srcsets
+        return settings.picture_variants
 
     def get_scale_name(self, scale_line):
         parts = scale_line.split(" ")
@@ -43,8 +43,12 @@ class Img2PictureTag(object):
                     continue
                 return dimentions[0]
 
-    def create_picture_tag(self, sourceset, attributes, uid=None, fieldname=None, resolve_urls=False):
-        """Converts the img tag to a picture tag with srcset definition"""
+    def create_picture_tag(
+        self, sourceset, attributes, uid=None, fieldname=None, resolve_urls=False
+    ):
+        """Converts the img tag to a picture tag with picture_variant definition"""
+        width = None
+        height = None
         src = attributes.get("src")
         if not uid and not src:
             raise TypeError("Either uid or attributes['src'] need to be given.")
@@ -55,11 +59,12 @@ class Img2PictureTag(object):
         else:
             obj = self.resolve_uid_url(src)
         picture_tag = soup.new_tag("picture")
-        css_classes = attributes.get("class")
+        css_classes = attributes.get("class", [])
         if "captioned" in css_classes:
             picture_tag["class"] = "captioned"
         for i, source in enumerate(sourceset):
             target_scale = source["scale"]
+            print(f"target_scale: {target_scale}")
             media = source.get("media")
 
             additional_scales = source.get("additionalScales", None)
@@ -71,10 +76,14 @@ class Img2PictureTag(object):
             source_srcset = []
             for scale in source_scales:
                 if resolve_urls and obj:
-                    scale_view = obj.unrestrictedTraverse('@@images', None)
+                    scale_view = obj.unrestrictedTraverse("@@images", None)
                     scale_obj = scale_view.scale(fieldname, scale, pre=True)
                     scale_url = scale_obj.url
-                elif src:
+                else:
+                    # obj = self.resolve_uid_url(src)
+                    # scale_view = obj.unrestrictedTraverse("@@images", None)
+                    # scale_obj = scale_view.scale(fieldname, scale, pre=True)
+                    # scale_url = scale_obj.url
                     scale_url = self.update_src_scale(src=src, scale=scale)
                 scale_width = self.get_scale_width(scale)
                 source_srcset.append("{0} {1}w".format(scale_url, scale_width))
@@ -83,18 +92,30 @@ class Img2PictureTag(object):
                 source_tag["media"] = media
             picture_tag.append(source_tag)
             if i == len(sourceset) - 1:
-                scale_view = obj.unrestrictedTraverse('@@images', None)
-                scale_obj = scale_view.scale(fieldname, target_scale, pre=True)
-                scale_url = scale_obj.url
-                img_tag = soup.new_tag(
-                    "img",
-                    src=self.update_src_scale(src=scale_url, scale=target_scale),
-                )
+                if resolve_urls and obj:
+                    scale_view = obj.unrestrictedTraverse("@@images", None)
+                    scale_obj = scale_view.scale(fieldname, target_scale, pre=True)
+                    scale_url = scale_obj.url
+                    width = scale_obj.width
+                    height = scale_obj.height
+                else:
+                    # obj = self.resolve_uid_url(src)
+                    # scale_view = obj.unrestrictedTraverse("@@images", None)
+                    # scale_obj = scale_view.scale(fieldname, target_scale, pre=True)
+                    # scale_url = scale_obj.url
+                    # width = scale_obj.width
+                    # height = scale_obj.height
+                    scale_url = self.update_src_scale(src=src, scale=target_scale)
+                img_tag = soup.new_tag("img", src=scale_url)
                 for k, attr in attributes.items():
                     if k in ["src", "srcset"]:
                         continue
                     img_tag.attrs[k] = attr
                 img_tag["loading"] = "lazy"
+                if width:
+                    img_tag["width"] = width
+                if height:
+                    img_tag["height"] = height
                 picture_tag.append(img_tag)
         return picture_tag
 
@@ -111,7 +132,7 @@ class Img2PictureTag(object):
         parts = src.split("/")
         if "." in parts[-1]:
             field_name = parts[-1].split("-")[0]
-            src_scale =  "/".join(parts[:-1]) + "/{0}/{1}".format(field_name, scale)
+            src_scale = "/".join(parts[:-1]) + "/{0}/{1}".format(field_name, scale)
             src_scale
         else:
             src_scale = "/".join(parts[:-1]) + "/{}".format(scale)

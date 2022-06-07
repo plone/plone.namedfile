@@ -520,6 +520,7 @@ class ImageScaling(BrowserView):
             if scale not in available:
                 return None  # 404
             width, height = available[scale]
+            print(f"{width}/{height}")
         if IDisableCSRFProtection and self.request is not None:
             alsoProvides(self.request, IDisableCSRFProtection)
         storage = getMultiAdapter(
@@ -538,6 +539,7 @@ class ImageScaling(BrowserView):
             scale=scale,
             **parameters,
         )
+        print(f"ingo: {info}")
         if info is None:
             return  # 404
 
@@ -629,6 +631,8 @@ class ImageScaling(BrowserView):
         scale = self.scale(fieldname, sourceset[-1].get("scale"), pre=True)
         attributes = {}
         attributes["class"] = css_class and [css_class] or []
+        if not attributes["class"]:
+            del attributes["class"]
         attributes["src"] = scale.url
         attributes["width"] = scale.width
         attributes["height"] = scale.height
