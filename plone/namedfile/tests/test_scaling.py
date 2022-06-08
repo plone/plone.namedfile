@@ -94,6 +94,11 @@ def patch_Img2PictureTag_picture_variants():
     }
 
 
+def patch_Img2PictureTag_empty_picture_variants():
+    # You would have this in Plone 5.2, or if someone empties the registry setting.
+    return {}
+
+
 def patch_Img2PictureTag_allowed_scales():
 
     return {
@@ -577,6 +582,28 @@ http://nohost/item/@@images/image-1000-....png 1000w,
 http://nohost/item/@@images/image-1200-....png 1200w"/>
  <img alt="Alternative text" height="200" loading="lazy" src="http://nohost/item/@@images/image-600-....png" title="Custom title" width="200"/>
 </picture>"""
+        self.assertTrue(_ellipsis_match(expected, tag))
+
+    @patch.object(
+        plone.namedfile.scaling,
+        "get_picture_variants",
+        new=patch_Img2PictureTag_empty_picture_variants,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture, "uuidToObject", spec=True
+    )
+    def testGetPictureTagWithoutAnyVariants(self, mock_uuid_to_object):
+        ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
+        mock_uuid_to_object.return_value = self.item
+        tag = self.scaling.picture("image", picture_variant="medium")
+        expected = f"""<img src="http://nohost/item/@@images/image-0-....png" title="foo" height="200" width="200" />"""
         self.assertTrue(_ellipsis_match(expected, tag))
 
     def testGetUnknownScale(self):

@@ -620,13 +620,26 @@ class ImageScaling(BrowserView):
         img2picturetag = Img2PictureTag()
         picture_variant_config = get_picture_variants().get(picture_variant)
         if not picture_variant_config:
-            # raise NotFound(self, picture_variant, self.request)
-            logger.warn(
-                "Could not find the given picture_variant {0}, leave tag untouched!".format(
-                    picture_variant
-                )
+            logger.warning(
+                "Could not find the given picture_variant %s, "
+                "creating ordinary img tag instead!",
+                picture_variant
             )
-            return
+            if picture_variant in self.available_sizes:
+                # We have a bit of luck: we have a scale with the same name
+                # as the picture variant.
+                scale = picture_variant
+            else:
+                scale = None
+            return self.tag(
+                fieldname=fieldname,
+                scale=scale,
+                alt=alt,
+                css_class=css_class,
+                title=title,
+                **kwargs,
+            )
+
         sourceset = picture_variant_config.get("sourceset")
         scale = self.scale(fieldname, sourceset[-1].get("scale"), pre=True)
         attributes = {}

@@ -32,7 +32,7 @@ def get_allowed_scales():
 def get_picture_variants():
     registry = getUtility(IRegistry)
     settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
-    return settings.picture_variants
+    return getattr(settings, "picture_variants", {})
 
 
 class Img2PictureTag(object):
