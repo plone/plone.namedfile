@@ -24,6 +24,7 @@
     <a href="#examples">examples</a>,
     <a href="#cover">cover</a>,
     <a href="#contain">contain</a>,
+    <a href="#picture">picture tags</a>,
     <a href="#stored">stored scales</a>,
     <a href="#clear">clear</a>
   </p>
@@ -85,16 +86,21 @@
     </figure>
 
     <h3 id="contain">Mini direction=contain</h3>
-    <p>
-      Temporary note:
-      This crops the image. The crop may fail unless this
-      <a href="https://github.com/plone/plone.scale/pull/54">plone.scale PR</a> is merged.
-    </p>
     <figure class="figure"
       tal:define="img_tag python:images.tag('image', scale='mini', direction='contain')">
       <img tal:replace="structure img_tag" />
       <br /><code tal:content="img_tag" />
     </figure>
+  </section>
+
+  <section id="picture">
+    <h2>Picture tags</h2>
+    <p>
+      Temporary note:
+      Picture tags only work on Plone 6, with several other branches merged.
+      See <a href="https://github.com/plone/buildout.coredev/blob/6.0/plips/plip-image-srcsets.cfg">coredev</a>.
+      If not available (like on Plone 5.2), an ordinary image tag is created.
+    </p>
 
     <h3 id="picture_tag_large">Picture Tag Large</h3>
     <p>
