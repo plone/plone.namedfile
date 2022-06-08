@@ -1,13 +1,18 @@
 import logging
 import re
 
-from plone.base.interfaces import IImagingSchema
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.app.uuid.utils import uuidToObject
 from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
 from zope.component import queryUtility
 from bs4 import BeautifulSoup
+
+try:
+    from plone.base.interfaces import IImagingSchema
+except ImportError:
+    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
+
 
 logger = logging.getLogger("plone.outputfilter.picture_variant")
 appendix_re = re.compile("^(.*)([?#].*)$")
@@ -27,11 +32,10 @@ def get_allowed_scales():
 def get_picture_variants():
     registry = getUtility(IRegistry)
     settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
-    return settings.picture_variants
+    return getattr(settings, "picture_variants", {})
 
 
 class Img2PictureTag(object):
-
     def get_scale_name(self, scale_line):
         parts = scale_line.split(" ")
         return parts and parts[0] or ""
