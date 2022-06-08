@@ -1,7 +1,10 @@
 import logging
 import re
 
-from plone.base.interfaces import IImagingSchema
+try:
+    from plone.base.interfaces import IImagingSchema
+except ImportError:
+    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.outputfilters.browser.resolveuid import uuidToObject
 from plone.registry.interfaces import IRegistry
