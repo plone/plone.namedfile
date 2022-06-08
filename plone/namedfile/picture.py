@@ -3,7 +3,7 @@ import re
 
 from plone.base.interfaces import IImagingSchema
 from plone.namedfile.interfaces import IAvailableSizes
-from plone.outputfilters.browser.resolveuid import uuidToObject
+from plone.app.uuid.utils import uuidToObject
 from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
 from zope.component import queryUtility
@@ -65,7 +65,6 @@ class Img2PictureTag(object):
             picture_tag["class"] = "captioned"
         for i, source in enumerate(sourceset):
             target_scale = source["scale"]
-            print(f"target_scale: {target_scale}")
             media = source.get("media")
 
             additional_scales = source.get("additionalScales", None)
@@ -137,5 +136,4 @@ class Img2PictureTag(object):
             src_scale
         else:
             src_scale = "/".join(parts[:-1]) + "/{}".format(scale)
-        print(src_scale)
         return src_scale

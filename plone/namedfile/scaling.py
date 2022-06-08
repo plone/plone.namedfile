@@ -539,7 +539,7 @@ class ImageScaling(BrowserView):
             scale=scale,
             **parameters,
         )
-        print(f"ingo: {info}")
+        print(f"plone.namedfile.scale: info: {info}")
         if info is None:
             return  # 404
 
