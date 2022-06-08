@@ -1,16 +1,18 @@
 import logging
 import re
 
-try:
-    from plone.base.interfaces import IImagingSchema
-except ImportError:
-    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.outputfilters.browser.resolveuid import uuidToObject
 from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
 from zope.component import queryUtility
 from bs4 import BeautifulSoup
+
+try:
+    from plone.base.interfaces import IImagingSchema
+except ImportError:
+    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
+
 
 logger = logging.getLogger("plone.outputfilter.picture_variant")
 appendix_re = re.compile("^(.*)([?#].*)$")
@@ -34,7 +36,6 @@ def get_picture_variants():
 
 
 class Img2PictureTag(object):
-
     def get_scale_name(self, scale_line):
         parts = scale_line.split(" ")
         return parts and parts[0] or ""
