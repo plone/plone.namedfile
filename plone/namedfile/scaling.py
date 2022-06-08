@@ -520,7 +520,6 @@ class ImageScaling(BrowserView):
             if scale not in available:
                 return None  # 404
             width, height = available[scale]
-            print(f"{width}/{height}")
         if IDisableCSRFProtection and self.request is not None:
             alsoProvides(self.request, IDisableCSRFProtection)
         storage = getMultiAdapter(
@@ -539,7 +538,6 @@ class ImageScaling(BrowserView):
             scale=scale,
             **parameters,
         )
-        print(f"plone.namedfile.scale: info: {info}")
         if info is None:
             return  # 404
 
