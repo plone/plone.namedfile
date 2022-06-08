@@ -11,7 +11,7 @@ from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
-from plone.namedfile.picture import Img2PictureTag
+from plone.namedfile.picture import Img2PictureTag, get_picture_variants
 from plone.protect.interfaces import IDisableCSRFProtection
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IImageScaleFactory
@@ -618,7 +618,7 @@ class ImageScaling(BrowserView):
         **kwargs,
     ):
         img2picturetag = Img2PictureTag()
-        picture_variant_config = img2picturetag.image_srcsets.get(picture_variant)
+        picture_variant_config = get_picture_variants().get(picture_variant)
         if not picture_variant_config:
             # raise NotFound(self, picture_variant, self.request)
             logger.warn(

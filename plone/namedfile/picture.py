@@ -2,9 +2,11 @@ import logging
 import re
 
 from plone.base.interfaces import IImagingSchema
+from plone.namedfile.interfaces import IAvailableSizes
 from plone.outputfilters.browser.resolveuid import uuidToObject
 from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
+from zope.component import queryUtility
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger("plone.outputfilter.picture_variant")
@@ -12,18 +14,23 @@ appendix_re = re.compile("^(.*)([?#].*)$")
 resolveuid_re = re.compile("^[./]*resolve[Uu]id/([^/]*)/?(.*)$")
 
 
-class Img2PictureTag(object):
-    @property
-    def allowed_scales(self):
-        registry = getUtility(IRegistry)
-        settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
-        return settings.allowed_sizes
+def get_allowed_scales():
+    sizes_util = queryUtility(IAvailableSizes)
+    if sizes_util is None:
+        return {}
+    sizes = sizes_util()
+    if sizes is None:
+        return {}
+    return sizes
 
-    @property
-    def picture_variants(self):
-        registry = getUtility(IRegistry)
-        settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
-        return settings.picture_variants
+
+def get_picture_variants():
+    registry = getUtility(IRegistry)
+    settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
+    return settings.picture_variants
+
+
+class Img2PictureTag(object):
 
     def get_scale_name(self, scale_line):
         parts = scale_line.split(" ")
@@ -33,15 +40,9 @@ class Img2PictureTag(object):
         """get width from allowed_scales line
         large 800:65536
         """
-        for s in self.allowed_scales:
-            parts = s.split(" ")
-            if not parts:
-                continue
-            if parts[0] == scale:
-                dimentions = parts[1].split(":")
-                if not dimentions:
-                    continue
-                return dimentions[0]
+        allowed_scales = get_allowed_scales()
+        scale_info = allowed_scales.get(scale)
+        return scale_info[0]
 
     def create_picture_tag(
         self, sourceset, attributes, uid=None, fieldname=None, resolve_urls=False
@@ -53,7 +54,7 @@ class Img2PictureTag(object):
         if not uid and not src:
             raise TypeError("Either uid or attributes['src'] need to be given.")
         soup = BeautifulSoup("", "html.parser")
-        allowed_scales = self.allowed_scales
+        allowed_scales = get_allowed_scales()
         if uid:
             obj = uuidToObject(uid)
         else:

@@ -7,7 +7,6 @@ from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IImageScaleTraversable
-from plone.namedfile.picture import Img2PictureTag
 from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
@@ -27,22 +26,11 @@ from zope.interface import Interface
 from zope.publisher.interfaces import NotFound
 
 import PIL
+import plone.namedfile.picture
+import plone.namedfile.scaling
 import re
 import time
 import unittest
-
-
-class Img2PictureTagMock(Img2PictureTag):
-
-    @property
-    def allowed_scales(self):
-        allowed_sizes = []
-        return allowed_sizes
-
-    @property
-    def image_srcsets(self):
-        image_srcsets
-        return image_srcsets
 
 
 # Unique scale name used to be a uuid.uui4(),
@@ -67,12 +55,61 @@ def assertImage(testcase, data, format_, size):
     testcase.assertEqual(image.size, size)
 
 
-@contextmanager
-def patch_uuidToObject(value=None):
-    import plone.namedfile.picture
+def patch_Img2PictureTag_picture_variants():
 
-    with patch.object(plone.namedfile.picture, "uuidToObject", return_value=value):
-        yield
+    return {
+        "large": {
+            "title": "Large",
+            "sourceset": [
+                {
+                    "scale": "larger",
+                    "additionalScales": [
+                        "preview",
+                        "teaser",
+                        "large",
+                        "great",
+                        "huge",
+                    ],
+                }
+            ],
+        },
+        "medium": {
+            "title": "Medium",
+            "sourceset": [
+                {
+                    "scale": "teaser",
+                    "additionalScales": ["preview", "large", "larger", "great"],
+                }
+            ],
+        },
+        "small": {
+            "title": "Small",
+            "sourceset": [
+                {
+                    "scale": "preview",
+                    "additionalScales": ["preview", "large", "larger"],
+                }
+            ],
+        },
+    }
+
+
+def patch_Img2PictureTag_allowed_scales():
+
+    return {
+        "huge": (1600, 65536),
+        "great": (1200, 65536),
+        "larger": (1000, 65536),
+        "large": (800, 65536),
+        "teaser": (600, 65536),
+        "preview": (400, 65536),
+        "mini": (200, 65536),
+        "thumb": (128, 128),
+        "tile": (64, 64),
+        "icon": (32, 32),
+        "listing": (16, 16),
+    }
+
 
 
 @implementer(IAttributeAnnotatable, IHasImage)
@@ -270,9 +307,11 @@ class ImageScalingTests(unittest.TestCase):
         item.image = MockNamedImage(data, 'image/png', u'image.png')
         self.layer['app']._setOb('item', item)
         self.item = self.layer['app'].item
+        self._orig_sizes = ImageScaling._sizes
         self.scaling = ImageScaling(self.item, None)
 
     def tearDown(self):
+        ImageScaling._sizes = self._orig_sizes
         sm = getSiteManager()
         sm.unregisterAdapter(PrimaryFieldInfo)
 
@@ -462,10 +501,25 @@ class ImageScalingTests(unittest.TestCase):
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
-    def testGetPictureTagByName(self):
-        with patch_uuidToObject(self.item):
-            tag = self.scaling.picture('image', picture_variant='medium')
-        base = self.item.absolute_url()
+    @patch.object(
+        plone.namedfile.scaling,
+        "get_picture_variants",
+        new=patch_Img2PictureTag_picture_variants,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture, "uuidToObject", spec=True
+    )
+    def testGetPictureTagByName(self, mock_uuid_to_object):
+        ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
+        mock_uuid_to_object.return_value = self.item
+        tag = self.scaling.picture("image", picture_variant="medium")
         expected = f"""<picture>
  <source srcset="http://nohost/item/@@images/image-600-....png 600w,
 http://nohost/item/@@images/image-400-....png 400w,
@@ -476,9 +530,30 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 </picture>"""
         self.assertTrue(_ellipsis_match(expected, tag))
 
-    def testGetPictureTagWithAltAndTitle(self):
-        with patch_uuidToObject(self.item):
-            tag = self.scaling.picture('image', picture_variant='medium', alt="Alternative text", title="Custom title")
+    @patch.object(
+        plone.namedfile.scaling,
+        "get_picture_variants",
+        new=patch_Img2PictureTag_picture_variants,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture, "uuidToObject", spec=True
+    )
+    def testGetPictureTagWithAltAndTitle(self, mock_uuid_to_object):
+        ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
+        mock_uuid_to_object.return_value = self.item
+        tag = self.scaling.picture(
+            "image",
+            picture_variant="medium",
+            alt="Alternative text",
+            title="Custom title",
+        )
         base = self.item.absolute_url()
         expected = f"""<picture>
  <source srcset="http://nohost/item/@@images/image-600-....png 600w,
@@ -488,8 +563,6 @@ http://nohost/item/@@images/image-1000-....png 1000w,
 http://nohost/item/@@images/image-1200-....png 1200w"/>
  <img alt="Alternative text" height="200" loading="lazy" src="http://nohost/item/@@images/image-600-....png" title="Custom title" width="200"/>
 </picture>"""
-        print(f"{expected}")
-        print(f"{tag}")
         self.assertTrue(_ellipsis_match(expected, tag))
 
     def testGetUnknownScale(self):
