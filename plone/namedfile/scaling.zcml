@@ -4,12 +4,27 @@
     xmlns:zcml="http://namespaces.zope.org/zcml"
     xmlns:browser="http://namespaces.zope.org/browser">
   <include package="zope.annotation" />
+  <include package="Products.CMFCore" file="permissions.zcml" />
   <browser:page
       allowed_attributes="scale tag"
       class=".scaling.ImageScaling"
       for=".interfaces.IImageScaleTraversable"
       name="images"
       permission="zope2.View"
+  />
+  <browser:page
+      for=".interfaces.IImageScaleTraversable"
+      name="images-test"
+      class=".scaling.ImagesTest"
+      template="test.pt"
+      permission="cmf.ModifyPortalContent"
+  />
+  <browser:page
+      for=".interfaces.IImageScaleTraversable"
+      name="images-clear"
+      class=".scaling.ImagesTest"
+      attribute="clear"
+      permission="cmf.ModifyPortalContent"
   />
   <browser:page
       allowed_attributes="scale tag"

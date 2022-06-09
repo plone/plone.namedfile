@@ -11,3 +11,4 @@ include
 lib
 parts
 requirements-*-mxdev.txt
+sources/
