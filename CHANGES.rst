@@ -8,6 +8,20 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0a4 (2022-05-26)
+--------------------
+
+Bug fixes:
+
+
+- Only look at the width when checking if a HiDPI image would be larger than the original.
+  Otherwise HiDPI srcsets are never included when the scale is defined with a height of 65536.
+  [maurits] (#114)
+- Fix Unauthorized when accessing ``@@images/image`` of private image, even as Manager.
+  Fixes problem introduced in previous release.
+  [maurits] (#118)
+
+
 6.0.0a3 (2022-02-28)
 --------------------
 

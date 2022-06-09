@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+from contextlib import contextmanager
 from DateTime import DateTime
+from doctest import _ellipsis_match
 from OFS.SimpleItem import SimpleItem
 from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
@@ -9,11 +11,14 @@ from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
+from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.storage import IImageScaleStorage
 from six import BytesIO
+from unittest.mock import patch
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
+from zope.component import adapter
 from zope.component import getGlobalSiteManager
 from zope.component import getSiteManager
 from zope.interface import implementer
@@ -21,9 +26,17 @@ from zope.interface import Interface
 from zope.publisher.interfaces import NotFound
 
 import PIL
+import plone.namedfile.picture
+import plone.namedfile.scaling
 import re
 import time
 import unittest
+
+
+# Unique scale name used to be a uuid.uui4(),
+# which is a combination of hexadecimal digits with dashes, total 36.
+# Now it is 'imagescalename-width-hash', where hash is 32.
+PAT_UID_SCALE = r"[0-9a-z]*-[0-9]*-[0-9a-f]{32}"
 
 
 def wait_to_ensure_modified():
@@ -42,15 +55,93 @@ def assertImage(testcase, data, format_, size):
     testcase.assertEqual(image.size, size)
 
 
+def patch_Img2PictureTag_picture_variants():
+
+    return {
+        "large": {
+            "title": "Large",
+            "sourceset": [
+                {
+                    "scale": "larger",
+                    "additionalScales": [
+                        "preview",
+                        "teaser",
+                        "large",
+                        "great",
+                        "huge",
+                    ],
+                }
+            ],
+        },
+        "medium": {
+            "title": "Medium",
+            "sourceset": [
+                {
+                    "scale": "teaser",
+                    "additionalScales": ["preview", "large", "larger", "great"],
+                }
+            ],
+        },
+        "small": {
+            "title": "Small",
+            "sourceset": [
+                {
+                    "scale": "preview",
+                    "additionalScales": ["preview", "large", "larger"],
+                }
+            ],
+        },
+    }
+
+
+def patch_Img2PictureTag_empty_picture_variants():
+    # You would have this in Plone 5.2, or if someone empties the registry setting.
+    return {}
+
+
+def patch_Img2PictureTag_allowed_scales():
+
+    return {
+        "huge": (1600, 65536),
+        "great": (1200, 65536),
+        "larger": (1000, 65536),
+        "large": (800, 65536),
+        "teaser": (600, 65536),
+        "preview": (400, 65536),
+        "mini": (200, 65536),
+        "thumb": (128, 128),
+        "tile": (64, 64),
+        "icon": (32, 32),
+        "listing": (16, 16),
+    }
+
+
+
 @implementer(IAttributeAnnotatable, IHasImage)
 class DummyContent(SimpleItem):
     image = None
     modified = DateTime
-    id = __name__ = 'item'
-    title = 'foo'
+    id = __name__ = "item"
+    title = "foo"
 
     def Title(self):
         return self.title
+
+    def UID(self):
+        return "dummy_uuid"
+
+
+@implementer(IPrimaryFieldInfo)
+@adapter(DummyContent)
+class PrimaryFieldInfo(object):
+    def __init__(self, context):
+        self.context = context
+        self.fieldname = "image"
+        self.field = self.context.image
+
+    @property
+    def value(self):
+        return self.field
 
 
 class MockNamedImage(NamedImage):
@@ -59,7 +150,7 @@ class MockNamedImage(NamedImage):
 
 @implementer(IScaledImageQuality)
 class DummyQualitySupplier(object):
-    """ fake utility for plone.app.imaging's scaling quality """
+    """fake utility for plone.app.imaging's scaling quality"""
 
     def getQuality(self):
         return 1  # as bad as it gets
@@ -87,9 +178,9 @@ class FakeImage:
             data=self.data,
             width=self._width,
             height=self._height,
-            mimetype=f'image/{self.format.lower()}',
+            mimetype=f"image/{self.format.lower()}",
             key=self.key,
-            uid=self.uid
+            uid=self.uid,
         )
 
     def absolute_url(self):
@@ -105,12 +196,29 @@ class FakeImageScaleStorage:
     """Storage class for FakeImages."""
 
     def __init__(self, context, modified=None):
-        """ Adapt the given context item and optionally provide a callable
-            to return a representation of the last modification date, which
-            can be used to invalidate stored scale data on update. """
+        """Adapt the given context item and optionally provide a callable
+        to return a representation of the last modification date, which
+        can be used to invalidate stored scale data on update."""
         self.context = context
         self.modified = modified
         self.storage = context._scales
+
+    def pre_scale(self, factory=None, **parameters):
+        """Find image scale data for the given parameters or pre-create it.
+
+        In our version, we only support height and width.
+        """
+        stripped_parameters = {
+            "target_height": parameters.get("height"),
+            "target_width": parameters.get("width"),
+        }
+        key = self.hash(**stripped_parameters)
+        info = self.get_info_by_hash(key)
+        if info is not None:
+            # Note: we could do something with self.modified here,
+            # but we choose to ignore it.
+            return info
+        return self.create_scale(no_scale=True, **stripped_parameters)
 
     def scale(self, factory=None, **parameters):
         """Find image scale data for the given parameters or create it.
@@ -122,7 +230,6 @@ class FakeImageScaleStorage:
             "target_width": parameters.get("width"),
         }
         key = self.hash(**stripped_parameters)
-        storage = self.storage
         info = self.get_info_by_hash(key)
         if info is not None:
             # Note: we could do something with self.modified here,
@@ -130,7 +237,7 @@ class FakeImageScaleStorage:
             return info
         return self.create_scale(**stripped_parameters)
 
-    def create_scale(self, target_height=None, target_width=None):
+    def create_scale(self, target_height=None, target_width=None, no_scale=False):
         if target_height is None and target_width is None:
             # Return the original.
             return self.context.info
@@ -145,19 +252,43 @@ class FakeImageScaleStorage:
         uid = f"uid-{len(self.storage)}"
         key = self.hash(target_height=target_height, target_width=target_width)
 
-        # Create a new fake image for this scale.
-        scale = FakeImage(value, format, key=key, uid=uid)
+        if no_scale:
+            info = dict(
+                data=None,
+                width=self._width,
+                height=self._height,
+                mimetype=f"image/{self.format.lower()}",
+                key=self.key,
+                uid=self.uid,
+            )
+        else:
+            # Create a new fake image for this scale.
+            scale = FakeImage(value, format, key=key, uid=uid)
+            info = scale.info
 
-        # Store the scale and return the info.
-        self.storage[uid] = scale.info
+        # Store the real scale or placeholder scale and return the info.
+        self.storage[uid] = info
         return scale.info
 
     def __getitem__(self, uid):
-        """ Find image scale data based on its uid. """
+        """Find image scale data based on its uid."""
         return self.storage[uid]
 
     def get(self, uid, default=None):
         return self.storage.get(uid, default)
+
+    def get_or_generate(self, uid, default=None):
+        info = self.storage.get(uid, default)
+        if info is None:
+            return
+        if info.get("data"):
+            return info
+        # We have a placeholder. Get real data.
+        stripped_parameters = {
+            "target_height": info.get("height"),
+            "target_width": info.get("width"),
+        }
+        return self.create_scale(**stripped_parameters)
 
     def hash(self, **parameters):
         return tuple(parameters.values())
@@ -168,184 +299,315 @@ class FakeImageScaleStorage:
                 return value
 
 
+# @patch.multiple(
+#     "plone.namedfile.scaling.Img2PictureTag",
+#     allowed_scales=patch_Img2PictureTag_allowed_scales,
+#     picture_variants=patch_Img2PictureTag_picture_variants,
+#     spec=True,
+# )
 class ImageScalingTests(unittest.TestCase):
 
     layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
 
     def setUp(self):
-        data = getFile('image.png')
+        sm = getSiteManager()
+        sm.registerAdapter(PrimaryFieldInfo)
+
+        data = getFile("image.png")
         item = DummyContent()
-        item.image = MockNamedImage(data, 'image/png', u'image.png')
-        self.layer['app']._setOb('item', item)
-        self.item = self.layer['app'].item
+        item.image = MockNamedImage(data, "image/png", "image.png")
+        self.layer["app"]._setOb("item", item)
+        self.item = self.layer["app"].item
+        self._orig_sizes = ImageScaling._sizes
         self.scaling = ImageScaling(self.item, None)
 
+    def tearDown(self):
+        ImageScaling._sizes = self._orig_sizes
+        sm = getSiteManager()
+        sm.unregisterAdapter(PrimaryFieldInfo)
+
     def testCreateScale(self):
-        foo = self.scaling.scale('image', width=100, height=80)
+        foo = self.scaling.scale("image", width=100, height=80)
         self.assertTrue(foo.uid)
-        self.assertEqual(foo.mimetype, 'image/png')
+        self.assertEqual(foo.mimetype, "image/png")
         self.assertIsInstance(foo.mimetype, str)
-        self.assertEqual(foo.data.contentType, 'image/png')
+        self.assertEqual(foo.data.contentType, "image/png")
         self.assertIsInstance(foo.data.contentType, str)
         self.assertEqual(foo.width, 80)
         self.assertEqual(foo.height, 80)
-        assertImage(self, foo.data.data, 'PNG', (80, 80))
+        assertImage(self, foo.data.data, "PNG", (80, 80))
 
     def testCreateExactScale(self):
-        foo = self.scaling.scale('image', width=100, height=80)
+        foo = self.scaling.scale("image", width=100, height=80)
         self.assertIsNot(foo.data, self.item.image)
 
         # test that exact scale without parameters returns original
-        foo = self.scaling.scale('image',
-                                 width=self.item.image._width,
-                                 height=self.item.image._height)
+        foo = self.scaling.scale(
+            "image", width=self.item.image._width, height=self.item.image._height
+        )
         self.assertIs(foo.data, self.item.image)
 
-        foo = self.scaling.scale('image',
-                                 width=self.item.image._width,
-                                 height=self.item.image._height,
-                                 quality=80)
+        foo = self.scaling.scale(
+            "image",
+            width=self.item.image._width,
+            height=self.item.image._height,
+            quality=80,
+        )
         self.assertIsNot(foo.data, self.item.image)
 
     def testCreateHighPixelDensityScale(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        foo = self.scaling.scale('image', width=100, height=80)
+        self.scaling.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
+        foo = self.scaling.scale("image", width=100, height=80, include_srcset=True)
         self.assertTrue(foo.srcset)
-        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
-        self.assertEqual(foo.srcset[0]['height'], 160)
-        self.assertEqual(foo.srcset[0]['width'], 160)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (160, 160))
+        self.assertEqual(foo.srcset[0]["mimetype"], "image/png")
+        self.assertEqual(foo.srcset[0]["height"], 160)
+        self.assertEqual(foo.srcset[0]["width"], 160)
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]["data"], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer["request"], foo.srcset[0]["uid"])
+        assertImage(self, bar.data.data, "PNG", (160, 160))
 
     def testCreateScaleWithoutData(self):
         item = DummyContent()
         scaling = ImageScaling(item, None)
-        foo = scaling.scale('image', width=100, height=80)
+        foo = scaling.scale("image", width=100, height=80)
         self.assertEqual(foo, None)
 
     def testCreateHighPixelDensityScaleWithoutData(self):
         item = DummyContent()
         scaling = ImageScaling(item, None)
-        scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        foo = scaling.scale('image', width=100, height=80)
-        self.assertFalse(hasattr(foo, 'srcset'))
+        scaling.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
+        foo = scaling.scale("image", width=100, height=80)
+        self.assertFalse(hasattr(foo, "srcset"))
 
     def testGetScaleByName(self):
-        self.scaling.available_sizes = {'foo': (60, 60)}
-        foo = self.scaling.scale('image', scale='foo')
+        self.scaling.available_sizes = {"foo": (60, 60)}
+        foo = self.scaling.scale("image", scale="foo")
         self.assertTrue(foo.uid)
-        self.assertEqual(foo.mimetype, 'image/png')
+        self.assertEqual(foo.mimetype, "image/png")
         self.assertIsInstance(foo.mimetype, str)
-        self.assertEqual(foo.data.contentType, 'image/png')
+        self.assertEqual(foo.data.contentType, "image/png")
         self.assertIsInstance(foo.data.contentType, str)
         self.assertEqual(foo.width, 60)
         self.assertEqual(foo.height, 60)
-        assertImage(self, foo.data.data, 'PNG', (60, 60))
+        assertImage(self, foo.data.data, "PNG", (60, 60))
         expected_url = re.compile(
-            r'http://nohost/item/@@images/[-a-z0-9]{36}\.png')
+            r"http://nohost/item/@@images/{0}.png".format(PAT_UID_SCALE)
+        )
         self.assertTrue(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
 
         tag = foo.tag()
         base = self.item.absolute_url()
-        expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+        expected = (
+            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base,
+                base, PAT_UID_SCALE
             )
+        )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
     def testGetHighPixelDensityScaleByName(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        self.scaling.available_sizes = {'foo': (60, 60)}
-        foo = self.scaling.scale('image', scale='foo')
+        self.scaling.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
+        self.scaling.available_sizes = {"foo": (60, 60)}
+        foo = self.scaling.scale("image", scale="foo", include_srcset=True)
         self.assertTrue(foo.srcset)
-        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
-        self.assertEqual(foo.srcset[0]['width'], 120)
-        self.assertEqual(foo.srcset[0]['height'], 120)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+        self.assertEqual(foo.srcset[0]["mimetype"], "image/png")
+        self.assertEqual(foo.srcset[0]["width"], 120)
+        self.assertEqual(foo.srcset[0]["height"], 120)
+
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]["data"], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer["request"], foo.srcset[0]["uid"])
+        assertImage(self, bar.data.data, "PNG", (120, 120))
 
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}'.format(base) +
-            r'/@@images/([-0-9a-f]{36})'
-            r'.(jpeg|gif|png)" '
+            r'<img src="{0}'.format(base)
+            + r"/@@images/({0})".format(PAT_UID_SCALE)
+            + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
-            r'.(jpeg|gif|png)'
-            r' 2x" />')
+            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE)
+            + r".(jpeg|gif|png)"
+            r' 2x" />'
+        )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
     def testGetRetinaScaleByWidthAndHeight(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        foo = self.scaling.scale('image', width=60, height=60)
+        self.scaling.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
+        foo = self.scaling.scale("image", width=60, height=60, include_srcset=True)
         self.assertTrue(foo.srcset)
-        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
-        self.assertEqual(foo.srcset[0]['width'], 120)
-        self.assertEqual(foo.srcset[0]['height'], 120)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+        self.assertEqual(foo.srcset[0]["mimetype"], "image/png")
+        self.assertEqual(foo.srcset[0]["width"], 120)
+        self.assertEqual(foo.srcset[0]["height"], 120)
+
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]["data"], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer["request"], foo.srcset[0]["uid"])
+        assertImage(self, bar.data.data, "PNG", (120, 120))
 
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}'.format(base) +
-            r'/@@images/([-0-9a-f]{36})'
-            r'.(jpeg|gif|png)" '
+            r'<img src="{0}'.format(base)
+            + r"/@@images/({0})".format(PAT_UID_SCALE)
+            + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
-            r'.(jpeg|gif|png)'
-            r' 2x" />')
+            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE)
+            + r".(jpeg|gif|png)"
+            r' 2x" />'
+        )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
     def testGetRetinaScaleByWidthOnly(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        foo = self.scaling.scale('image', width=60)
+        self.scaling.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
+        foo = self.scaling.scale("image", width=60, include_srcset=True)
         self.assertTrue(foo.srcset)
-        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
-        self.assertEqual(foo.srcset[0]['width'], 120)
-        self.assertEqual(foo.srcset[0]['height'], 120)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+        self.assertEqual(foo.srcset[0]["mimetype"], "image/png")
+        self.assertEqual(foo.srcset[0]["width"], 120)
+        self.assertEqual(foo.srcset[0]["height"], 120)
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]["data"], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer["request"], foo.srcset[0]["uid"])
+        assertImage(self, bar.data.data, "PNG", (120, 120))
 
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}'.format(base) +
-            r'/@@images/([-0-9a-f]{36})'
-            r'.(jpeg|gif|png)" '
+            r'<img src="{0}'.format(base)
+            + r"/@@images/({0})".format(PAT_UID_SCALE)
+            + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
-            r'.(jpeg|gif|png)'
-            r' 2x" />')
+            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE)
+            + r".(jpeg|gif|png)"
+            r' 2x" />'
+        )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
     def testGetRetinaScaleByHeightOnly(self):
-        self.scaling.getHighPixelDensityScales = lambda: [{'scale': 2, 'quality': 66}]
-        foo = self.scaling.scale('image', height=60)
+        self.scaling.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
+        foo = self.scaling.scale("image", height=60, include_srcset=True)
         self.assertTrue(foo.srcset)
-        self.assertEqual(foo.srcset[0]['mimetype'], 'image/png')
-        self.assertEqual(foo.srcset[0]['width'], 120)
-        self.assertEqual(foo.srcset[0]['height'], 120)
-        assertImage(self, foo.srcset[0]['data'].data, 'PNG', (120, 120))
+        self.assertEqual(foo.srcset[0]["mimetype"], "image/png")
+        self.assertEqual(foo.srcset[0]["width"], 120)
+        self.assertEqual(foo.srcset[0]["height"], 120)
+        # It is a pre-registered scale, not yet rendered.
+        self.assertEqual(foo.srcset[0]["data"], None)
+        # Render the scale by pretending to visit its url.
+        bar = self.scaling.publishTraverse(self.layer["request"], foo.srcset[0]["uid"])
+        assertImage(self, bar.data.data, "PNG", (120, 120))
 
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}'.format(base) +
-            r'/@@images/([-0-9a-f]{36})'
-            r'.(jpeg|gif|png)" '
+            r'<img src="{0}'.format(base)
+            + r"/@@images/({0})".format(PAT_UID_SCALE)
+            + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/([-0-9a-f]{36})'
-            r'.(jpeg|gif|png)'
-            r' 2x" />')
+            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE)
+            + r".(jpeg|gif|png)"
+            r' 2x" />'
+        )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
 
+    @patch.object(
+        plone.namedfile.scaling,
+        "get_picture_variants",
+        new=patch_Img2PictureTag_picture_variants,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture, "uuidToObject", spec=True
+    )
+    def testGetPictureTagByName(self, mock_uuid_to_object):
+        ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
+        mock_uuid_to_object.return_value = self.item
+        tag = self.scaling.picture("image", picture_variant="medium")
+        expected = f"""<picture>
+ <source srcset="http://nohost/item/@@images/image-600-....png 600w,
+http://nohost/item/@@images/image-400-....png 400w,
+http://nohost/item/@@images/image-800-....png 800w,
+http://nohost/item/@@images/image-1000-....png 1000w,
+http://nohost/item/@@images/image-1200-....png 1200w"/>
+ <img height="200" loading="lazy" src="http://nohost/item/@@images/image-600-....png" title="foo" width="200"/>
+</picture>"""
+        self.assertTrue(_ellipsis_match(expected, tag))
+
+    @patch.object(
+        plone.namedfile.scaling,
+        "get_picture_variants",
+        new=patch_Img2PictureTag_picture_variants,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture, "uuidToObject", spec=True
+    )
+    def testGetPictureTagWithAltAndTitle(self, mock_uuid_to_object):
+        ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
+        mock_uuid_to_object.return_value = self.item
+        tag = self.scaling.picture(
+            "image",
+            picture_variant="medium",
+            alt="Alternative text",
+            title="Custom title",
+        )
+        base = self.item.absolute_url()
+        expected = f"""<picture>
+ <source srcset="http://nohost/item/@@images/image-600-....png 600w,
+http://nohost/item/@@images/image-400-....png 400w,
+http://nohost/item/@@images/image-800-....png 800w,
+http://nohost/item/@@images/image-1000-....png 1000w,
+http://nohost/item/@@images/image-1200-....png 1200w"/>
+ <img alt="Alternative text" height="200" loading="lazy" src="http://nohost/item/@@images/image-600-....png" title="Custom title" width="200"/>
+</picture>"""
+        self.assertTrue(_ellipsis_match(expected, tag))
+
+    @patch.object(
+        plone.namedfile.scaling,
+        "get_picture_variants",
+        new=patch_Img2PictureTag_empty_picture_variants,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture, "uuidToObject", spec=True
+    )
+    def testGetPictureTagWithoutAnyVariants(self, mock_uuid_to_object):
+        ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
+        mock_uuid_to_object.return_value = self.item
+        tag = self.scaling.picture("image", picture_variant="medium")
+        expected = f"""<img src="http://nohost/item/@@images/image-0-....png" title="foo" height="200" width="200" />"""
+        self.assertTrue(_ellipsis_match(expected, tag))
+
     def testGetUnknownScale(self):
-        foo = self.scaling.scale('image', scale='foo?')
+        foo = self.scaling.scale("image", scale="foo?")
         self.assertEqual(foo, None)
 
     def testScaleInvalidation(self):
@@ -354,36 +616,36 @@ class ImageScalingTests(unittest.TestCase):
         # Test that different parameters give different scale
         self.item.modified = lambda: dt
         self.item.image._p_mtime = dt.millis()
-        scale1a = self.scaling.scale('image', width=100, height=80)
-        scale2a = self.scaling.scale('image', width=80, height=60)
+        scale1a = self.scaling.scale("image", width=100, height=80)
+        scale2a = self.scaling.scale("image", width=80, height=60)
         self.assertNotEqual(scale1a.data, scale2a.data)
 
         # Test that bare object modification does not invalidate scales
         self.item.modified = lambda: dt + 1
-        scale1b = self.scaling.scale('image', width=100, height=80)
-        scale2b = self.scaling.scale('image', width=80, height=60)
+        scale1b = self.scaling.scale("image", width=100, height=80)
+        scale2b = self.scaling.scale("image", width=80, height=60)
         self.assertNotEqual(scale1b.data, scale2b.data)
         self.assertEqual(scale1a.data, scale1b.data)
         self.assertEqual(scale2a.data, scale2b.data)
 
         # Test that field modification invalidates scales
         self.item.image._p_mtime = (dt + 1).millis()
-        scale1b = self.scaling.scale('image', width=100, height=80)
-        scale2b = self.scaling.scale('image', width=80, height=60)
+        scale1b = self.scaling.scale("image", width=100, height=80)
+        scale2b = self.scaling.scale("image", width=80, height=60)
         self.assertNotEqual(scale1b.data, scale2b.data)
-        self.assertNotEqual(scale1a.data, scale1b.data, 'scale not updated?')
-        self.assertNotEqual(scale2a.data, scale2b.data, 'scale not updated?')
+        self.assertNotEqual(scale1a.data, scale1b.data, "scale not updated?")
+        self.assertNotEqual(scale2a.data, scale2b.data, "scale not updated?")
 
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
-        self.scaling.available_sizes = {'foo': (23, 23)}
-        foo = self.scaling.scale('image', scale='foo')
+        self.scaling.available_sizes = {"foo": (23, 23)}
+        foo = self.scaling.scale("image", scale="foo")
         self.assertEqual(foo.width, 23)
         self.assertEqual(foo.height, 23)
         # now let's update the scale dimensions, after which the scale
         # shouldn't be the same...
-        self.scaling.available_sizes = {'foo': (42, 42)}
-        foo = self.scaling.scale('image', scale='foo')
+        self.scaling.available_sizes = {"foo": (42, 42)}
+        foo = self.scaling.scale("image", scale="foo")
         self.assertEqual(foo.width, 42)
         self.assertEqual(foo.height, 42)
 
@@ -394,74 +656,76 @@ class ImageScalingTests(unittest.TestCase):
     def testCustomAvailableSizes(self):
         # a callable can be used to look up the available sizes
         def custom_available_sizes():
-            return {'bar': (10, 10)}
+            return {"bar": (10, 10)}
+
         sm = getSiteManager()
-        sm.registerUtility(component=custom_available_sizes,
-                           provided=IAvailableSizes)
-        self.assertEqual(self.scaling.available_sizes, {'bar': (10, 10)})
+        sm.registerUtility(component=custom_available_sizes, provided=IAvailableSizes)
+        self.assertEqual(self.scaling.available_sizes, {"bar": (10, 10)})
         sm.unregisterUtility(provided=IAvailableSizes)
         # for testing purposes, the sizes may also be set directly on
         # the scaling adapter
-        self.scaling.available_sizes = {'qux': (12, 12)}
-        self.assertEqual(self.scaling.available_sizes, {'qux': (12, 12)})
+        self.scaling.available_sizes = {"qux": (12, 12)}
+        self.assertEqual(self.scaling.available_sizes, {"qux": (12, 12)})
 
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
         self.item.__allow_access_to_unprotected_subobjects__ = 0
-        self.assertRaises(Unauthorized,
-                          self.scaling.guarded_orig_image, 'image')
+        self.assertRaises(Unauthorized, self.scaling.guarded_orig_image, "image")
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 
     def testGetAvailableSizes(self):
-        self.scaling.available_sizes = {'foo': (60, 60)}
-        assert self.scaling.getAvailableSizes('image') == {'foo': (60, 60)}
+        self.scaling.available_sizes = {"foo": (60, 60)}
+        assert self.scaling.getAvailableSizes("image") == {"foo": (60, 60)}
 
     def testGetImageSize(self):
-        assert self.scaling.getImageSize('image') == (200, 200)
+        assert self.scaling.getImageSize("image") == (200, 200)
 
     def testGetOriginalScaleTag(self):
-        tag = self.scaling.tag('image')
+        tag = self.scaling.tag("image")
         base = self.item.absolute_url()
-        expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+        expected = (
+            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
-                base,
+                base, PAT_UID_SCALE
             )
+        )
         self.assertTrue(re.match(expected, tag).groups())
 
     def testScaleOnItemWithNonASCIITitle(self):
-        self.item.title = u'ü'
-        tag = self.scaling.tag('image')
+        self.item.title = "ü"
+        tag = self.scaling.tag("image")
         base = self.item.absolute_url()
-        expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+        expected = (
+            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" '
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
-                base,
+                base, PAT_UID_SCALE
             )
+        )
         self.assertTrue(re.match(expected, tag).groups())
 
     def testScaleOnItemWithUnicodeTitle(self):
-        self.item.Title = lambda: u'ü'
-        tag = self.scaling.tag('image')
+        self.item.Title = lambda: "ü"
+        tag = self.scaling.tag("image")
         base = self.item.absolute_url()
-        expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+        expected = (
+            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" '
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
-                base,
+                base, PAT_UID_SCALE
             )
+        )
         self.assertTrue(re.match(expected, tag).groups())
 
     def testScaledJpegImageQuality(self):
         """Test image quality setting for jpeg images.
         Image quality not available for PNG images.
         """
-        data = getFile('image.jpg')
+        data = getFile("image.jpg")
         item = DummyContent()
-        item.image = NamedImage(data, 'image/png', u'image.jpg')
+        item.image = NamedImage(data, "image/png", "image.jpg")
         scaling = ImageScaling(item, None)
 
         # scale an image, record its size
-        foo = scaling.scale('image', width=100, height=80)
+        foo = scaling.scale("image", width=100, height=80)
         size_foo = foo.data.getSize()
         # let's pretend p.a.imaging set the scaling quality to "really sloppy"
         gsm = getGlobalSiteManager()
@@ -469,20 +733,23 @@ class ImageScalingTests(unittest.TestCase):
         gsm.registerUtility(qualitySupplier.getQuality, IScaledImageQuality)
         wait_to_ensure_modified()
         # now scale again
-        bar = scaling.scale('image', width=100, height=80)
+        bar = scaling.scale("image", width=100, height=80)
         size_bar = bar.data.getSize()
         # first one should be bigger
         self.assertTrue(size_foo > size_bar)
 
     def testOversizedHighPixelDensityScale(self):
-        orig_size = max(self.scaling.getImageSize('image'))
+        orig_size = max(self.scaling.getImageSize("image"))
         scale_size = orig_size / 2
         self.scaling.getHighPixelDensityScales = lambda: [
-            {'scale': 2, 'quality': 66},
-            {'scale': 3, 'quality': 66}]
-        foo = self.scaling.scale('image', width=scale_size, height=scale_size)
+            {"scale": 2, "quality": 66},
+            {"scale": 3, "quality": 66},
+        ]
+        foo = self.scaling.scale(
+            "image", width=scale_size, height=scale_size, include_srcset=True
+        )
         self.assertEqual(len(foo.srcset), 1)
-        self.assertEqual(foo.srcset[0]['scale'], 2)
+        self.assertEqual(foo.srcset[0]["scale"], 2)
 
 
 class ImageTraverseTests(unittest.TestCase):
@@ -490,59 +757,60 @@ class ImageTraverseTests(unittest.TestCase):
     layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 
     def setUp(self):
-        self.app = self.layer['app']
-        data = getFile('image.png')
+        self.app = self.layer["app"]
+        data = getFile("image.png")
         item = DummyContent()
-        item.image = NamedImage(data, 'image/png', u'image.png')
-        self.app._setOb('item', item)
+        item.image = NamedImage(data, "image/png", "image.png")
+        self.app._setOb("item", item)
         self.item = self.app.item
         self._orig_sizes = ImageScaling._sizes
 
     def tearDown(self):
         ImageScaling._sizes = self._orig_sizes
 
-    def traverse(self, path=''):
-        view = self.item.unrestrictedTraverse('@@images')
-        stack = path.split('/')
+    def traverse(self, path=""):
+        view = self.item.unrestrictedTraverse("@@images")
+        stack = path.split("/")
         name = stack.pop(0)
         static_traverser = view.traverse(name, stack)
         scale = stack.pop(0)
         tag = static_traverser.traverse(scale, stack)
         base = self.item.absolute_url()
-        expected = \
-            r'<img src="{0}/@@images/([-0-9a-f]{{36}}).(jpeg|gif|png)" ' \
+        expected = (
+            r'<img src="{0}/@@images/([0-9a-z]*-[0-9]*-[0-9a-f]{{32}}).(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
                 base,
             )
+        )
         groups = re.match(expected, tag).groups()
         self.assertTrue(groups, tag)
         uid, ext, height, width = groups
         return uid, ext, int(width), int(height)
 
     def testImageThumb(self):
-        ImageScaling._sizes = {'thumb': (128, 128)}
-        uid, ext, width, height = self.traverse('image/thumb')
-        self.assertEqual((width, height), ImageScaling._sizes['thumb'])
-        self.assertEqual(ext, 'png')
+        ImageScaling._sizes = {"thumb": (128, 128)}
+        uid, ext, width, height = self.traverse("image/thumb")
+        self.assertEqual((width, height), ImageScaling._sizes["thumb"])
+        self.assertEqual(ext, "png")
 
     def testCustomSizes(self):
         # set custom image sizes
-        ImageScaling._sizes = {'foo': (23, 23)}
+        ImageScaling._sizes = {"foo": (23, 23)}
         # make sure traversing works with the new sizes
-        uid, ext, width, height = self.traverse('image/foo')
+        uid, ext, width, height = self.traverse("image/foo")
         self.assertEqual(width, 23)
         self.assertEqual(height, 23)
 
     def testScaleInvalidation(self):
         # first view the thumbnail of the original image
-        ImageScaling._sizes = {'thumb': (128, 128)}
-        uid1, ext, width1, height1 = self.traverse('image/thumb')
+        ImageScaling._sizes = {"thumb": (128, 128)}
+        uid1, ext, width1, height1 = self.traverse("image/thumb")
         wait_to_ensure_modified()
         # now upload a new one and make sure the thumbnail has changed
-        data = getFile('image.jpg')
-        self.item.image = NamedImage(data, 'image/jpeg', u'image.jpg')
-        uid2, ext, width2, height2 = self.traverse('image/thumb')
-        self.assertNotEqual(uid1, uid2, 'thumb not updated?')
+        data = getFile("image.jpg")
+        self.item.image = NamedImage(data, "image/jpeg", "image.jpg")
+        uid2, ext, width2, height2 = self.traverse("image/thumb")
+        self.assertNotEqual(uid1, uid2, "thumb not updated?")
         # the height also differs as the original image had a size of 200, 200
         # whereas the updated one has 500, 200...
         self.assertEqual(width1, width2)
@@ -550,23 +818,23 @@ class ImageTraverseTests(unittest.TestCase):
 
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
-        ImageScaling._sizes = {'foo': (23, 23)}
-        uid1, ext, width, height = self.traverse('image/foo')
+        ImageScaling._sizes = {"foo": (23, 23)}
+        uid1, ext, width, height = self.traverse("image/foo")
         self.assertEqual(width, 23)
         self.assertEqual(height, 23)
         # now let's update the scale dimensions, after which the scale
         # should also have been updated...
-        ImageScaling._sizes = {'foo': (42, 42)}
-        uid2, ext, width, height = self.traverse('image/foo')
+        ImageScaling._sizes = {"foo": (42, 42)}
+        uid2, ext, width, height = self.traverse("image/foo")
         self.assertEqual(width, 42)
         self.assertEqual(height, 42)
-        self.assertNotEqual(uid1, uid2, 'scale not updated?')
+        self.assertNotEqual(uid1, uid2, "scale not updated?")
 
     def testGuardedAccess(self):
         # make sure it's not possible to access scales of forbidden images
         self.item.__allow_access_to_unprotected_subobjects__ = 0
-        ImageScaling._sizes = {'foo': (42, 42)}
-        self.assertRaises(Unauthorized, self.traverse, 'image/foo')
+        ImageScaling._sizes = {"foo": (42, 42)}
+        self.assertRaises(Unauthorized, self.traverse, "image/foo")
         self.item.__allow_access_to_unprotected_subobjects__ = 1
 
 
@@ -670,4 +938,5 @@ class StorageTests(unittest.TestCase):
 
 def test_suite():
     from unittest import defaultTestLoader
+
     return defaultTestLoader.loadTestsFromName(__name__)

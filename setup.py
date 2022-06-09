@@ -5,7 +5,7 @@ from setuptools import setup
 import os
 
 
-version = '6.0.0a4.dev0'
+version = '6.0.0a5.dev0'
 
 description = 'File types and fields for images, files and blob files with ' \
               'filenames'
@@ -48,6 +48,7 @@ setup(
     install_requires=[
         'persistent',
         'piexif',
+        'plone.app.uuid',
         'plone.rfc822>=2.0.0',
         'plone.scale[storage] >=3.0',
         'plone.schemaeditor',
