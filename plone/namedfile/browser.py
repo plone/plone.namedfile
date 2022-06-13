@@ -99,31 +99,32 @@ class Download(BrowserView):
         return stream_data(file, **request_range)
 
     def handle_request_range(self, file):
+        default = {}
         # check if we have a range in the request
-        ranges = None
         header_range = self.request.getHeader("Range", None)
+        if header_range is None:
+            return default
         if_range = self.request.getHeader("If-Range", None)
-        if header_range is not None:
-            ranges = parseRange(header_range)
-            if if_range is not None:
-                # We delete the ranges, which causes us to skip to the 200
-                # response.
-                return {}
-            # XXX: multipart ranges not implemented
-            if ranges and len(ranges) == 1:
-                try:
-                    length = file.getSize()
-                    [(start, end)] = expandRanges(ranges, length)
-                    size = end - start
-                    self.request.response.setHeader("Content-Length", size)
-                    self.request.response.setHeader(
-                        "Content-Range", f"bytes {start}-{end - 1}/{length}"
-                    )
-                    self.request.response.setStatus(206)  # Partial content
-                    return dict(start=start, end=end)
-                except ValueError:
-                    return {}
-        return {}
+        if if_range is not None:
+            # We delete the ranges, which causes us to skip to the 200
+            # response.
+            return default
+        ranges = parseRange(header_range)
+        if not ranges or len(ranges) != 1:
+            # TODO: multipart ranges not implemented
+            return default
+        try:
+            length = file.getSize()
+            [(start, end)] = expandRanges(ranges, length)
+            size = end - start
+            self.request.response.setHeader("Content-Length", size)
+            self.request.response.setHeader(
+                "Content-Range", f"bytes {start}-{end - 1}/{length}"
+            )
+            self.request.response.setStatus(206)  # Partial content
+            return dict(start=start, end=end)
+        except ValueError:
+            return default
 
     def set_headers(self, file):
         # With filename None, set_headers will not add the download headers.
