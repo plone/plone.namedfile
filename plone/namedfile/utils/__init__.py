@@ -29,7 +29,7 @@ try:
     from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 except ImportError:
     IImagingSchema = None
-    log.info('IImagingSchema for high pixel density scales not available.')
+    log.info("IImagingSchema for high pixel density scales not available.")
 
 
 @implementer(IStreamIterator)
@@ -42,7 +42,9 @@ class filestream_range_iterator(Iterable):
          as Iterators.filestream_iterator
     """
 
-    def __init__(self, name, mode='rb', bufsize=-1, streamsize=1 << 16, start=0, end=None):
+    def __init__(
+        self, name, mode="rb", bufsize=-1, streamsize=1 << 16, start=0, end=None
+    ):
         self._io = FileIO(name, mode=mode)
         self.streamsize = streamsize
         self.start = start
@@ -80,29 +82,28 @@ def safe_basename(filename):
     """Get the basename of the given filename, regardless of which platform
     (Windows or Unix) it originated from.
     """
-    fslice = max(
-        filename.rfind('/'),
-        filename.rfind('\\'),
-        filename.rfind(':'),
-    ) + 1
+    fslice = (
+        max(
+            filename.rfind("/"),
+            filename.rfind("\\"),
+            filename.rfind(":"),
+        )
+        + 1
+    )
     return filename[fslice:]
 
 
-def get_contenttype(
-        file=None,
-        filename=None,
-        default='application/octet-stream'):
-    """Get the MIME content type of the given file and/or filename.
-    """
+def get_contenttype(file=None, filename=None, default="application/octet-stream"):
+    """Get the MIME content type of the given file and/or filename."""
 
-    file_type = getattr(file, 'contentType', None)
+    file_type = getattr(file, "contentType", None)
     if file_type:
         return file_type
 
-    filename = getattr(file, 'filename', filename)
+    filename = getattr(file, "filename", filename)
     if filename:
         extension = os.path.splitext(filename)[1].lower()
-        return mimetypes.types_map.get(extension, 'application/octet-stream')
+        return mimetypes.types_map.get(extension, "application/octet-stream")
 
     return default
 
@@ -114,33 +115,33 @@ def set_headers(file, response, filename=None):
 
     contenttype = get_contenttype(file)
 
-    response.setHeader('Content-Type', contenttype)
-    response.setHeader('Content-Length', file.getSize())
-    response.setHeader('Accept-Ranges', 'bytes')
+    response.setHeader("Content-Type", contenttype)
+    response.setHeader("Content-Length", file.getSize())
+    response.setHeader("Accept-Ranges", "bytes")
 
     if filename is not None:
         if not isinstance(filename, str):
-            filename = str(filename, 'utf-8', errors='ignore')
-        filename = urllib.parse.quote(filename.encode('utf8'))
+            filename = str(filename, "utf-8", errors="ignore")
+        filename = urllib.parse.quote(filename.encode("utf8"))
         response.setHeader(
-            'Content-Disposition',
-            f'attachment; filename*=UTF-8\'\'{filename}'
+            "Content-Disposition", f"attachment; filename*=UTF-8''{filename}"
         )
 
 
 def stream_data(file, start=0, end=None):
-    """Return the given file as a stream if possible.
-    """
+    """Return the given file as a stream if possible."""
     if IBlobby.providedBy(file):
         if file._blob._p_blob_uncommitted:
             return file.data[start:end]
-        return filestream_range_iterator(file._blob.committed(), 'rb', start=start, end=end)
+        return filestream_range_iterator(
+            file._blob.committed(), "rb", start=start, end=end
+        )
     return file.data[start:end]
 
 
 def _ensure_data(image):
     data = None
-    if getattr(image, 'read', None):
+    if getattr(image, "read", None):
         data = image.read()
         image.seek(0)
     else:
@@ -153,31 +154,31 @@ def getImageInfo(data):
     size = len(data)
     height = -1
     width = -1
-    content_type = ''
+    content_type = ""
 
-    if (size >= 10) and data[:6] in (b'GIF87a', b'GIF89a'):
+    if (size >= 10) and data[:6] in (b"GIF87a", b"GIF89a"):
         # handle GIFs
-        content_type = 'image/gif'
-        w, h = struct.unpack('<HH', data[6:10])
+        content_type = "image/gif"
+        w, h = struct.unpack("<HH", data[6:10])
         width = int(w)
         height = int(h)
 
-    elif data[:8] == b'\211PNG\r\n\032\n':
+    elif data[:8] == b"\211PNG\r\n\032\n":
         # handle PNG
         content_type, width, height = process_png(data)
 
-    elif data[:2] == b'\377\330':
+    elif data[:2] == b"\377\330":
         # handle JPEGs
         content_type, width, height = process_jpeg(data)
 
-    elif (size >= 30) and data.startswith(b'BM'):
+    elif (size >= 30) and data.startswith(b"BM"):
         # handle BMPs
-        kind = struct.unpack('<H', data[14:16])[0]
+        kind = struct.unpack("<H", data[14:16])[0]
         if kind == 40:  # Windows 3.x bitmap
-            content_type = 'image/x-ms-bmp'
-            width, height = struct.unpack('<LL', data[18:26])
+            content_type = "image/x-ms-bmp"
+            width, height = struct.unpack("<LL", data[18:26])
 
-    elif size and b'http://www.w3.org/2000/svg' in data:
+    elif size and b"http://www.w3.org/2000/svg" in data:
         # handle SVGs
         content_type, width, height = process_svg(data)
 
@@ -192,12 +193,13 @@ def getImageInfo(data):
             # Should happen if data is to short --> first_bytes
             # happens also if data is an svg or another special format.
             log.warning(
-                'PIL can not recognize the image. '
-                'Image is probably broken or of a non-supported format.'
+                "PIL can not recognize the image. "
+                "Image is probably broken or of a non-supported format."
             )
 
-    log.debug('Image Info (Type: %s, Width: %s, Height: %s)',
-              content_type, width, height)
+    log.debug(
+        "Image Info (Type: %s, Width: %s, Height: %s)", content_type, width, height
+    )
     return content_type, width, height
 
 
@@ -207,7 +209,7 @@ def get_exif(image):
     image_data = _ensure_data(image)
 
     content_type, width, height = getImageInfo(image_data)
-    if content_type in ['image/jpeg', 'image/tiff']:
+    if content_type in ["image/jpeg", "image/tiff"]:
         # Only this two Image Types could have Exif informations
         # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
         try:
@@ -217,7 +219,7 @@ def get_exif(image):
             # Should happen if data is to short --> first_bytes
             log.warn(e)
             exif_data = exif_data = {
-                '0th': {
+                "0th": {
                     piexif.ImageIFD.XResolution: (width, 1),
                     piexif.ImageIFD.YResolution: (height, 1),
                 }
@@ -237,23 +239,24 @@ def rotate_image(image_data, method=None, REQUEST=None):
     img = PIL.Image.open(BytesIO(data))
 
     exif_data = None
-    if 'exif' in img.info:
+    if "exif" in img.info:
         try:
-            exif_data = piexif.load(img.info['exif'])
+            exif_data = piexif.load(img.info["exif"])
         except ValueError:
-            log.warn('Exif information currupt')
+            log.warn("Exif information currupt")
             pass
-        if exif_data and piexif.ImageIFD.Orientation in exif_data['0th']:
-            orientation = exif_data['0th'][piexif.ImageIFD.Orientation]
-        if exif_data and \
-                (not exif_data['0th'].get(piexif.ImageIFD.XResolution) or
-                 not exif_data['0th'].get(piexif.ImageIFD.YResolution)):
-            exif_data['0th'][piexif.ImageIFD.XResolution] = (img.width, 1)
-            exif_data['0th'][piexif.ImageIFD.YResolution] = (img.height, 1)
+        if exif_data and piexif.ImageIFD.Orientation in exif_data["0th"]:
+            orientation = exif_data["0th"][piexif.ImageIFD.Orientation]
+        if exif_data and (
+            not exif_data["0th"].get(piexif.ImageIFD.XResolution)
+            or not exif_data["0th"].get(piexif.ImageIFD.YResolution)
+        ):
+            exif_data["0th"][piexif.ImageIFD.XResolution] = (img.width, 1)
+            exif_data["0th"][piexif.ImageIFD.YResolution] = (img.height, 1)
     if exif_data is None:
         width, height = img.size
         exif_data = {
-            '0th': {
+            "0th": {
                 piexif.ImageIFD.XResolution: (width, 1),
                 piexif.ImageIFD.YResolution: (height, 1),
             }
@@ -262,7 +265,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
     if method is not None:
         orientation = method
 
-    log.debug('Rotate image with input orientation: %s', orientation)
+    log.debug("Rotate image with input orientation: %s", orientation)
 
     fmt = img.format
     if orientation == 1:  # not transform necessary
@@ -273,39 +276,42 @@ def rotate_image(image_data, method=None, REQUEST=None):
     elif orientation == 3:
         img = img.transpose(PIL.Image.ROTATE_180)
     elif orientation == 4:
-        img = img.transpose(PIL.Image.ROTATE_180).transpose(
-            PIL.Image.FLIP_LEFT_RIGHT)
+        img = img.transpose(PIL.Image.ROTATE_180).transpose(PIL.Image.FLIP_LEFT_RIGHT)
     elif orientation == 5:
-        img = img.transpose(PIL.Image.ROTATE_270).transpose(
-            PIL.Image.FLIP_LEFT_RIGHT)
+        img = img.transpose(PIL.Image.ROTATE_270).transpose(PIL.Image.FLIP_LEFT_RIGHT)
     elif orientation == 6:
         img = img.transpose(PIL.Image.ROTATE_270)
     elif orientation == 7:
-        img = img.transpose(PIL.Image.ROTATE_90).transpose(
-            PIL.Image.FLIP_LEFT_RIGHT)
+        img = img.transpose(PIL.Image.ROTATE_90).transpose(PIL.Image.FLIP_LEFT_RIGHT)
     elif orientation == 8:
         img = img.transpose(PIL.Image.ROTATE_90)
 
     if orientation in [5, 6, 7, 8]:
-        if exif_data['0th'][piexif.ImageIFD.XResolution] and \
-                exif_data['0th'][piexif.ImageIFD.YResolution]:
-            exif_data['0th'][piexif.ImageIFD.XResolution], \
-                exif_data['0th'][piexif.ImageIFD.YResolution] = \
-                exif_data['0th'][piexif.ImageIFD.YResolution], \
-                exif_data['0th'][piexif.ImageIFD.XResolution]
+        if (
+            exif_data["0th"][piexif.ImageIFD.XResolution]
+            and exif_data["0th"][piexif.ImageIFD.YResolution]
+        ):
+            (
+                exif_data["0th"][piexif.ImageIFD.XResolution],
+                exif_data["0th"][piexif.ImageIFD.YResolution],
+            ) = (
+                exif_data["0th"][piexif.ImageIFD.YResolution],
+                exif_data["0th"][piexif.ImageIFD.XResolution],
+            )
         else:
-            exif_data['0th'][piexif.ImageIFD.XResolution], \
-                exif_data['0th'][piexif.ImageIFD.YResolution] = \
-                (img.width, 1), (img.height, 1)
+            (
+                exif_data["0th"][piexif.ImageIFD.XResolution],
+                exif_data["0th"][piexif.ImageIFD.YResolution],
+            ) = (img.width, 1), (img.height, 1)
 
     # set orientation to normal
-    exif_data['0th'][piexif.ImageIFD.Orientation] = 1
+    exif_data["0th"][piexif.ImageIFD.Orientation] = 1
 
     try:
         exif_bytes = piexif.dump(exif_data)
     except Exception as e:
         log.warn(e)
-        del(exif_data['Exif'][piexif.ExifIFD.SceneType])
+        del exif_data["Exif"][piexif.ExifIFD.SceneType]
         # This Element piexif.ExifIFD.SceneType cause error on dump
         exif_bytes = piexif.dump(exif_data)
 
@@ -315,7 +321,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
     return output_image_data.getvalue(), width, height, exif_data
 
 
-@deprecate('use getHighPixelDensityScales instead')
+@deprecate("use getHighPixelDensityScales instead")
 def getRetinaScales():
     return getHighPixelDensityScales()
 
@@ -323,15 +329,14 @@ def getRetinaScales():
 def getHighPixelDensityScales():
     registry = queryUtility(IRegistry)
     if IImagingSchema and registry:
-        settings = registry.forInterface(
-            IImagingSchema, prefix='plone', check=False)
-        if settings.highpixeldensity_scales == '2x':
+        settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
+        if settings.highpixeldensity_scales == "2x":
             return [
-                {'scale': 2, 'quality': settings.quality_2x},
+                {"scale": 2, "quality": settings.quality_2x},
             ]
-        elif settings.highpixeldensity_scales == '3x':
+        elif settings.highpixeldensity_scales == "3x":
             return [
-                {'scale': 2, 'quality': settings.quality_2x},
-                {'scale': 3, 'quality': settings.quality_3x},
+                {"scale": 2, "quality": settings.quality_2x},
+                {"scale": 3, "quality": settings.quality_3x},
             ]
     return []

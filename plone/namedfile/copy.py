@@ -28,8 +28,8 @@ class BlobFileCopyHook:
     def _copyBlob(self, translate):
         target = translate(self.context)
         target._blob = Blob()
-        fsrc = self.context._blob.open('r')
-        fdst = target._blob.open('w')
+        fsrc = self.context._blob.open("r")
+        fdst = target._blob.open("w")
         shutil.copyfileobj(fsrc, fdst)
         fdst.close()
         fsrc.close()

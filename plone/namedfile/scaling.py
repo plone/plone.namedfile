@@ -553,7 +553,7 @@ class ImageScaling(BrowserView):
                     direction=direction,
                     scale=scale,
                     storage=storage,
-                    **parameters
+                    **parameters,
                 )
         if "fieldname" not in info:
             info["fieldname"] = fieldname
@@ -620,7 +620,7 @@ class ImageScaling(BrowserView):
             logger.warning(
                 "Could not find the given picture_variant %s, "
                 "creating ordinary img tag instead!",
-                picture_variant
+                picture_variant,
             )
             if picture_variant in self.available_sizes:
                 # We have a bit of luck: we have a scale with the same name
@@ -652,7 +652,13 @@ class ImageScaling(BrowserView):
             attributes["title"] = title
         if alt:
             attributes["alt"] = alt
-        return img2picturetag.create_picture_tag(sourceset, attributes, resolve_urls=True, uid=scale.context.UID(), fieldname=fieldname).prettify()
+        return img2picturetag.create_picture_tag(
+            sourceset,
+            attributes,
+            resolve_urls=True,
+            uid=scale.context.UID(),
+            fieldname=fieldname,
+        ).prettify()
 
 
 class NavigationRootScaling(ImageScaling):

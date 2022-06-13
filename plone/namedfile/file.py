@@ -57,7 +57,7 @@ class FileChunk(Persistent):
             result.append(self._data)
             next = self.next
 
-        return b''.join(result)
+        return b"".join(result)
 
     __bytes__ = _get_contents
 
@@ -65,6 +65,7 @@ class FileChunk(Persistent):
 FILECHUNK_CLASSES = [FileChunk]
 try:
     from zope.app.file.file import FileChunk as zafFileChunk
+
     FILECHUNK_CLASSES.append(zafFileChunk)
 except ImportError:
     pass
@@ -161,13 +162,10 @@ class NamedFile(Persistent):
     True
     """
 
-    filename = FieldProperty(INamedFile['filename'])
+    filename = FieldProperty(INamedFile["filename"])
 
-    def __init__(self, data=b'', contentType='', filename=None):
-        if (
-            filename is not None and
-            contentType in ('', 'application/octet-stream')
-        ):
+    def __init__(self, data=b"", contentType="", filename=None):
+        if filename is not None and contentType in ("", "application/octet-stream"):
             contentType = get_contenttype(filename=filename)
         self.data = data
         self.contentType = contentType
@@ -183,7 +181,7 @@ class NamedFile(Persistent):
 
         # Handle case when data is a string
         if isinstance(data, str):
-            data = data.encode('UTF-8')
+            data = data.encode("UTF-8")
 
         if isinstance(data, bytes):
             self._data, self._size = FileChunk(data), len(data)
@@ -191,7 +189,7 @@ class NamedFile(Persistent):
 
         # Handle case when data is None
         if data is None:
-            raise TypeError('Cannot set None data on a file.')
+            raise TypeError("Cannot set None data on a file.")
 
         # Handle case when data is already a FileChunk
         if isinstance(data, tuple(FILECHUNK_CLASSES)):
@@ -261,7 +259,7 @@ class NamedFile(Persistent):
         return
 
     def getSize(self):
-        '''See `IFile`'''
+        """See `IFile`"""
         return self._size
 
     # See IFile.
@@ -270,11 +268,11 @@ class NamedFile(Persistent):
 
 @implementer(INamedImage)
 class NamedImage(NamedFile):
-    """An non-BLOB image with a filename
-    """
-    filename = FieldProperty(INamedFile['filename'])
+    """An non-BLOB image with a filename"""
 
-    def __init__(self, data=b'', contentType='', filename=None):
+    filename = FieldProperty(INamedFile["filename"])
+
+    def __init__(self, data=b"", contentType="", filename=None):
         self.contentType, self._width, self._height = getImageInfo(data)
         self.filename = filename
         self._setData(data)
@@ -285,13 +283,17 @@ class NamedImage(NamedFile):
 
         exif_data = get_exif(data)
         if exif_data is not None:
-            log.debug('Image contains Exif Informations. '
-                      'Test for Image Orientation and Rotate if necessary.'
-                      'Exif Data: %s', exif_data)
-            orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
+            log.debug(
+                "Image contains Exif Informations. "
+                "Test for Image Orientation and Rotate if necessary."
+                "Exif Data: %s",
+                exif_data,
+            )
+            orientation = exif_data["0th"].get(piexif.ImageIFD.Orientation, 1)
             if 1 < orientation <= 8:
                 self.data, self._width, self._height, self.exif = rotate_image(
-                    self.data)
+                    self.data
+                )
             self.exif_data = exif_data
 
     def _setData(self, data):
@@ -302,7 +304,7 @@ class NamedImage(NamedFile):
             self.contentType = contentType
 
     def getImageSize(self):
-        '''See interface `IImage`'''
+        """See interface `IImage`"""
         return (self._width, self._height)
 
     data = property(NamedFile._getData, _setData)
@@ -312,42 +314,38 @@ class NamedImage(NamedFile):
 class NamedBlobFile(Persistent):
     """A file stored in a ZODB BLOB, with a filename"""
 
-    filename = FieldProperty(INamedFile['filename'])
+    filename = FieldProperty(INamedFile["filename"])
 
-    def __init__(self, data=b'', contentType='', filename=None):
-        if (
-            filename is not None and
-            contentType in ('', 'application/octet-stream')
-        ):
+    def __init__(self, data=b"", contentType="", filename=None):
+        if filename is not None and contentType in ("", "application/octet-stream"):
             contentType = get_contenttype(filename=filename)
         self.contentType = contentType
         self._blob = Blob()
-        f = self._blob.open('w')
-        f.write(b'')
+        f = self._blob.open("w")
+        f.write(b"")
         f.close()
         self._setData(data)
         self.filename = filename
 
-    def open(self, mode='r'):
-        if mode != 'r' and 'size' in self.__dict__:
-            del self.__dict__['size']
+    def open(self, mode="r"):
+        if mode != "r" and "size" in self.__dict__:
+            del self.__dict__["size"]
         return self._blob.open(mode)
 
     def openDetached(self):
-        return open(self._blob.committed(), 'rb')
+        return open(self._blob.committed(), "rb")
 
     def _setData(self, data):
-        if 'size' in self.__dict__:
-            del self.__dict__['size']
+        if "size" in self.__dict__:
+            del self.__dict__["size"]
         # Search for a storable that is able to store the data
-        dottedName = '.'.join((data.__class__.__module__,
-                               data.__class__.__name__))
-        log.debug('Storage selected for data: %s', dottedName)
+        dottedName = ".".join((data.__class__.__module__, data.__class__.__name__))
+        log.debug("Storage selected for data: %s", dottedName)
         storable = getUtility(IStorage, name=dottedName)
         storable.store(data, self._blob)
 
     def _getData(self):
-        fp = self._blob.open('r')
+        fp = self._blob.open("r")
         data = fp.read()
         fp.close()
         return data
@@ -357,12 +355,12 @@ class NamedBlobFile(Persistent):
 
     @property
     def size(self):
-        if 'size' in self.__dict__:
-            return self.__dict__['size']
+        if "size" in self.__dict__:
+            return self.__dict__["size"]
         with self._blob.open() as reader:
             reader.seek(0, 2)
             size = int(reader.tell())
-        self.__dict__['size'] = size
+        self.__dict__["size"] = size
         return size
 
     def getSize(self):
@@ -371,33 +369,36 @@ class NamedBlobFile(Persistent):
 
 @implementer(INamedBlobImage)
 class NamedBlobImage(NamedBlobFile):
-    """An image stored in a ZODB BLOB with a filename
-    """
+    """An image stored in a ZODB BLOB with a filename"""
 
-    def __init__(self, data=b'', contentType='', filename=None):
-        super().__init__(data,
-                                             contentType=contentType,
-                                             filename=filename)
+    def __init__(self, data=b"", contentType="", filename=None):
+        super().__init__(data, contentType=contentType, filename=filename)
 
         # Allow override of the image sniffer
         if contentType:
             self.contentType = contentType
         exif_data = get_exif(self.data)
         if exif_data is not None:
-            log.debug('Image contains Exif Informations. '
-                      'Test for Image Orientation and Rotate if necessary.'
-                      'Exif Data: %s', exif_data)
-            orientation = exif_data['0th'].get(piexif.ImageIFD.Orientation, 1)
+            log.debug(
+                "Image contains Exif Informations. "
+                "Test for Image Orientation and Rotate if necessary."
+                "Exif Data: %s",
+                exif_data,
+            )
+            orientation = exif_data["0th"].get(piexif.ImageIFD.Orientation, 1)
             if 1 < orientation <= 8:
                 try:
-                    self.data, self._width, self._height, self.exif = \
-                        rotate_image(self.data)
+                    self.data, self._width, self._height, self.exif = rotate_image(
+                        self.data
+                    )
                 except KeyboardInterrupt:
                     raise
                 except Exception:
                     log.warning(
-                        'Error rotating image %s based on exif data.',
-                        filename, exc_info=1)
+                        "Error rotating image %s based on exif data.",
+                        filename,
+                        exc_info=1,
+                    )
             else:
                 self.exif = exif_data
 
@@ -405,7 +406,7 @@ class NamedBlobImage(NamedBlobFile):
         super()._setData(data)
         firstbytes = self.getFirstBytes()
         res = getImageInfo(firstbytes)
-        if res == ('image/jpeg', -1, -1) or res == ('image/tiff', -1, -1):
+        if res == ("image/jpeg", -1, -1) or res == ("image/tiff", -1, -1):
             # header was longer than firstbytes
             start = len(firstbytes)
             length = max(0, MAX_INFO_BYTES - start)
@@ -422,7 +423,7 @@ class NamedBlobImage(NamedBlobFile):
 
         Returns an amount which is sufficient to determine the image type.
         """
-        with self.open('r') as fp:
+        with self.open("r") as fp:
             fp.seek(start)
             firstbytes = fp.read(length)
         return firstbytes

@@ -115,7 +115,6 @@ def patch_Img2PictureTag_allowed_scales():
     }
 
 
-
 @implementer(IAttributeAnnotatable, IHasImage)
 class DummyContent(SimpleItem):
     image = None
@@ -391,9 +390,7 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.width, 60)
         self.assertEqual(foo.height, 60)
         assertImage(self, foo.data.data, "PNG", (60, 60))
-        expected_url = re.compile(
-            fr"http://nohost/item/@@images/{PAT_UID_SCALE}.png"
-        )
+        expected_url = re.compile(rf"http://nohost/item/@@images/{PAT_UID_SCALE}.png")
         self.assertTrue(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
 
@@ -426,8 +423,8 @@ class ImageScalingTests(unittest.TestCase):
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            fr'<img src="{base}'
-            + fr"/@@images/({PAT_UID_SCALE})"
+            rf'<img src="{base}'
+            + rf"/@@images/({PAT_UID_SCALE})"
             + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
             r'srcset="http://nohost/item/@@images/({})'.format(PAT_UID_SCALE)
@@ -454,8 +451,8 @@ class ImageScalingTests(unittest.TestCase):
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            fr'<img src="{base}'
-            + fr"/@@images/({PAT_UID_SCALE})"
+            rf'<img src="{base}'
+            + rf"/@@images/({PAT_UID_SCALE})"
             + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
             r'srcset="http://nohost/item/@@images/({})'.format(PAT_UID_SCALE)
@@ -481,8 +478,8 @@ class ImageScalingTests(unittest.TestCase):
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            fr'<img src="{base}'
-            + fr"/@@images/({PAT_UID_SCALE})"
+            rf'<img src="{base}'
+            + rf"/@@images/({PAT_UID_SCALE})"
             + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
             r'srcset="http://nohost/item/@@images/({})'.format(PAT_UID_SCALE)
@@ -508,8 +505,8 @@ class ImageScalingTests(unittest.TestCase):
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            fr'<img src="{base}'
-            + fr"/@@images/({PAT_UID_SCALE})"
+            rf'<img src="{base}'
+            + rf"/@@images/({PAT_UID_SCALE})"
             + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
             r'srcset="http://nohost/item/@@images/({})'.format(PAT_UID_SCALE)
@@ -531,9 +528,7 @@ class ImageScalingTests(unittest.TestCase):
         new=patch_Img2PictureTag_allowed_scales,
         spec=True,
     )
-    @patch.object(
-        plone.namedfile.picture, "uuidToObject", spec=True
-    )
+    @patch.object(plone.namedfile.picture, "uuidToObject", spec=True)
     def testGetPictureTagByName(self, mock_uuid_to_object):
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
@@ -560,9 +555,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         new=patch_Img2PictureTag_allowed_scales,
         spec=True,
     )
-    @patch.object(
-        plone.namedfile.picture, "uuidToObject", spec=True
-    )
+    @patch.object(plone.namedfile.picture, "uuidToObject", spec=True)
     def testGetPictureTagWithAltAndTitle(self, mock_uuid_to_object):
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
@@ -595,9 +588,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         new=patch_Img2PictureTag_allowed_scales,
         spec=True,
     )
-    @patch.object(
-        plone.namedfile.picture, "uuidToObject", spec=True
-    )
+    @patch.object(plone.namedfile.picture, "uuidToObject", spec=True)
     def testGetPictureTagWithoutAnyVariants(self, mock_uuid_to_object):
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item

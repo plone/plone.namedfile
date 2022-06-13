@@ -33,26 +33,12 @@ import unittest
 
 
 def registerUtilities():
+    provideUtility(storages.StringStorable(), IStorage, name="__builtin__.str")
+    provideUtility(storages.UnicodeStorable(), IStorage, name="__builtin__.unicode")
     provideUtility(
-        storages.StringStorable(),
-        IStorage,
-        name='__builtin__.str'
+        storages.FileChunkStorable(), IStorage, name="plone.namedfile.file.FileChunk"
     )
-    provideUtility(
-        storages.UnicodeStorable(),
-        IStorage,
-        name='__builtin__.unicode'
-    )
-    provideUtility(
-        storages.FileChunkStorable(),
-        IStorage,
-        name='plone.namedfile.file.FileChunk'
-    )
-    provideUtility(
-        storages.FileDescriptorStorable(),
-        IStorage,
-        name='__builtin__.file'
-    )
+    provideUtility(storages.FileDescriptorStorable(), IStorage, name="__builtin__.file")
 
 
 class TestImage(unittest.TestCase):
@@ -67,23 +53,23 @@ class TestImage(unittest.TestCase):
 
     def testEmpty(self):
         file = self._makeImage()
-        self.assertEqual(file.contentType, '')
-        self.assertEqual(file.data, b'')
+        self.assertEqual(file.contentType, "")
+        self.assertEqual(file.data, b"")
 
     def testConstructor(self):
-        file = self._makeImage(b'Data')
-        self.assertEqual(file.contentType, '')
-        self.assertEqual(file.data, b'Data')
+        file = self._makeImage(b"Data")
+        self.assertEqual(file.contentType, "")
+        self.assertEqual(file.data, b"Data")
 
     def testMutators(self):
         image = self._makeImage()
 
-        image.contentType = 'image/jpeg'
-        self.assertEqual(image.contentType, 'image/jpeg')
+        image.contentType = "image/jpeg"
+        self.assertEqual(image.contentType, "image/jpeg")
 
         image._setData(zptlogo)
         self.assertEqual(image.data, zptlogo)
-        self.assertEqual(image.contentType, 'image/gif')
+        self.assertEqual(image.contentType, "image/gif")
         self.assertEqual(image.getImageSize(), (16, 16))
 
     def testInterface(self):
@@ -95,10 +81,14 @@ class TestImage(unittest.TestCase):
 
     def testDataMutatorWithLargeHeader(self):
         from plone.namedfile.file import IMAGE_INFO_BYTES
-        bogus_header_length = struct.pack('>H', IMAGE_INFO_BYTES * 2)
-        data = (b'\xff\xd8\xff\xe0' + bogus_header_length +
-                b'\x00' * IMAGE_INFO_BYTES * 2 +
-                b'\xff\xc0\x00\x11\x08\x02\xa8\x04\x00')
+
+        bogus_header_length = struct.pack(">H", IMAGE_INFO_BYTES * 2)
+        data = (
+            b"\xff\xd8\xff\xe0"
+            + bogus_header_length
+            + b"\x00" * IMAGE_INFO_BYTES * 2
+            + b"\xff\xc0\x00\x11\x08\x02\xa8\x04\x00"
+        )
         image = self._makeImage()
         image._setData(data)
         self.assertEqual(image.getImageSize(), (1024, 680))
@@ -113,10 +103,11 @@ class TestImageFunctional(unittest.TestCase):
 
     def testCopyBlobs(self):
         from zope.copy import copy
+
         file = NamedBlobFile()
-        file.data = 'hello, world'
+        file.data = "hello, world"
         image = NamedBlobImage()
-        image.data = 'some image bytes'
+        image.data = "some image bytes"
         transaction.commit()
 
         file_copy = copy(file)
