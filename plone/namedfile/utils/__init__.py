@@ -8,10 +8,10 @@ from plone.namedfile.utils.svg_utils import process_svg
 from plone.registry.interfaces import IRegistry
 from six import BytesIO
 from six.moves import urllib
-from ZPublisher.Iterators import IStreamIterator
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import implementer
+from ZPublisher.Iterators import IStreamIterator
 
 import mimetypes
 import os.path
@@ -19,6 +19,8 @@ import piexif
 import PIL.Image
 import six
 import struct
+
+
 if six.PY3:  # pragma: no cover
     from collections.abc import Iterable
 else:  # pragma: no cover

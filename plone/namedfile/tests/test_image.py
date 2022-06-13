@@ -3,9 +3,9 @@
 
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
+from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import get_contenttype
-from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from zope.interface.verify import verifyClass
 
 import unittest

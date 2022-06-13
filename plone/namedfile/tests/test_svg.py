@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import unittest
-
 from plone.namedfile.file import NamedImage
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import get_contenttype
 from plone.namedfile.utils.svg_utils import dimension_int
 from plone.namedfile.utils.svg_utils import process_svg
+
+import unittest
 
 
 class TestSvg(unittest.TestCase):

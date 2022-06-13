@@ -4,14 +4,15 @@ from Acquisition import aq_base
 from DateTime import DateTime
 from io import BytesIO
 from plone.memoize import ram
-from plone.protect import PostOnly
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
+from plone.namedfile.picture import get_picture_variants
+from plone.namedfile.picture import Img2PictureTag
 from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
-from plone.namedfile.picture import Img2PictureTag, get_picture_variants
+from plone.protect import PostOnly
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IImageScaleFactory
 from plone.scale.interfaces import IScaledImageQuality
