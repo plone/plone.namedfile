@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from io import FileIO
 from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
@@ -20,16 +21,12 @@ import six
 import struct
 
 
-from collections.abc import Iterable
-
-
 log = getLogger(__name__)
 
 try:
-    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
+    from plone.base.interfaces.controlpanel import IImagingSchema
 except ImportError:
-    IImagingSchema = None
-    log.info("IImagingSchema for high pixel density scales not available.")
+    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 
 
 @implementer(IStreamIterator)
@@ -328,15 +325,16 @@ def getRetinaScales():
 
 def getHighPixelDensityScales():
     registry = queryUtility(IRegistry)
-    if IImagingSchema and registry:
-        settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
-        if settings.highpixeldensity_scales == "2x":
-            return [
-                {"scale": 2, "quality": settings.quality_2x},
-            ]
-        elif settings.highpixeldensity_scales == "3x":
-            return [
-                {"scale": 2, "quality": settings.quality_2x},
-                {"scale": 3, "quality": settings.quality_3x},
-            ]
+    if not registry:
+        return []
+    settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
+    if settings.highpixeldensity_scales == "2x":
+        return [
+            {"scale": 2, "quality": settings.quality_2x},
+        ]
+    if settings.highpixeldensity_scales == "3x":
+        return [
+            {"scale": 2, "quality": settings.quality_2x},
+            {"scale": 3, "quality": settings.quality_3x},
+        ]
     return []
