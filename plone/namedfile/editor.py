@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from plone.namedfile import field
 from plone.namedfile import interfaces
 from plone.schemaeditor.fields import FieldFactory
@@ -37,8 +36,8 @@ class INamedImageField(interfaces.INamedImageField):
         required=False)
 
 
-NamedFileFactory = FieldFactory(field.NamedFile, _(u'File Upload'))
-NamedImageFactory = FieldFactory(field.NamedImage, _(u'Image'))
+NamedFileFactory = FieldFactory(field.NamedFile, _('File Upload'))
+NamedImageFactory = FieldFactory(field.NamedImage, _('Image'))
 
 
 class INamedBlobFileField(interfaces.INamedBlobFileField):
@@ -73,5 +72,5 @@ class INamedBlobImageField(interfaces.INamedBlobImageField):
         required=False)
 
 
-NamedBlobFileFactory = FieldFactory(field.NamedBlobFile, _(u'File Upload'))
-NamedBlobImageFactory = FieldFactory(field.NamedBlobImage, _(u'Image'))
+NamedBlobFileFactory = FieldFactory(field.NamedBlobFile, _('File Upload'))
+NamedBlobImageFactory = FieldFactory(field.NamedBlobImage, _('Image'))

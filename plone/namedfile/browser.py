@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from AccessControl.ZopeGuards import guarded_getattr
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
@@ -77,7 +76,7 @@ class Download(BrowserView):
     """
 
     def __init__(self, context, request):
-        super(Download, self).__init__(context, request)
+        super().__init__(context, request)
         self.fieldname = None
         self.filename = None
 
@@ -116,7 +115,7 @@ class Download(BrowserView):
                     self.request.response.setHeader('Content-Length', size)
                     self.request.response.setHeader(
                         'Content-Range',
-                        'bytes {0}-{1}/{2}'.format(start, end - 1, length))
+                        f'bytes {start}-{end - 1}/{length}')
                     self.request.response.setStatus(206)  # Partial content
                     return dict(start=start, end=end)
                 except ValueError:
@@ -175,10 +174,10 @@ class DisplayFile(Download):
             if self.use_denylist:
                 if mimetype in self.disallowed_inline_mimetypes:
                     # Let the Download view handle this.
-                    return super(DisplayFile, self).set_headers(file)
+                    return super().set_headers(file)
             else:
                 # Use the allowlist
                 if mimetype not in self.allowed_inline_mimetypes:
                     # Let the Download view handle this.
-                    return super(DisplayFile, self).set_headers(file)
+                    return super().set_headers(file)
         set_headers(file, self.request.response)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file was borrowed from z3c.blobfile and is licensed under the terms of
 # the ZPL.
 from OFS.Image import Pdata
@@ -16,10 +15,10 @@ MAXCHUNKSIZE = 1 << 16
 
 
 @implementer(IStorage)
-class BytesStorable(object):
+class BytesStorable:
 
     def store(self, data, blob):
-        if not isinstance(data, six.binary_type):
+        if not isinstance(data, bytes):
             raise NotStorable('Could not store data (not of bytes type).')
 
         with blob.open('w') as fp:
@@ -30,7 +29,7 @@ class BytesStorable(object):
 class TextStorable(BytesStorable):
 
     def store(self, data, blob):
-        if not isinstance(data, six.text_type):
+        if not isinstance(data, str):
             raise NotStorable('Could not store data (not of "unicode" type).')
 
         data = data.encode('UTF-8')
@@ -48,7 +47,7 @@ class StringStorable(BytesStorable):
 
 
 @implementer(IStorage)
-class FileChunkStorable(object):
+class FileChunkStorable:
 
     def store(self, data, blob):
         if not isinstance(data, FileChunk):
@@ -62,7 +61,7 @@ class FileChunkStorable(object):
 
 
 @implementer(IStorage)
-class FileDescriptorStorable(object):
+class FileDescriptorStorable:
 
     def store(self, data, blob):
         if not isinstance(data, io.IOBase):
@@ -74,7 +73,7 @@ class FileDescriptorStorable(object):
             return
 
 
-class BufferedReaderStorable(object):
+class BufferedReaderStorable:
 
     def store(self, data, blob):
         raw = data.raw
@@ -88,7 +87,7 @@ class BufferedReaderStorable(object):
 
 
 @implementer(IStorage)
-class FileUploadStorable(object):
+class FileUploadStorable:
 
     def store(self, data, blob):
         if not isinstance(data, FileUpload):
@@ -104,7 +103,7 @@ class FileUploadStorable(object):
 
 
 @implementer(IStorage)
-class PDataStorable(object):
+class PDataStorable:
     def store(self, pdata, blob):
         if not isinstance(pdata, Pdata):
             raise NotStorable('Could not store data (not of "Pdata").')

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file was borrowed from z3c.blobfile and is licensed under the terms of
 # the ZPL.
 
@@ -115,7 +114,7 @@ class TestImageFunctional(unittest.TestCase):
     def testCopyBlobs(self):
         from zope.copy import copy
         file = NamedBlobFile()
-        file.data = u'hello, world'
+        file.data = 'hello, world'
         image = NamedBlobImage()
         image.data = 'some image bytes'
         transaction.commit()

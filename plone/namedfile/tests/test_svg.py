@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from plone.namedfile.file import NamedImage
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import get_contenttype

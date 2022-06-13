@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Copy hook for proper copying blob data
 
 This file was borrowed from z3c.blobfile and is licensed under the terms of
@@ -16,7 +15,7 @@ import shutil
 
 @implementer(ICopyHook)
 @adapter(INamedBlobFile)
-class BlobFileCopyHook(object):
+class BlobFileCopyHook:
     """A copy hook that fixes the blob after copying"""
 
     def __init__(self, context):

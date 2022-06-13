@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from DateTime import DateTime
 from OFS.SimpleItem import SimpleItem
 from plone.app.testing import TEST_USER_NAME
@@ -50,7 +49,7 @@ class ImagePublisherTests(unittest.TestCase):
             raise unittest.SkipTest("Disabled in py2 for now.")
         data = getFile("image.png")
         item = DummyContent()
-        item.image = NamedImage(data, "image/png", u"image.png")
+        item.image = NamedImage(data, "image/png", "image.png")
         self.layer["app"]._setOb("item", item)
         self.item = self.layer["app"].item
         self.view = self.item.unrestrictedTraverse("@@images")
@@ -184,7 +183,7 @@ class ImagePublisherTests(unittest.TestCase):
         transaction.commit()
         self.browser.addHeader(
             "Authorization",
-            "Basic {0:s}:{1:s}".format(TEST_USER_NAME, TEST_USER_PASSWORD),
+            f"Basic {TEST_USER_NAME:s}:{TEST_USER_PASSWORD:s}",
         )
         from zExceptions import Unauthorized
 
@@ -199,7 +198,7 @@ class ImagePublisherTests(unittest.TestCase):
 
         data = getFile("image.svg")
         svg = DummyContent()
-        svg.image = NamedImage(data, "image/svg+xml", u"image.svg")
+        svg.image = NamedImage(data, "image/svg+xml", "image.svg")
         self.layer["app"]._setOb("svg", svg)
         svg = self.layer["app"].svg
 

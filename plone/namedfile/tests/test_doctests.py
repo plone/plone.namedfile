@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.testing import layered
 
@@ -27,8 +26,7 @@ class Py23DocChecker(doctest.OutputChecker):
             got = got.replace(
                 "filename*=\"utf-8''test.txt\"", "filename*=utf-8''test.txt")
 
-        if six.PY3:
-            got = re.sub("b'(.*?)'", "'\\1'", got)
+        got = re.sub("b'(.*?)'", "'\\1'", got)
         return doctest.OutputChecker.check_output(self, want, got, optionflags)
 
 

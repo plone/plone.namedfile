@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from OFS.SimpleItem import SimpleItem
 from plone.app.testing import SITE_OWNER_NAME
 from plone.app.testing import SITE_OWNER_PASSWORD
@@ -63,7 +62,7 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         browser.handleErrors = False
         browser.addHeader(
             "Authorization",
-            "Basic {0}:{1}".format(SITE_OWNER_NAME, SITE_OWNER_PASSWORD),
+            f"Basic {SITE_OWNER_NAME}:{SITE_OWNER_PASSWORD}",
         )
         return browser
 
@@ -78,7 +77,7 @@ class TestAttackVectorNamedImage(unittest.TestCase):
 
     def assert_download_works(self, base_url):
         browser = self.get_anon_browser()
-        browser.open(base_url + "/@@download/{0}".format(self.field_name))
+        browser.open(base_url + f"/@@download/{self.field_name}")
         header = get_disposition_header(browser)
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)
@@ -87,13 +86,13 @@ class TestAttackVectorNamedImage(unittest.TestCase):
     def assert_display_inline_works(self, base_url):
         # Test that displaying this file inline works.
         browser = self.get_anon_browser()
-        browser.open(base_url + "/@@display-file/{0}".format(self.field_name))
+        browser.open(base_url + f"/@@display-file/{self.field_name}")
         self.assertIsNone(get_disposition_header(browser))
 
     def assert_display_inline_is_download(self, base_url):
         # Test that displaying this file inline turns into a download.
         browser = self.get_anon_browser()
-        browser.open(base_url + "/@@display-file/{0}".format(self.field_name))
+        browser.open(base_url + f"/@@display-file/{self.field_name}")
         header = get_disposition_header(browser)
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)
@@ -127,7 +126,7 @@ class TestAttackVectorNamedImage(unittest.TestCase):
     def test_filename_empty(self):
         # An empty filename is probably no problem, but let's check.
         data = self._named_file("image.svg")
-        data.filename = u""
+        data.filename = ""
         setattr(self.item, self.field_name, self._named_file("image.svg"))
         transaction.commit()
         base_url = self.item.absolute_url()

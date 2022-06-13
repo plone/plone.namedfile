@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
@@ -69,8 +68,8 @@ class ImageScale(BrowserView):
             name = info["uid"]
         else:
             name = info["fieldname"]
-        self.__name__ = "{0}.{1}".format(name, extension)
-        self.url = "{0}/@@images/{1}".format(url, self.__name__)
+        self.__name__ = f"{name}.{extension}"
+        self.url = f"{url}/@@images/{self.__name__}"
         self.srcset = info.get("srcset", [])
 
     def absolute_url(self):
@@ -81,7 +80,7 @@ class ImageScale(BrowserView):
         extension = self.data.contentType.split("/")[-1].lower()
         for scale in self.srcset:
             _srcset_attr.append(
-                "{0}/@@images/{1}.{2} {3}x".format(
+                "{}/@@images/{}.{} {}x".format(
                     self.context.absolute_url(), scale["uid"], extension, scale["scale"]
                 )
             )
@@ -129,9 +128,9 @@ class ImageScale(BrowserView):
                 continue
             if isinstance(v, int):
                 v = str(v)
-            elif isinstance(v, six.binary_type):
-                v = six.text_type(v, "utf8")
-            parts.append("{0}={1}".format(k, quoteattr(v)))
+            elif isinstance(v, bytes):
+                v = str(v, "utf8")
+            parts.append(f"{k}={quoteattr(v)}")
         parts.append("/>")
 
         return " ".join(parts)
@@ -170,7 +169,7 @@ class ImageScale(BrowserView):
 
 
 @implementer(ITraversable)
-class ImmutableTraverser(object):
+class ImmutableTraverser:
     def __init__(self, scale):
         self.scale = scale
 
@@ -185,7 +184,7 @@ class ImmutableTraverser(object):
 
 
 @implementer(IImageScaleFactory)
-class DefaultImageScalingFactory(object):
+class DefaultImageScalingFactory:
     def __init__(self, context):
         self.context = context
         # fieldname will be set for real in the __call__ method.
@@ -261,7 +260,7 @@ class DefaultImageScalingFactory(object):
         if getattr(orig_value, "contentType", "") == "image/svg+xml":
             # No need to scale, we can simply use the original data,
             # but report a different width and height.
-            if isinstance(orig_data, (six.text_type)):
+            if isinstance(orig_data, (str)):
                 orig_data = safe_encode(orig_data)
             if isinstance(orig_data, (bytes)):
                 orig_data = BytesIO(orig_data)
@@ -275,7 +274,7 @@ class DefaultImageScalingFactory(object):
             raise
         except Exception:
             logger.exception(
-                'Could not scale "{0!r}" of {1!r}'.format(
+                'Could not scale "{!r}" of {!r}'.format(
                     orig_value,
                     self.url(),
                 ),
@@ -345,7 +344,7 @@ class DefaultImageScalingFactory(object):
         # Note: the format may differ from the original.
         # For example a TIFF may have been turned into a PNG.
         data, format_, dimensions = result
-        mimetype = "image/{0}".format(format_.lower())
+        mimetype = f"image/{format_.lower()}"
         value = orig_value.__class__(
             data,
             contentType=mimetype,

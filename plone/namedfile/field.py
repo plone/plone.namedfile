@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from plone.namedfile.file import NamedBlobFile as BlobFileValueType
 from plone.namedfile.file import NamedBlobImage as BlobImageValueType
 from plone.namedfile.file import NamedFile as FileValueType
@@ -28,7 +27,7 @@ _ = MessageFactory('plone')
 
 @implementer(IPluggableImageFieldValidation)
 @adapter(INamedImageField, Interface)
-class ImageContenttypeValidator(object):
+class ImageContenttypeValidator:
 
     def __init__(self, field, value):
         self.field = field
@@ -44,7 +43,7 @@ class ImageContenttypeValidator(object):
 
 class InvalidImageFile(ValidationError):
     """Exception for invalid image file"""
-    __doc__ = _(u'Invalid image file')
+    __doc__ = _('Invalid image file')
 
 
 def validate_binary_field(interface, field, value):
@@ -71,10 +70,10 @@ class NamedFile(Object):
     def __init__(self, **kw):
         if 'schema' in kw:
             self.schema = kw.pop('schema')
-        super(NamedFile, self).__init__(schema=self.schema, **kw)
+        super().__init__(schema=self.schema, **kw)
 
     def _validate(self, value):
-        super(NamedFile, self)._validate(value)
+        super()._validate(value)
         validate_file_field(self, value)
 
 
@@ -89,10 +88,10 @@ class NamedImage(Object):
     def __init__(self, **kw):
         if 'schema' in kw:
             self.schema = kw.pop('schema')
-        super(NamedImage, self).__init__(schema=self.schema, **kw)
+        super().__init__(schema=self.schema, **kw)
 
     def _validate(self, value):
-        super(NamedImage, self)._validate(value)
+        super()._validate(value)
         validate_image_field(self, value)
 
 
@@ -107,10 +106,10 @@ class NamedBlobFile(Object):
     def __init__(self, **kw):
         if 'schema' in kw:
             self.schema = kw.pop('schema')
-        super(NamedBlobFile, self).__init__(schema=self.schema, **kw)
+        super().__init__(schema=self.schema, **kw)
 
     def _validate(self, value):
-        super(NamedBlobFile, self)._validate(value)
+        super()._validate(value)
         validate_file_field(self, value)
 
 
@@ -125,8 +124,8 @@ class NamedBlobImage(Object):
     def __init__(self, **kw):
         if 'schema' in kw:
             self.schema = kw.pop('schema')
-        super(NamedBlobImage, self).__init__(schema=self.schema, **kw)
+        super().__init__(schema=self.schema, **kw)
 
     def _validate(self, value):
-        super(NamedBlobImage, self)._validate(value)
+        super()._validate(value)
         validate_image_field(self, value)

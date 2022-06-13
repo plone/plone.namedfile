@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # The implementations in this file are largely borrowed
 # from zope.app.file and z3c.blobfile
 # and are licensed under the ZPL.
@@ -60,10 +59,7 @@ class FileChunk(Persistent):
 
         return b''.join(result)
 
-    if six.PY2:
-        __str__ = _get_contents
-    else:
-        __bytes__ = _get_contents
+    __bytes__ = _get_contents
 
 
 FILECHUNK_CLASSES = [FileChunk]
@@ -186,10 +182,10 @@ class NamedFile(Persistent):
     def _setData(self, data):
 
         # Handle case when data is a string
-        if isinstance(data, six.text_type):
+        if isinstance(data, str):
             data = data.encode('UTF-8')
 
-        if isinstance(data, six.binary_type):
+        if isinstance(data, bytes):
             self._data, self._size = FileChunk(data), len(data)
             return
 
@@ -299,7 +295,7 @@ class NamedImage(NamedFile):
             self.exif_data = exif_data
 
     def _setData(self, data):
-        super(NamedImage, self)._setData(data)
+        super()._setData(data)
 
         contentType, self._width, self._height = getImageInfo(self._data)
         if contentType:
@@ -379,7 +375,7 @@ class NamedBlobImage(NamedBlobFile):
     """
 
     def __init__(self, data=b'', contentType='', filename=None):
-        super(NamedBlobImage, self).__init__(data,
+        super().__init__(data,
                                              contentType=contentType,
                                              filename=filename)
 
@@ -406,7 +402,7 @@ class NamedBlobImage(NamedBlobFile):
                 self.exif = exif_data
 
     def _setData(self, data):
-        super(NamedBlobImage, self)._setData(data)
+        super()._setData(data)
         firstbytes = self.getFirstBytes()
         res = getImageInfo(firstbytes)
         if res == ('image/jpeg', -1, -1) or res == ('image/tiff', -1, -1):

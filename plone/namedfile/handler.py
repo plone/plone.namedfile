@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from plone.namedfile import field
 from plone.supermodel.exportimport import ObjectHandler
 

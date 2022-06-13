@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
 from io import BytesIO
 from logging import getLogger
 
 import re
-import xml.etree.cElementTree as et
+import xml.etree.ElementTree as et
 
 
 log = getLogger(__name__)

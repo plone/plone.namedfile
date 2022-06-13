@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file is borrowed from zope.app.file and licensed ZPL.
 
 from plone.namedfile.file import NamedImage
@@ -73,17 +72,17 @@ class TestImage(unittest.TestCase):
             get_contenttype(
                 NamedImage(
                     getFile('image.gif'),
-                    filename=u'image.gif')),
+                    filename='image.gif')),
             'image/gif')
         self.assertEqual(
             get_contenttype(
                 NamedImage(
                     getFile('image.tif'),
-                    filename=u'image.tif')),
+                    filename='image.tif')),
             'image/tiff')
         self.assertEqual(get_contenttype(
             NamedImage(getFile('notimage.doc'),
-                       filename=u'notimage.doc')),
+                       filename='notimage.doc')),
             'application/msword')
 
 
@@ -101,7 +100,7 @@ class TestValidation(unittest.TestCase):
         from zope.interface import implementer
 
         @implementer(INamedImageField)
-        class FakeField(object):
+        class FakeField:
             __name__ = 'logo'
 
         # field is empty
@@ -120,7 +119,7 @@ class TestValidation(unittest.TestCase):
         validate_image_field(FakeField(), image)
 
         notimage = NamedImage(getFile('notimage.doc'),
-                              filename=u'notimage.doc')
+                              filename='notimage.doc')
         self.assertRaises(
             InvalidImageFile,
             validate_image_field,

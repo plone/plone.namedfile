@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from io import FileIO
 from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
@@ -21,10 +20,7 @@ import six
 import struct
 
 
-if six.PY3:  # pragma: no cover
-    from collections.abc import Iterable
-else:  # pragma: no cover
-    from collections import Iterable
+from collections.abc import Iterable
 
 
 log = getLogger(__name__)
@@ -123,12 +119,12 @@ def set_headers(file, response, filename=None):
     response.setHeader('Accept-Ranges', 'bytes')
 
     if filename is not None:
-        if not isinstance(filename, six.text_type):
-            filename = six.text_type(filename, 'utf-8', errors='ignore')
+        if not isinstance(filename, str):
+            filename = str(filename, 'utf-8', errors='ignore')
         filename = urllib.parse.quote(filename.encode('utf8'))
         response.setHeader(
             'Content-Disposition',
-            'attachment; filename*=UTF-8\'\'{0}'.format(filename)
+            f'attachment; filename*=UTF-8\'\'{filename}'
         )
 
 

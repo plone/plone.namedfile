@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from plone.namedfile import NamedBlobFile
 from plone.namedfile import NamedBlobImage
 from plone.namedfile import NamedFile
@@ -50,7 +49,7 @@ class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
         value = self._query()
         if value is None:
             return None
-        if not isinstance(value.contentType, six.text_type):
+        if not isinstance(value.contentType, str):
             return value.contentType.decode('utf8')
         return value.contentType
 

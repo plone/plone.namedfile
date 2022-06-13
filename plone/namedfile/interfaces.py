@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from zope import schema
 from zope.interface import Interface
 from zope.schema.interfaces import IObject
@@ -10,16 +9,16 @@ HAVE_BLOBS = True
 class IFile(Interface):
 
     contentType = schema.NativeStringLine(
-        title=u'Content Type',
-        description=u'The content type identifies the type of data.',
+        title='Content Type',
+        description='The content type identifies the type of data.',
         default='',
         required=False,
         missing_value=''
     )
 
     data = schema.Bytes(
-        title=u'Data',
-        description=u'The actual content of the object.',
+        title='Data',
+        description='The actual content of the object.',
         default=b'',
         missing_value='',
         required=False,
@@ -85,7 +84,7 @@ class INamed(Interface):
     """An item with a filename
     """
 
-    filename = schema.TextLine(title=u'Filename', required=False, default=None)
+    filename = schema.TextLine(title='Filename', required=False, default=None)
 
 
 class INamedFile(INamed, IFile):
