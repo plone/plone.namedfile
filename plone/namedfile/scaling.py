@@ -233,7 +233,7 @@ class DefaultImageScalingFactory:
         return self.context.absolute_url()
 
     def get_quality(self):
-        """Get plone.app.imaging's quality setting"""
+        """Get scaled image quality setting from imaging control panel."""
         getScaledImageQuality = queryUtility(IScaledImageQuality)
         if getScaledImageQuality is None:
             return None

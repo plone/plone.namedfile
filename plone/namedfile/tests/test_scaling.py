@@ -148,7 +148,7 @@ class MockNamedImage(NamedImage):
 
 @implementer(IScaledImageQuality)
 class DummyQualitySupplier:
-    """fake utility for plone.app.imaging's scaling quality"""
+    """fake utility for image quality setting from imaging control panel."""
 
     def getQuality(self):
         return 1  # as bad as it gets
@@ -707,7 +707,8 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 
     def testScaledJpegImageQuality(self):
         """Test image quality setting for jpeg images.
-        Image quality not available for PNG images.
+
+        Image quality is not available for PNG images.
         """
         data = getFile("image.jpg")
         item = DummyContent()
@@ -717,7 +718,8 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         # scale an image, record its size
         foo = scaling.scale("image", width=100, height=80)
         size_foo = foo.data.getSize()
-        # let's pretend p.a.imaging set the scaling quality to "really sloppy"
+        # Let's pretend the imaging control panel sets the scaling quality to
+        # "really sloppy"
         gsm = getGlobalSiteManager()
         qualitySupplier = DummyQualitySupplier()
         gsm.registerUtility(qualitySupplier.getQuality, IScaledImageQuality)
