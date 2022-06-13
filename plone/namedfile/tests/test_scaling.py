@@ -649,10 +649,11 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         self.assertEqual(foo.width, 42)
         self.assertEqual(foo.height, 42)
 
-    def testAvailableSizes(self):
+    def testDefaultAvailableSizes(self):
         # by default, no named scales are configured
         self.assertEqual(self.scaling.available_sizes, {})
 
+    def testCustomAvailableSizes(self):
         # a callable can be used to look up the available sizes
         def custom_available_sizes():
             return {"bar": (10, 10)}

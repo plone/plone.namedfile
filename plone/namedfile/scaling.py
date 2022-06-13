@@ -12,7 +12,6 @@ from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.namedfile.picture import Img2PictureTag, get_picture_variants
-from plone.protect.interfaces import IDisableCSRFProtection
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IImageScaleFactory
 from plone.scale.interfaces import IScaledImageQuality
@@ -418,7 +417,7 @@ class ImageScaling(BrowserView):
             return image.tag()
         raise TraversalError(self, name)
 
-    _sizes = {}
+    _sizes = None
 
     @deprecate("use property available_sizes instead")
     def getAvailableSizes(self, fieldname=None):
@@ -432,13 +431,13 @@ class ImageScaling(BrowserView):
     @property
     def available_sizes(self):
         # fieldname is ignored by default
-        sizes_util = queryUtility(IAvailableSizes)
-        if sizes_util is None:
-            return self._sizes
-        sizes = sizes_util()
-        if sizes is None:
-            return {}
-        return sizes
+        if self._sizes is None:
+            sizes_util = queryUtility(IAvailableSizes)
+            if sizes_util is None:
+                self._sizes = {}
+            else:
+                self._sizes = sizes_util() or {}
+        return self._sizes
 
     @available_sizes.setter
     def available_sizes(self, value):
@@ -520,8 +519,6 @@ class ImageScaling(BrowserView):
             if scale not in available:
                 return None  # 404
             width, height = available[scale]
-        if IDisableCSRFProtection and self.request is not None:
-            alsoProvides(self.request, IDisableCSRFProtection)
         storage = getMultiAdapter(
             (self.context, functools.partial(self.modified, fieldname)),
             IImageScaleStorage,
@@ -548,16 +545,18 @@ class ImageScaling(BrowserView):
         if include_srcset is None and pre:
             include_srcset = True
         if include_srcset:
-            info["srcset"] = self.calculate_srcset(
-                fieldname=fieldname,
-                height=height,
-                width=width,
-                direction=direction,
-                scale=scale,
-                storage=storage,
-                **parameters,
-            )
-        info["fieldname"] = fieldname
+            if "srcset" not in info:
+                info["srcset"] = self.calculate_srcset(
+                    fieldname=fieldname,
+                    height=height,
+                    width=width,
+                    direction=direction,
+                    scale=scale,
+                    storage=storage,
+                    **parameters
+                )
+        if "fieldname" not in info:
+            info["fieldname"] = fieldname
         scale_view = self._scale_view_class(self.context, self.request, **info)
         return scale_view
 
