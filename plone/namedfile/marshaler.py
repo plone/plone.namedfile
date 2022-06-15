@@ -10,8 +10,6 @@ from plone.rfc822.defaultfields import BaseFieldMarshaler
 from zope.component import adapter
 from zope.interface import Interface
 
-import six
-
 
 class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
     """Base marshaler for plone.namedfile values. Actual adapters are
@@ -62,7 +60,7 @@ class BaseNamedFileFieldMarshaler(BaseFieldMarshaler):
                 message.add_header("Content-Disposition", "attachment")
                 message.set_param(
                     "filename",
-                    filename.encode("utf-8") if six.PY2 else filename,
+                    filename,
                     header="Content-Disposition",
                     charset="utf-8",
                 )

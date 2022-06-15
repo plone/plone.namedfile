@@ -19,7 +19,6 @@ from zope.schema.fieldproperty import FieldProperty
 from ZPublisher import HTTPRangeSupport
 
 import piexif
-import six
 import transaction
 
 

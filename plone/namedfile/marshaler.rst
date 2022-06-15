@@ -21,9 +21,9 @@ To test this, we must first load some configuration::
     ... </configure>
     ... """
 
-    >>> import six
+    >>> import io
     >>> from zope.configuration import xmlconfig
-    >>> xmlconfig.xmlconfig(six.StringIO(configuration))
+    >>> xmlconfig.xmlconfig(io.StringIO(configuration))
 
 Next, we will create a schema with which to test the marshaler::
 
@@ -106,7 +106,7 @@ Let's try it with primary fields::
 
     >>> marshaler = getMultiAdapter((t, ITestContent['_file']), IFieldMarshaler)
     >>> bytearray(marshaler.marshal(primary=True))
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
 
     >>> marshaler.getContentType()
     'text/plain'
@@ -161,7 +161,7 @@ Let's now use this message to construct a new object::
     >>> from plone.rfc822 import initializeObjectFromSchema
     >>> initializeObjectFromSchema(newContent, ITestContent, inputMessage)
     >>> bytearray(newContent._file.data)
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
     >>> newContent._file.contentType
     'text/plain'
     >>> newContent._file.filename
@@ -209,7 +209,7 @@ Of course, we will also be able to load this data from a message::
     >>> initializeObjectFromSchema(newContent, ITestContent, inputMessage)
 
     >>> bytearray(newContent._file.data)
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
     >>> newContent._file.contentType
     'text/plain'
     >>> newContent._file.filename

@@ -8,7 +8,6 @@ from zope.interface import implementer
 from zope.publisher.browser import FileUpload
 
 import io
-import six
 
 
 MAXCHUNKSIZE = 1 << 16
