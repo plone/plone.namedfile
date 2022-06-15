@@ -1,12 +1,13 @@
-import logging
-import re
-
-from plone.namedfile.interfaces import IAvailableSizes
+from bs4 import BeautifulSoup
 from plone.app.uuid.utils import uuidToObject
+from plone.namedfile.interfaces import IAvailableSizes
 from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
 from zope.component import queryUtility
-from bs4 import BeautifulSoup
+
+import logging
+import re
+
 
 try:
     from plone.base.interfaces import IImagingSchema
@@ -35,7 +36,7 @@ def get_picture_variants():
     return getattr(settings, "picture_variants", {})
 
 
-class Img2PictureTag(object):
+class Img2PictureTag:
     def get_scale_name(self, scale_line):
         parts = scale_line.split(" ")
         return parts and parts[0] or ""
@@ -90,7 +91,7 @@ class Img2PictureTag(object):
                     # scale_url = scale_obj.url
                     scale_url = self.update_src_scale(src=src, scale=scale)
                 scale_width = self.get_scale_width(scale)
-                source_srcset.append("{0} {1}w".format(scale_url, scale_width))
+                source_srcset.append(f"{scale_url} {scale_width}w")
             source_tag = soup.new_tag("source", srcset=",\n".join(source_srcset))
             if media:
                 source_tag["media"] = media
@@ -136,8 +137,8 @@ class Img2PictureTag(object):
         parts = src.split("/")
         if "." in parts[-1]:
             field_name = parts[-1].split("-")[0]
-            src_scale = "/".join(parts[:-1]) + "/{0}/{1}".format(field_name, scale)
+            src_scale = "/".join(parts[:-1]) + f"/{field_name}/{scale}"
             src_scale
         else:
-            src_scale = "/".join(parts[:-1]) + "/{}".format(scale)
+            src_scale = "/".join(parts[:-1]) + f"/{scale}"
         return src_scale

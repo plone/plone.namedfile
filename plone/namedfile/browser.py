@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from AccessControl.ZopeGuards import guarded_getattr
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
@@ -55,7 +54,10 @@ DISALLOWED_INLINE_MIMETYPES = [
 # We give integrators the option to choose the denylist via an environment variable.
 try:
     # Look for sane name, and fall back to very specific name of hotfix.
-    USE_DENYLIST = os.environ.get("NAMEDFILE_USE_DENYLIST", os.environ.get("PLONEHOTFIX20210518_NAMEDFILE_USE_DENYLIST", 0))
+    USE_DENYLIST = os.environ.get(
+        "NAMEDFILE_USE_DENYLIST",
+        os.environ.get("PLONEHOTFIX20210518_NAMEDFILE_USE_DENYLIST", 0),
+    )
     USE_DENYLIST = bool(int(USE_DENYLIST))
 except (ValueError, TypeError, AttributeError):
     USE_DENYLIST = False
@@ -77,7 +79,7 @@ class Download(BrowserView):
     """
 
     def __init__(self, context, request):
-        super(Download, self).__init__(context, request)
+        super().__init__(context, request)
         self.fieldname = None
         self.filename = None
 
@@ -97,31 +99,32 @@ class Download(BrowserView):
         return stream_data(file, **request_range)
 
     def handle_request_range(self, file):
+        default = {}
         # check if we have a range in the request
-        ranges = None
-        header_range = self.request.getHeader('Range', None)
-        if_range = self.request.getHeader('If-Range', None)
-        if header_range is not None:
-            ranges = parseRange(header_range)
-            if if_range is not None:
-                # We delete the ranges, which causes us to skip to the 200
-                # response.
-                return {}
-            # XXX: multipart ranges not implemented
-            if ranges and len(ranges) == 1:
-                try:
-                    length = file.getSize()
-                    [(start, end)] = expandRanges(ranges, length)
-                    size = end - start
-                    self.request.response.setHeader('Content-Length', size)
-                    self.request.response.setHeader(
-                        'Content-Range',
-                        'bytes {0}-{1}/{2}'.format(start, end - 1, length))
-                    self.request.response.setStatus(206)  # Partial content
-                    return dict(start=start, end=end)
-                except ValueError:
-                    return {}
-        return {}
+        header_range = self.request.getHeader("Range", None)
+        if header_range is None:
+            return default
+        if_range = self.request.getHeader("If-Range", None)
+        if if_range is not None:
+            # We delete the ranges, which causes us to skip to the 200
+            # response.
+            return default
+        ranges = parseRange(header_range)
+        if not ranges or len(ranges) != 1:
+            # TODO: multipart ranges not implemented
+            return default
+        try:
+            length = file.getSize()
+            [(start, end)] = expandRanges(ranges, length)
+            size = end - start
+            self.request.response.setHeader("Content-Length", size)
+            self.request.response.setHeader(
+                "Content-Range", f"bytes {start}-{end - 1}/{length}"
+            )
+            self.request.response.setStatus(206)  # Partial content
+            return dict(start=start, end=end)
+        except ValueError:
+            return default
 
     def set_headers(self, file):
         # With filename None, set_headers will not add the download headers.
@@ -138,7 +141,7 @@ class Download(BrowserView):
             info = IPrimaryFieldInfo(self.context, None)
             if info is None:
                 # Ensure that we have at least a fieldname
-                raise NotFound(self, '', self.request)
+                raise NotFound(self, "", self.request)
             self.fieldname = info.fieldname
 
             # respect field level security as defined in plone.autoform
@@ -147,7 +150,7 @@ class Download(BrowserView):
 
             file = info.value
         else:
-            context = getattr(self.context, 'aq_explicit', self.context)
+            context = getattr(self.context, "aq_explicit", self.context)
             file = guarded_getattr(context, self.fieldname, None)
 
         if file is None:
@@ -175,10 +178,10 @@ class DisplayFile(Download):
             if self.use_denylist:
                 if mimetype in self.disallowed_inline_mimetypes:
                     # Let the Download view handle this.
-                    return super(DisplayFile, self).set_headers(file)
+                    return super().set_headers(file)
             else:
                 # Use the allowlist
                 if mimetype not in self.allowed_inline_mimetypes:
                     # Let the Download view handle this.
-                    return super(DisplayFile, self).set_headers(file)
+                    return super().set_headers(file)
         set_headers(file, self.request.response)

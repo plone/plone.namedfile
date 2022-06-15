@@ -1,27 +1,24 @@
-# -*- coding: utf-8 -*-
-
-import unittest
-
 from plone.namedfile.file import NamedImage
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import get_contenttype
 from plone.namedfile.utils.svg_utils import dimension_int
 from plone.namedfile.utils.svg_utils import process_svg
 
+import unittest
+
 
 class TestSvg(unittest.TestCase):
-
     def test_get_contenttype(self):
         self.assertEqual(
             get_contenttype(
-                NamedImage(
-                    getFile('image.svg'),
-                    contentType='image/svg+xml')),
-            'image/svg+xml')
+                NamedImage(getFile("image.svg"), contentType="image/svg+xml")
+            ),
+            "image/svg+xml",
+        )
 
     def test_process_svg(self):
 
-        content_type, width, height = process_svg(getFile('image.svg'))
+        content_type, width, height = process_svg(getFile("image.svg"))
         self.assertEqual(content_type, "image/svg+xml")
         self.assertEqual(width, 158)
         self.assertEqual(height, 40)
@@ -39,4 +36,4 @@ class TestSvg(unittest.TestCase):
         self.assertEqual(dimension_int(6.25), 6)
         self.assertEqual(dimension_int({}), 0)
         self.assertEqual(dimension_int([]), 0)
-        self.assertEqual(dimension_int(getFile('image.svg')), 0)
+        self.assertEqual(dimension_int(getFile("image.svg")), 0)

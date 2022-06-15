@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file was borrowed from z3c.blobfile and is licensed under the terms of
 # the ZPL.
 from OFS.Image import Pdata
@@ -16,24 +15,22 @@ MAXCHUNKSIZE = 1 << 16
 
 
 @implementer(IStorage)
-class BytesStorable(object):
-
+class BytesStorable:
     def store(self, data, blob):
-        if not isinstance(data, six.binary_type):
-            raise NotStorable('Could not store data (not of bytes type).')
+        if not isinstance(data, bytes):
+            raise NotStorable("Could not store data (not of bytes type).")
 
-        with blob.open('w') as fp:
+        with blob.open("w") as fp:
             fp.write(data)
 
 
 @implementer(IStorage)
 class TextStorable(BytesStorable):
-
     def store(self, data, blob):
-        if not isinstance(data, six.text_type):
+        if not isinstance(data, str):
             raise NotStorable('Could not store data (not of "unicode" type).')
 
-        data = data.encode('UTF-8')
+        data = data.encode("UTF-8")
         BytesStorable.store(self, data, blob)
 
 
@@ -48,13 +45,14 @@ class StringStorable(BytesStorable):
 
 
 @implementer(IStorage)
-class FileChunkStorable(object):
-
+class FileChunkStorable:
     def store(self, data, blob):
         if not isinstance(data, FileChunk):
-            raise NotStorable('Could not store data (not a of "FileChunk" type).')  # noqa
+            raise NotStorable(
+                'Could not store data (not a of "FileChunk" type).'
+            )  # noqa
 
-        with blob.open('w') as fp:
+        with blob.open("w") as fp:
             chunk = data
             while chunk:
                 fp.write(chunk._data)
@@ -62,41 +60,38 @@ class FileChunkStorable(object):
 
 
 @implementer(IStorage)
-class FileDescriptorStorable(object):
-
+class FileDescriptorStorable:
     def store(self, data, blob):
         if not isinstance(data, io.IOBase):
             raise NotStorable('Could not store data: not of io.IOBase ("file").')
 
-        filename = getattr(data, 'name', None)
+        filename = getattr(data, "name", None)
         if filename is not None:
             blob.consumeFile(filename)
             return
 
 
-class BufferedReaderStorable(object):
-
+class BufferedReaderStorable:
     def store(self, data, blob):
         raw = data.raw
         if not isinstance(raw, io.FileIO):
             raise NotStorable('Could not store data (not of type "io.FileIO")')
 
-        filename = getattr(data.raw, 'name', None)
+        filename = getattr(data.raw, "name", None)
         if filename is not None:
             blob.consumeFile(filename)
             return
 
 
 @implementer(IStorage)
-class FileUploadStorable(object):
-
+class FileUploadStorable:
     def store(self, data, blob):
         if not isinstance(data, FileUpload):
             raise NotStorable('Could not store data (not of "FileUpload").')
 
         data.seek(0)
 
-        with blob.open('w') as fp:
+        with blob.open("w") as fp:
             block = data.read(MAXCHUNKSIZE)
             while block:
                 fp.write(block)
@@ -104,10 +99,10 @@ class FileUploadStorable(object):
 
 
 @implementer(IStorage)
-class PDataStorable(object):
+class PDataStorable:
     def store(self, pdata, blob):
         if not isinstance(pdata, Pdata):
             raise NotStorable('Could not store data (not of "Pdata").')
-        fp = blob.open('w')
+        fp = blob.open("w")
         fp.write(bytes(pdata))
         fp.close()

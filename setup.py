@@ -1,23 +1,23 @@
-# -*- coding: utf-8 -*-
 from setuptools import find_packages
 from setuptools import setup
 
 import os
 
 
-version = '6.0.0a5.dev0'
+version = "6.0.0a5.dev0"
 
-description = 'File types and fields for images, files and blob files with ' \
-              'filenames'
-long_description = ('\n\n'.join([
-    open('README.rst').read(),
-    open('CHANGES.rst').read(),
-    open(os.path.join("plone", "namedfile", "usage.rst")).read(),
-]))
+description = "File types and fields for images, files and blob files with " "filenames"
+long_description = "\n\n".join(
+    [
+        open("README.rst").read(),
+        open("CHANGES.rst").read(),
+        open(os.path.join("plone", "namedfile", "usage.rst")).read(),
+    ]
+)
 
 
 setup(
-    name='plone.namedfile',
+    name="plone.namedfile",
     version=version,
     description=description,
     long_description=long_description,
@@ -36,37 +36,37 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: BSD License",
     ],
-    keywords='plone named file image blob',
-    author='Laurence Rowe, Martin Aspeli',
-    author_email='plone-developers@lists.sourceforge.net',
-    url='https://pypi.org/project/plone.namedfile',
-    license='BSD',
+    keywords="plone named file image blob",
+    author="Laurence Rowe, Martin Aspeli",
+    author_email="plone-developers@lists.sourceforge.net",
+    url="https://pypi.org/project/plone.namedfile",
+    license="BSD",
     packages=find_packages(),
-    namespace_packages=['plone'],
+    namespace_packages=["plone"],
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'persistent',
-        'piexif',
-        'plone.app.uuid',
-        'plone.rfc822>=2.0.0',
-        'plone.scale[storage] >=3.0',
-        'plone.schemaeditor',
-        'plone.supermodel',
-        'setuptools',
-        'six',
-        'zope.browserpage',
-        'zope.component',
-        'zope.copy',
-        'zope.security',
-        'zope.traversing',
+        "persistent",
+        "piexif",
+        "plone.app.uuid",
+        "plone.rfc822>=2.0.0",
+        "plone.scale[storage] >=3.0",
+        "plone.schemaeditor",
+        "plone.supermodel",
+        "setuptools",
+        "six",
+        "zope.browserpage",
+        "zope.component",
+        "zope.copy",
+        "zope.security",
+        "zope.traversing",
     ],
     extras_require={
-        'test': [
-            'plone.app.testing',
-            'lxml',
-            'Pillow',
-            'plone.testing[z2]',
+        "test": [
+            "plone.app.testing",
+            "lxml",
+            "Pillow",
+            "plone.testing[z2]",
         ],
     },
 )

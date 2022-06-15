@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from contextlib import contextmanager
 from DateTime import DateTime
 from doctest import _ellipsis_match
@@ -116,7 +115,6 @@ def patch_Img2PictureTag_allowed_scales():
     }
 
 
-
 @implementer(IAttributeAnnotatable, IHasImage)
 class DummyContent(SimpleItem):
     image = None
@@ -133,7 +131,7 @@ class DummyContent(SimpleItem):
 
 @implementer(IPrimaryFieldInfo)
 @adapter(DummyContent)
-class PrimaryFieldInfo(object):
+class PrimaryFieldInfo:
     def __init__(self, context):
         self.context = context
         self.fieldname = "image"
@@ -149,8 +147,8 @@ class MockNamedImage(NamedImage):
 
 
 @implementer(IScaledImageQuality)
-class DummyQualitySupplier(object):
-    """fake utility for plone.app.imaging's scaling quality"""
+class DummyQualitySupplier:
+    """fake utility for image quality setting from imaging control panel."""
 
     def getQuality(self):
         return 1  # as bad as it gets
@@ -392,16 +390,14 @@ class ImageScalingTests(unittest.TestCase):
         self.assertEqual(foo.width, 60)
         self.assertEqual(foo.height, 60)
         assertImage(self, foo.data.data, "PNG", (60, 60))
-        expected_url = re.compile(
-            r"http://nohost/item/@@images/{0}.png".format(PAT_UID_SCALE)
-        )
+        expected_url = re.compile(rf"http://nohost/item/@@images/{PAT_UID_SCALE}.png")
         self.assertTrue(expected_url.match(foo.absolute_url()))
         self.assertEqual(foo.url, foo.absolute_url())
 
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" '
+            r'<img src="{}/@@images/({}).(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
                 base, PAT_UID_SCALE
             )
@@ -427,11 +423,11 @@ class ImageScalingTests(unittest.TestCase):
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}'.format(base)
-            + r"/@@images/({0})".format(PAT_UID_SCALE)
+            rf'<img src="{base}'
+            + rf"/@@images/({PAT_UID_SCALE})"
             + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE)
+            r'srcset="http://nohost/item/@@images/({})'.format(PAT_UID_SCALE)
             + r".(jpeg|gif|png)"
             r' 2x" />'
         )
@@ -455,11 +451,11 @@ class ImageScalingTests(unittest.TestCase):
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}'.format(base)
-            + r"/@@images/({0})".format(PAT_UID_SCALE)
+            rf'<img src="{base}'
+            + rf"/@@images/({PAT_UID_SCALE})"
             + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE)
+            r'srcset="http://nohost/item/@@images/({})'.format(PAT_UID_SCALE)
             + r".(jpeg|gif|png)"
             r' 2x" />'
         )
@@ -482,11 +478,11 @@ class ImageScalingTests(unittest.TestCase):
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}'.format(base)
-            + r"/@@images/({0})".format(PAT_UID_SCALE)
+            rf'<img src="{base}'
+            + rf"/@@images/({PAT_UID_SCALE})"
             + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE)
+            r'srcset="http://nohost/item/@@images/({})'.format(PAT_UID_SCALE)
             + r".(jpeg|gif|png)"
             r' 2x" />'
         )
@@ -509,11 +505,11 @@ class ImageScalingTests(unittest.TestCase):
         tag = foo.tag()
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}'.format(base)
-            + r"/@@images/({0})".format(PAT_UID_SCALE)
+            rf'<img src="{base}'
+            + rf"/@@images/({PAT_UID_SCALE})"
             + r'.(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" '
-            r'srcset="http://nohost/item/@@images/({0})'.format(PAT_UID_SCALE)
+            r'srcset="http://nohost/item/@@images/({})'.format(PAT_UID_SCALE)
             + r".(jpeg|gif|png)"
             r' 2x" />'
         )
@@ -532,9 +528,7 @@ class ImageScalingTests(unittest.TestCase):
         new=patch_Img2PictureTag_allowed_scales,
         spec=True,
     )
-    @patch.object(
-        plone.namedfile.picture, "uuidToObject", spec=True
-    )
+    @patch.object(plone.namedfile.picture, "uuidToObject", spec=True)
     def testGetPictureTagByName(self, mock_uuid_to_object):
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
@@ -561,9 +555,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         new=patch_Img2PictureTag_allowed_scales,
         spec=True,
     )
-    @patch.object(
-        plone.namedfile.picture, "uuidToObject", spec=True
-    )
+    @patch.object(plone.namedfile.picture, "uuidToObject", spec=True)
     def testGetPictureTagWithAltAndTitle(self, mock_uuid_to_object):
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
@@ -596,9 +588,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         new=patch_Img2PictureTag_allowed_scales,
         spec=True,
     )
-    @patch.object(
-        plone.namedfile.picture, "uuidToObject", spec=True
-    )
+    @patch.object(plone.namedfile.picture, "uuidToObject", spec=True)
     def testGetPictureTagWithoutAnyVariants(self, mock_uuid_to_object):
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
@@ -684,7 +674,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         tag = self.scaling.tag("image")
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" '
+            r'<img src="{}/@@images/({}).(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
                 base, PAT_UID_SCALE
             )
@@ -696,7 +686,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         tag = self.scaling.tag("image")
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" '
+            r'<img src="{}/@@images/({}).(jpeg|gif|png)" '
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
                 base, PAT_UID_SCALE
             )
@@ -708,7 +698,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         tag = self.scaling.tag("image")
         base = self.item.absolute_url()
         expected = (
-            r'<img src="{0}/@@images/({1}).(jpeg|gif|png)" '
+            r'<img src="{}/@@images/({}).(jpeg|gif|png)" '
             r'alt="\xfc" title="\xfc" height="(\d+)" width="(\d+)" />'.format(
                 base, PAT_UID_SCALE
             )
@@ -717,7 +707,8 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 
     def testScaledJpegImageQuality(self):
         """Test image quality setting for jpeg images.
-        Image quality not available for PNG images.
+
+        Image quality is not available for PNG images.
         """
         data = getFile("image.jpg")
         item = DummyContent()
@@ -727,7 +718,8 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         # scale an image, record its size
         foo = scaling.scale("image", width=100, height=80)
         size_foo = foo.data.getSize()
-        # let's pretend p.a.imaging set the scaling quality to "really sloppy"
+        # Let's pretend the imaging control panel sets the scaling quality to
+        # "really sloppy"
         gsm = getGlobalSiteManager()
         qualitySupplier = DummyQualitySupplier()
         gsm.registerUtility(qualitySupplier.getQuality, IScaledImageQuality)
