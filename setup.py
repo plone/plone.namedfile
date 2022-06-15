@@ -55,6 +55,7 @@ setup(
         "plone.supermodel",
         "setuptools",
         "zope.browserpage",
+        "zope.cachedescriptors",
         "zope.component",
         "zope.copy",
         "zope.security",

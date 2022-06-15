@@ -17,12 +17,14 @@ from plone.scale.interfaces import IImageScaleFactory
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.scale import scaleImage
 from plone.scale.storage import IImageScaleStorage
+from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.utils import safe_encode
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from zExceptions import Unauthorized
 from ZODB.blob import BlobFile
 from ZODB.POSException import ConflictError
+from zope.cachedescriptors.property import Lazy as lazy_property
 from zope.component import getMultiAdapter
 from zope.component import queryUtility
 from zope.deprecation import deprecate
@@ -39,6 +41,25 @@ import logging
 
 logger = logging.getLogger(__name__)
 _marker = object()
+
+
+def _image_tag_from_values(*values):
+    """Turn list of tuples into an img tag.
+
+    Naturally, this should at least contain ("src", "some url").
+    """
+    parts = ["<img"]
+    for k, v in values:
+        if v is None:
+            continue
+        if isinstance(v, int):
+            v = str(v)
+        elif isinstance(v, bytes):
+            v = str(v, "utf8")
+        parts.append(f"{k}={quoteattr(v)}")
+    parts.append("/>")
+
+    return " ".join(parts)
 
 
 class ImageScale(BrowserView):
@@ -120,19 +141,7 @@ class ImageScale(BrowserView):
             values.append(("srcset", srcset_attr))
 
         values.extend(kwargs.items())
-
-        parts = ["<img"]
-        for k, v in values:
-            if v is None:
-                continue
-            if isinstance(v, int):
-                v = str(v)
-            elif isinstance(v, bytes):
-                v = str(v, "utf8")
-            parts.append(f"{k}={quoteattr(v)}")
-        parts.append("/>")
-
-        return " ".join(parts)
+        return _image_tag_from_values(*values)
 
     def validate_access(self):
         fieldname = getattr(self.data, "fieldname", getattr(self, "fieldname", None))
@@ -661,6 +670,18 @@ class ImageScaling(BrowserView):
 
 
 class NavigationRootScaling(ImageScaling):
+    @lazy_property
+    def _supports_image_scales_metadata(self):
+        # Do we have the image_scales in the portal_catalog?
+        # Expected to be False on Plone 5.2, True on Plone 6.0.
+        catalog = getToolByName(self.context, "portal_catalog")
+        return "image_scales" in catalog._catalog.schema
+
+    @lazy_property
+    def _supports_hidpi(self):
+        # Do we have any "old-style" high DPI scales (2x/3x)?
+        return bool(self.getHighPixelDensityScales())
+
     def _scale_cachekey(method, self, brain, fieldname, **kwargs):
         return (
             self.context.absolute_url(),
@@ -672,10 +693,74 @@ class NavigationRootScaling(ImageScaling):
 
     @ram.cache(_scale_cachekey)
     def tag(self, brain, fieldname, **kwargs):
+        if self._supports_image_scales_metadata:
+            tag = self._tag_from_brain_image_scales(brain, fieldname, **kwargs)
+            if tag:
+                return tag
         obj = brain.getObject()
         images = obj.restrictedTraverse("@@images")
         tag = images.tag(fieldname, **kwargs)
         return tag
+
+    def _tag_from_brain_image_scales(
+        self,
+        brain,
+        fieldname,
+        scale=None,
+        alt=_marker,
+        css_class=None,
+        title=_marker,
+        **kwargs,
+    ):
+        """Try to get a tag from the image_scales metadata.
+
+        If we have any non-standard keyword arguments, we cannot use this method.
+        Especially you cannot set a direction: we must use the default "thumbnail".
+
+        Also, no old-style hidpi srcsets are included.  If the site has enabled this,
+        we return nothing: this information is not (easily) available in the brain.
+        """
+        if self._supports_hidpi:
+            return
+        if not (brain and fieldname and scale):
+            return
+        if kwargs:
+            # too many keyword arguments
+            return
+        if not getattr(brain, "image_scales", None):
+            # no images here at all
+            return
+        if fieldname not in brain.image_scales:
+            return
+        try:
+            # Note: per field we get a list with dicts.
+            # For normal image fields this will always be one dict.
+            # When the field is a RelationList pointing to images,
+            # it might contain more.  That does not sound like something
+            # we can support out of the box, so we always use the first one.
+            # This probably makes the most sense in that corner case as well.
+            data = brain.image_scales[fieldname][0]["scales"][scale]
+        except (KeyError, IndexError):
+            return
+
+        # data has download, height and width
+        if title is _marker:
+            title = brain.Title
+            if callable(title):
+                # Brain may be a CatalogContentListingObject.
+                title = title()
+        if alt is _marker:
+            alt = title
+        values = [
+            ("src", data["download"]),
+            ("alt", alt),
+            ("title", title),
+            ("height", data["height"]),
+            ("width", data["width"]),
+        ]
+        if css_class:
+            values.append(("class", css_class))
+        return _image_tag_from_values(*values)
 
 
 def _scale_sort_key(item):
