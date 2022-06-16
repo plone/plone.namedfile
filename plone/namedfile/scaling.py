@@ -35,7 +35,6 @@ from zope.traversing.interfaces import TraversalError
 
 import functools
 import logging
-import six
 
 
 logger = logging.getLogger(__name__)

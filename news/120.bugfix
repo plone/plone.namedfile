@@ -1,2 +1,2 @@
-Cleanup: isort, black, pyupgrade, etc.
+Cleanup: isort, black, pyupgrade, remove use of six, etc.
 [maurits]

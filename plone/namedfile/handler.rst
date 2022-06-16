@@ -19,7 +19,7 @@ First, we wire up the handlers::
     ... </configure>
     ... """
 
-    >>> from six import StringIO
+    >>> from io import StringIO
     >>> from zope.configuration import xmlconfig
     >>> xmlconfig.xmlconfig(StringIO(configuration))
 

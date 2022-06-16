@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from io import BytesIO
 from io import FileIO
 from logging import getLogger
 from plone.namedfile.interfaces import IBlobby
@@ -6,8 +7,7 @@ from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.svg_utils import process_svg
 from plone.registry.interfaces import IRegistry
-from six import BytesIO
-from six.moves import urllib
+from urllib.parse import quote
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import implementer
@@ -17,7 +17,6 @@ import mimetypes
 import os.path
 import piexif
 import PIL.Image
-import six
 import struct
 
 
@@ -119,7 +118,7 @@ def set_headers(file, response, filename=None):
     if filename is not None:
         if not isinstance(filename, str):
             filename = str(filename, "utf-8", errors="ignore")
-        filename = urllib.parse.quote(filename.encode("utf8"))
+        filename = quote(filename.encode("utf8"))
         response.setHeader(
             "Content-Disposition", f"attachment; filename*=UTF-8''{filename}"
         )

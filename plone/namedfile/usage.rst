@@ -44,7 +44,7 @@ The FileContainer class creates empty objects to start with::
     >>> container = FileContainer()
 
     >>> bytearray(container.simple.data)
-    bytearray('')
+    bytearray(b'')
     >>> container.simple.contentType
     ''
     >>> container.simple.filename is None
@@ -75,7 +75,7 @@ will attempt to guess the filename from the file extension::
 
     >>> container.simple = namedfile.NamedFile('dummy test data', filename=u"test.txt")
     >>> bytearray(container.simple.data)
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
     >>> container.simple.contentType
     'text/plain'
     >>> print(container.simple.filename)
@@ -83,7 +83,7 @@ will attempt to guess the filename from the file extension::
 
     >>> container.blob = namedfile.NamedBlobFile('dummy test data', filename=u"test.txt")
     >>> bytearray(container.blob.data)
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
     >>> container.blob.contentType
     'text/plain'
     >>> print(container.blob.filename)
@@ -170,7 +170,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'simple')
     >>> bytearray(download())
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')
@@ -182,7 +182,7 @@ We will test this with a dummy request, faking traversal::
     >>> download = Download(container, request).publishTraverse(request, 'blob')
     >>> data = download()
     >>> bytearray(hasattr(data, 'read') and data.read() or data)
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')
@@ -262,7 +262,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'simple')
     >>> bytearray(display_file())
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')
@@ -273,7 +273,7 @@ We will test this with a dummy request, faking traversal::
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
     >>> data = display_file()
     >>> bytearray(hasattr(data, 'read') and data.read() or data)
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')
@@ -336,7 +336,7 @@ We will test this with a dummy request, faking traversal::
     >>> request = TestRequest()
     >>> download = Download(container, request)
     >>> bytearray(download())
-    bytearray('dummy test data')
+    bytearray(b'dummy test data')
     >>> request.response.getHeader('Content-Length')
     '15'
     >>> request.response.getHeader('Content-Type')

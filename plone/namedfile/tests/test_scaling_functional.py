@@ -1,4 +1,5 @@
 from DateTime import DateTime
+from io import BytesIO
 from OFS.SimpleItem import SimpleItem
 from plone.app.testing import TEST_USER_NAME
 from plone.app.testing import TEST_USER_PASSWORD
@@ -9,12 +10,10 @@ from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
 from plone.testing.zope import Browser
-from six import BytesIO
 from zope.annotation import IAttributeAnnotatable
 from zope.interface import implementer
 
 import PIL
-import six
 import transaction
 import unittest
 
@@ -45,8 +44,6 @@ class ImagePublisherTests(unittest.TestCase):
     layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 
     def setUp(self):
-        if six.PY2:
-            raise unittest.SkipTest("Disabled in py2 for now.")
         data = getFile("image.png")
         item = DummyContent()
         item.image = NamedImage(data, "image/png", "image.png")

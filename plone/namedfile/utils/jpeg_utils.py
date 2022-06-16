@@ -1,5 +1,5 @@
+from io import BytesIO
 from logging import getLogger
-from six import BytesIO
 
 import struct
 

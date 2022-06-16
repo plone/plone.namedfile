@@ -1,6 +1,6 @@
-from contextlib import contextmanager
 from DateTime import DateTime
 from doctest import _ellipsis_match
+from io import BytesIO
 from OFS.SimpleItem import SimpleItem
 from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
@@ -13,7 +13,6 @@ from plone.namedfile.tests import getFile
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.storage import IImageScaleStorage
-from six import BytesIO
 from unittest.mock import patch
 from zExceptions import Unauthorized
 from zope.annotation import IAttributeAnnotatable
@@ -533,7 +532,7 @@ class ImageScalingTests(unittest.TestCase):
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
         tag = self.scaling.picture("image", picture_variant="medium")
-        expected = f"""<picture>
+        expected = """<picture>
  <source srcset="http://nohost/item/@@images/image-600-....png 600w,
 http://nohost/item/@@images/image-400-....png 400w,
 http://nohost/item/@@images/image-800-....png 800w,
@@ -567,12 +566,12 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         )
         base = self.item.absolute_url()
         expected = f"""<picture>
- <source srcset="http://nohost/item/@@images/image-600-....png 600w,
-http://nohost/item/@@images/image-400-....png 400w,
-http://nohost/item/@@images/image-800-....png 800w,
-http://nohost/item/@@images/image-1000-....png 1000w,
-http://nohost/item/@@images/image-1200-....png 1200w"/>
- <img alt="Alternative text" height="200" loading="lazy" src="http://nohost/item/@@images/image-600-....png" title="Custom title" width="200"/>
+ <source srcset="{base}/@@images/image-600-....png 600w,
+{base}/@@images/image-400-....png 400w,
+{base}/@@images/image-800-....png 800w,
+{base}/@@images/image-1000-....png 1000w,
+{base}/@@images/image-1200-....png 1200w"/>
+ <img alt="Alternative text" height="200" loading="lazy" src="{base}/@@images/image-600-....png" title="Custom title" width="200"/>
 </picture>"""
         self.assertTrue(_ellipsis_match(expected, tag))
 
@@ -593,7 +592,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
         tag = self.scaling.picture("image", picture_variant="medium")
-        expected = f"""<img src="http://nohost/item/@@images/image-0-....png" title="foo" height="200" width="200" />"""
+        expected = """<img src="http://nohost/item/@@images/image-0-....png" title="foo" height="200" width="200" />"""
         self.assertTrue(_ellipsis_match(expected, tag))
 
     def testGetUnknownScale(self):
