@@ -5,6 +5,7 @@ from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.svg_utils import process_svg
+from plone.namedfile.utils.webp_utils import process_webp
 from plone.registry.interfaces import IRegistry
 from six import BytesIO
 from six.moves import urllib
@@ -182,6 +183,11 @@ def getImageInfo(data):
     elif size and b'http://www.w3.org/2000/svg' in data:
         # handle SVGs
         content_type, width, height = process_svg(data)
+
+    elif data.startswith(b"RIFF"):
+        # We are not going to parse the data of this WEBP file
+        # just return the content type and 0 for width and height
+        content_type, width, height = process_webp(data)
 
     else:
         # Use PIL / Pillow to determ Image Information
