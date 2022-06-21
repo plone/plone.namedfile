@@ -1,6 +1,3 @@
-# Note: this file should only be loaded in zcml on Plone 6, with plone.base.
-from plone.base.interfaces import IImageScalesFieldAdapter
-from plone.base.interfaces import IImagingSchema
 from plone.dexterity.interfaces import IDexterityContent
 from plone.namedfile.interfaces import INamedImageField
 from plone.registry.interfaces import IRegistry
@@ -11,6 +8,15 @@ from zope.interface import implementer
 from zope.interface import Interface
 
 
+try:
+    from plone.base.interfaces import IImageScalesFieldAdapter
+    from plone.base.interfaces import IImagingSchema
+except ImportError:
+    # BBB Plone 5
+    IImageScalesFieldAdapter = Interface
+    IImagingSchema = None
+
+
 def _split_scale_info(allowed_size):
     name, dims = allowed_size.split(" ")
     width, height = list(map(int, dims.split(":")))
@@ -19,6 +25,8 @@ def _split_scale_info(allowed_size):
 
 def _get_scale_infos():
     """Returns list of (name, width, height) of the available image scales."""
+    if IImagingSchema is None:
+        return []
     registry = getUtility(IRegistry)
     imaging_settings = registry.forInterface(IImagingSchema, prefix="plone")
     allowed_sizes = imaging_settings.allowed_sizes

@@ -1,4 +1,3 @@
-from plone.base.interfaces import IImageScalesFieldAdapter
 from plone.dexterity.content import Item
 from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
@@ -8,8 +7,14 @@ from unittest.mock import patch
 from zope.component import queryMultiAdapter
 from zope.publisher.browser import TestRequest
 
-import unittest
 import plone.namedfile.adapters
+import unittest
+
+
+try:
+    from plone.base.interfaces import IImageScalesFieldAdapter
+except ImportError:
+    IImageScalesFieldAdapter = None
 
 
 def patch_get_scale_infos():
@@ -59,6 +64,7 @@ class ImageScalesAdaptersRegisteredTest(unittest.TestCase):
         field.set(self.content, value)
         return field
 
+    @unittest.skipIf(IImageScalesFieldAdapter is None, "Skipping on Plone 5")
     def test_field_adapter_return_scales(self):
         image = NamedImage(dummy.Image(), filename="dummy.gif")
         field = self.create_field(image)
@@ -92,11 +98,19 @@ class ImageScalesAdaptersRegisteredTest(unittest.TestCase):
         self.assertTrue(download.startswith(f"{images_url}/image1-16-"))
         self.assertTrue(download.endswith(".gif"))
 
+    @unittest.skipIf(IImageScalesFieldAdapter is not None, "Skipping on Plone 6")
+    def test_field_adapter_return_nothing_without_plone_base(self):
+        image = NamedImage(dummy.Image(), filename="dummy.gif")
+        field = self.create_field(image)
+        res = self.serialize(self.content, field)
+        self.assertIsNone(res)
+
     def test_field_adapter_do_not_return_scales_for_empty_fields_with_adapter(self):
         field = self.create_field()
         res = self.serialize(self.content, field)
         self.assertEqual(res, None)
 
+    @unittest.skipIf(IImageScalesFieldAdapter is None, "Skipping on Plone 5")
     def test_field_adapter_does_not_return_larger_scales(self):
         # Add an image of 900 by 900 pixels.
         image = NamedImage(dummy.JpegImage(), filename="900.jpeg")
