@@ -24,4 +24,7 @@
   <include file="editor.zcml" />
   <include file="field.zcml" />
 
+  <!-- This adapter is only needed and used on Plone 6.  -->
+  <adapter zcml:condition="installed plone.base" factory=".adapters.ImageFieldScales" />
+
 </configure>

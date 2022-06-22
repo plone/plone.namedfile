@@ -9,5 +9,9 @@
   <permission id="zope2.View" title="View" />
 
   <include package="plone.namedfile" />
+  <class class="plone.dexterity.content.DexterityContent">
+    <!-- This is normally done in plone.app.dexterity. -->
+    <implements interface="plone.namedfile.interfaces.IImageScaleTraversable" />
+  </class>
 
 </configure>
