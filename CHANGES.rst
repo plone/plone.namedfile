@@ -8,6 +8,43 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0b1 (2022-06-23)
+--------------------
+
+New features:
+
+
+- Creating a tag no longer generates the actual scale.
+  [maurits] (#113)
+- Add picture method to to ImageScaling and include it in @@image-test.
+  Picture tags only work on Plone 6, with several other branches for picture variants merged.
+  See `plip-image-srcsets.cfg <https://github.com/plone/buildout.coredev/blob/6.0/plips/plip-image-srcsets.cfg>`_.
+  If not available (like on Plone 5.2), an ordinary image tag is created.
+  [MrTango] (#113)
+- Add ``@@images-test`` page for Editors.
+  This shows various variants from the image field of the current context.
+  It shows a list of stored scales.
+  It allows purging the stored scales.
+  [maurits] (#113)
+- removed marking request for disable CSRF protection (need plone.scale with https://github.com/plone/plone.scale/pull/58)
+  [mamico] (#177)
+- use the attribute _sizes for local caching correctly available_sizes
+  [mamico] (#177)
+- add additional infos in scale storage only if missing
+  [mamico] (#177)
+- Register adapter for image fields to the new image_scales metadata.
+  Use this in the image_scale view to get images from a list a brains.
+  This code is not active on Plone 5, only Plone 6.
+  [cekk, maurits] (#3521)
+
+
+Bug fixes:
+
+
+- Cleanup: isort, black, pyupgrade, remove use of six, etc.
+  [maurits] (#120)
+
+
 6.0.0a4 (2022-05-26)
 --------------------
 
