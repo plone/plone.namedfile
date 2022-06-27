@@ -129,4 +129,8 @@ class ImageFieldScales:
         return scale.url if scale else None
 
     def _scale_view_from_url(self, url):
+        # The "download" information for scales is the path to
+        # "@@images/foo-scale" only.
+        # The full URL to the scale is rendered by the scaling adapter at
+        # runtime to make sure they are correct in virtual hostings.
         return url.replace(self.context.absolute_url(), "").lstrip("/")
