@@ -751,8 +751,17 @@ class NavigationRootScaling(ImageScaling):
                 title = title()
         if alt is _marker:
             alt = title
+
+        # common case is a local path to "@@images/img-scale"
+        # but it might be a custom url starting with "http"
+        src = (
+            data["download"]
+            if data["download"].startswith("http")
+            else f"{brain.getURL()}/{data['download']}"
+        )
+
         values = [
-            ("src", data["download"]),
+            ("src", src),
             ("alt", alt),
             ("title", title),
             ("height", data["height"]),
