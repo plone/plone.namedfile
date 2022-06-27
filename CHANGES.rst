@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0b2 (2022-06-27)
+--------------------
+
+Bug fixes:
+
+
+- Do not use full url in `image_scales` dictionary.
+  [petschki] (#123)
+
+
 6.0.0b1 (2022-06-23)
 --------------------
 
