@@ -69,7 +69,7 @@ class ImageFieldScales:
                 "filename": image.filename,
                 "content-type": image.contentType,
                 "size": image.getSize(),
-                "download": url,
+                "download": self._scale_view_from_url(url),
                 "width": width,
                 "height": height,
                 "scales": scales,
@@ -109,7 +109,7 @@ class ImageFieldScales:
             actual_height = scale.height
 
             scales[name] = {
-                "download": url,
+                "download": self._scale_view_from_url(url),
                 "width": actual_width,
                 "height": actual_height,
             }
@@ -127,3 +127,6 @@ class ImageFieldScales:
         )
         # Corrupt images may not have a scale.
         return scale.url if scale else None
+
+    def _scale_view_from_url(self, url):
+        return url.replace(self.context.absolute_url(), "").lstrip("/")

@@ -752,7 +752,7 @@ class NavigationRootScaling(ImageScaling):
         if alt is _marker:
             alt = title
         values = [
-            ("src", data["download"]),
+            ("src", f"{brain.getURL()}/{data['download']}"),
             ("alt", alt),
             ("title", title),
             ("height", data["height"]),
