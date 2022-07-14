@@ -6,6 +6,7 @@ from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IImageScaleTraversable
+from plone.namedfile.scaling import ImageScale
 from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
@@ -294,6 +295,13 @@ class FakeImageScaleStorage:
         for value in self.storage.values():
             if value["key"] == hash:
                 return value
+
+
+class TitleImageScale(ImageScale):
+    """ImageScale class with its own title property.
+    """
+
+    title = "title from class"
 
 
 # @patch.multiple(
@@ -925,6 +933,28 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(scale_uid.data.uid, "uid-0")
         self.assertEqual(scale_uid.data.info["uid"], "uid-0")
         self.assertIs(scale_uid.data, scale2.data)
+
+    def test_title(self):
+        # Test that a custom title property on an ImageScale class is used.
+        item = FakeImage("abcdef", "jpeg")
+        scaling = ImageScaling(item, None)
+        scaling._scale_view_class = TitleImageScale
+        self.assertEqual(
+            scaling.tag("image"),
+            '<img src="http://fake.image/@@images/image.jpeg" alt="title from class" title="title from class" height="4" width="6" />'
+        )
+        self.assertEqual(
+            scaling.tag("image", alt="own alt"),
+            '<img src="http://fake.image/@@images/image.jpeg" alt="own alt" title="title from class" height="4" width="6" />'
+        )
+        self.assertEqual(
+            scaling.tag("image", title="own title"),
+            '<img src="http://fake.image/@@images/image.jpeg" alt="title from class" title="own title" height="4" width="6" />'
+        )
+        self.assertEqual(
+            scaling.tag("image", alt="own alt", title="own title"),
+            '<img src="http://fake.image/@@images/image.jpeg" alt="own alt" title="own title" height="4" width="6" />'
+        )
 
 
 def test_suite():
