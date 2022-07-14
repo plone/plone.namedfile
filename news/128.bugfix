@@ -1,0 +1,4 @@
+Get title from ImageScale class.
+Prevents a traceback when the context is a tile.
+When no title can we found, fall back to an empty string.
+[maurits]

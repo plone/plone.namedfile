@@ -107,6 +107,24 @@ class ImageScale(BrowserView):
         srcset_attr = ", ".join(_srcset_attr)
         return srcset_attr
 
+    @property
+    def title(self):
+        """Get the title from the context.
+
+        Let's not fail when we cannot find a title.
+        """
+        try:
+            # Most Plone content items.
+            return self.context.Title()
+        except AttributeError:
+            pass
+        try:
+            # Can work on a tile and most other things.
+            return self.context.title
+        except AttributeError:
+            pass
+        return ""
+
     def tag(
         self,
         height=_marker,
@@ -123,9 +141,9 @@ class ImageScale(BrowserView):
             width = getattr(self, "width", self.data._width)
 
         if alt is _marker:
-            alt = self.context.Title()
+            alt = self.title
         if title is _marker:
-            title = self.context.Title()
+            title = self.title
 
         values = [
             ("src", self.url),
