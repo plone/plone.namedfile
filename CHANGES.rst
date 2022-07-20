@@ -8,6 +8,18 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0b3 (2022-07-20)
+--------------------
+
+Bug fixes:
+
+
+- Get title from ImageScale class.
+  Prevents a traceback when the context is a tile.
+  When no title can we found, fall back to an empty string.
+  [maurits] (#128)
+
+
 6.0.0b2 (2022-06-27)
 --------------------
 
