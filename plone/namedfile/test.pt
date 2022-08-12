@@ -69,7 +69,7 @@
   </section>
   <hr />
   <section id="examples">
-    <h2>Examples with direction/mode</h2>
+    <h2>Examples with mode</h2>
 
     <h3>Mini</h3>
     <figure class="figure"
@@ -78,16 +78,16 @@
       <br /><code tal:content="img_tag" />
     </figure>
 
-    <h3 id="cover">Mini direction=cover</h3>
+    <h3 id="cover">Mini mode=cover</h3>
     <figure class="figure"
-      tal:define="img_tag python:images.tag('image', scale='mini', direction='cover')">
+      tal:define="img_tag python:images.tag('image', scale='mini', mode='cover')">
       <img tal:replace="structure img_tag" />
       <br /><code tal:content="img_tag" />
     </figure>
 
-    <h3 id="contain">Mini direction=contain</h3>
+    <h3 id="contain">Mini mode=contain</h3>
     <figure class="figure"
-      tal:define="img_tag python:images.tag('image', scale='mini', direction='contain')">
+      tal:define="img_tag python:images.tag('image', scale='mini', mode='contain')">
       <img tal:replace="structure img_tag" />
       <br /><code tal:content="img_tag" />
     </figure>
@@ -96,9 +96,7 @@
   <section id="picture">
     <h2>Picture tags</h2>
     <p>
-      Temporary note:
-      Picture tags only work on Plone 6, with several other branches merged.
-      See <a href="https://github.com/plone/buildout.coredev/blob/6.0/plips/plip-image-srcsets.cfg">coredev</a>.
+      Picture tags only work on Plone 6.
       If not available (like on Plone 5.2), an ordinary image tag is created.
     </p>
 
