@@ -85,7 +85,7 @@ class ImageScalesAdaptersRegisteredTest(unittest.TestCase):
             },
         )
         # Note: self.content.absolute_url() is actually empty in this test.
-        self.assertTrue(download.startswith("@@images/image1-16-"))
+        self.assertTrue(download.startswith(f"@@images/image1-16-"))
         self.assertTrue(download.endswith(".gif"))
         self.assertIn("listing", scales)
         self.assertEqual(len(scales), 1)
@@ -94,7 +94,7 @@ class ImageScalesAdaptersRegisteredTest(unittest.TestCase):
         self.assertEqual(listing["height"], 16)
         self.assertEqual(listing["width"], 16)
         download = listing["download"]
-        self.assertTrue(download.startswith("@@images/image1-16-"))
+        self.assertTrue(download.startswith(f"@@images/image1-16-"))
         self.assertTrue(download.endswith(".gif"))
 
     @unittest.skipIf(IImageScalesFieldAdapter is not None, "Skipping on Plone 6")
@@ -131,7 +131,7 @@ class ImageScalesAdaptersRegisteredTest(unittest.TestCase):
             },
         )
         # Note: self.content.absolute_url() is actually empty in this test.
-        self.assertTrue(download.startswith("@@images/image1-900-"))
+        self.assertTrue(download.startswith(f"@@images/image1-900-"))
         self.assertTrue(download.endswith(".jpeg"))
         # larger and huge should not be in here: these scales would return the same
         # content as the original.
@@ -142,4 +142,4 @@ class ImageScalesAdaptersRegisteredTest(unittest.TestCase):
         preview = scales["preview"]
         self.assertEqual(preview["width"], 400)
         self.assertEqual(preview["height"], 400)
-        self.assertTrue(preview["download"].startswith("@@images/image1-400-"))
+        self.assertTrue(preview["download"].startswith(f"@@images/image1-400-"))

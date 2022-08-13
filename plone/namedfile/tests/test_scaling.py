@@ -30,7 +30,6 @@ import plone.namedfile.scaling
 import re
 import time
 import unittest
-import warnings
 
 
 # Unique scale name used to be a uuid.uui4(),
@@ -673,29 +672,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 
     def testGetAvailableSizes(self):
         self.scaling.available_sizes = {"foo": (60, 60)}
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("once")
-            self.assertEqual(
-                self.scaling.getAvailableSizes(),
-                {"foo": (60, 60)},
-            )
-            self.assertEqual(len(w), 1)
-            self.assertIs(w[0].category, DeprecationWarning)
-            self.assertIn(
-                "use property available_sizes instead",
-                str(w[0].message),
-            )
-            self.assertEqual(
-                self.scaling.getAvailableSizes("image"),
-                {"foo": (60, 60)},
-            )
-            self.assertEqual(len(w), 2)
-            self.assertIs(w[1].category, DeprecationWarning)
-            self.assertIn(
-                "fieldname was passed to deprecated getAvailableSizes, but "
-                "will be ignored.",
-                str(w[1].message),
-            )
+        assert self.scaling.getAvailableSizes("image") == {"foo": (60, 60)}
 
     def testGetImageSize(self):
         assert self.scaling.getImageSize("image") == (200, 200)

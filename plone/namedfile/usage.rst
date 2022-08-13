@@ -357,8 +357,8 @@ several ways that you may reference scales from page templates.
 
 1. for full control you may do the tag generation explicitly::
 
-     <img tal:define="images context/@@images;
-                      thumbnail python: images.scale('image', width=64, height=64);"
+     <img tal:define="scales context/@@images;
+                      thumbnail python: scales.scale('image', width=64, height=64);"
           tal:condition="thumbnail"
           tal:attributes="src thumbnail/url;
                           width thumbnail/width;
@@ -366,16 +366,16 @@ several ways that you may reference scales from page templates.
 
    This would create an up to 64 by 64 pixel scaled down version of the image
    stored in the "image" field.  It also allows for passing in additional
-   parameters supported by the ``scaleImage`` function from ``plone.scale``,
-   e.g. ``mode`` or ``quality``.
+   parameters support by `plone.scale`_'s ``scaleImage`` function, e.g.
+   ``direction`` or ``quality``.
 
-   .. _`plone.scale`: https://pypi.org/project/plone.scale/
+   .. _`plone.scale`: http://pypi.python.org/pypi/plone.scale
 
 2. for automatic tag generation with extra parameters you would use::
 
-     <img tal:define="images context/@@images"
-          tal:replace="structure python: images.tag('image',
-                       width=1200, height=800, mode='contain')" />
+     <img tal:define="scale context/@@images"
+          tal:replace="structure python: scale.scale('image',
+                       width=1200, height=800, direction='down').tag()" />
 
 3. It is possible to access scales via predefined named scale sizes, rather
    than hardcoding the dimensions every time you access a scale.  The scale
@@ -384,8 +384,9 @@ several ways that you may reference scales from page templates.
    scale name => (width, height).  A scale called 'mini' could then be accessed
    like this::
 
-     <img tal:define="images context/@@images"
-          tal:replace="structure python: images.tag('image', scale='mini')" />
+     <img tal:define="scale context/@@images"
+          tal:replace="structure python: scale.scale('image',
+                       scale='mini').tag()" />
 
    This would use the predefined scale size "mini" to determine the desired
    image dimensions, but still allow to pass in extra parameters.
