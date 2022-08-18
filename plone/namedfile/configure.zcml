@@ -27,4 +27,18 @@
   <!-- This adapter is only needed and used on Plone 6.  -->
   <adapter zcml:condition="installed plone.base" factory=".adapters.ImageFieldScales" />
 
+  <!-- configure sizes lookup for IAvailableSizes -->
+  <utility
+      zcml:condition="have plone-60"
+      component=".utils.getAllowedSizes"
+      provides=".interfaces.IAvailableSizes"
+      />
+
+  <!-- quality lookup for IScaledImageQuality from plone.scale, which itself has no ZCML-->
+  <utility
+      zcml:condition="have plone-60"
+      component=".utils.getQuality"
+      provides="plone.scale.interfaces.IScaledImageQuality"
+      />
+
 </configure>

@@ -1,0 +1,2 @@
+Move getAllowedSizes + getQuality from CMFPlone.utils to this package.
+[jensens]
