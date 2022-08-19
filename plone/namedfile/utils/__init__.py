@@ -17,8 +17,12 @@ import mimetypes
 import os.path
 import piexif
 import PIL.Image
+import re
 import struct
 
+# image-scaling
+QUALITY_DEFAULT = 88
+pattern = re.compile(r'^(.*)\s+(\d+)\s*:\s*(\d+)$')
 
 log = getLogger(__name__)
 
