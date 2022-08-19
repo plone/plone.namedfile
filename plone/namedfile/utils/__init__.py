@@ -17,8 +17,12 @@ import mimetypes
 import os.path
 import piexif
 import PIL.Image
+import re
 import struct
 
+# image-scaling
+QUALITY_DEFAULT = 88
+pattern = re.compile(r'^(.*)\s+(\d+)\s*:\s*(\d+)$')
 
 log = getLogger(__name__)
 
@@ -337,3 +341,30 @@ def getHighPixelDensityScales():
             {"scale": 3, "quality": settings.quality_3x},
         ]
     return []
+
+def getAllowedSizes():
+    registry = queryUtility(IRegistry)
+    if not registry:
+        return None
+    settings = registry.forInterface(
+        IImagingSchema, prefix="plone", check=False)
+    if not settings.allowed_sizes:
+        return None
+    sizes = {}
+    for line in settings.allowed_sizes:
+        line = line.strip()
+        if line:
+            name, width, height = pattern.match(line).groups()
+            name = name.strip().replace(' ', '_')
+            sizes[name] = int(width), int(height)
+    return sizes
+
+
+def getQuality():
+    registry = queryUtility(IRegistry)
+    if registry:
+        settings = registry.forInterface(
+            IImagingSchema, prefix="plone", check=False)
+        return settings.quality or QUALITY_DEFAULT
+    return QUALITY_DEFAULT
+
