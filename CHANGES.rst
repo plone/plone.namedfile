@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0b4 (2022-09-07)
+--------------------
+
+Bug fixes:
+
+
+- Move getAllowedSizes + getQuality from CMFPlone.utils to this package.
+  [jensens] (#132)
+
+
 6.0.0b3 (2022-07-20)
 --------------------
 
