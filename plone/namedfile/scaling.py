@@ -2,6 +2,7 @@ from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
 from io import BytesIO
+from io import StringIO
 from plone.memoize import ram
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
@@ -16,9 +17,10 @@ from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IImageScaleFactory
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.scale import scaleImage
+from plone.scale.scale import scale_svg_image
 from plone.scale.storage import IImageScaleStorage
 from Products.CMFCore.utils import getToolByName
-from Products.CMFPlone.utils import safe_encode
+from Products.CMFPlone.utils import safe_text
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from zExceptions import Unauthorized
@@ -284,14 +286,12 @@ class DefaultImageScalingFactory:
     ):
         """Return a scaled image, its mimetype format, and width and height."""
         if getattr(orig_value, "contentType", "") == "image/svg+xml":
-            # No need to scale, we can simply use the original data,
-            # but report a different width and height.
-            if isinstance(orig_data, (str)):
-                orig_data = safe_encode(orig_data)
-            if isinstance(orig_data, (bytes)):
-                orig_data = BytesIO(orig_data)
-            result = orig_data.read(), "svg+xml", (width, height)
-            return result
+            if isinstance(orig_data, bytes):
+                orig_data = StringIO(safe_text(orig_data))
+            elif isinstance(orig_data, BytesIO):
+                orig_data = StringIO(safe_text(orig_data.read()))
+            scaled_data, size = scale_svg_image(orig_data, width, height, direction)
+            return scaled_data, "svg+xml", size
         try:
             result = self.create_scale(
                 orig_data, direction=direction, height=height, width=width, **parameters
