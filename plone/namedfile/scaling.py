@@ -3,6 +3,7 @@ from Acquisition import aq_base
 from DateTime import DateTime
 from io import BytesIO
 from io import StringIO
+from io import TextIOWrapper
 from plone.memoize import ram
 from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
@@ -54,7 +55,7 @@ def _image_tag_from_values(*values):
     for k, v in values:
         if v is None:
             continue
-        if isinstance(v, int):
+        if isinstance(v, (int, float)):
             v = str(v)
         elif isinstance(v, bytes):
             v = str(v, "utf8")
@@ -289,7 +290,7 @@ class DefaultImageScalingFactory:
             if isinstance(orig_data, bytes):
                 orig_data = StringIO(safe_text(orig_data))
             elif isinstance(orig_data, BytesIO):
-                orig_data = StringIO(safe_text(orig_data.read()))
+                orig_data = TextIOWrapper(orig_data, encoding="utf-8")
             scaled_data, size = scale_svg_image(orig_data, width, height, direction)
             return scaled_data, "svg+xml", size
         try:
