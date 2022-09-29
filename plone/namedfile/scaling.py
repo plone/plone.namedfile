@@ -37,6 +37,7 @@ from zope.traversing.interfaces import TraversalError
 
 import functools
 import logging
+import warnings
 
 
 logger = logging.getLogger(__name__)
@@ -274,13 +275,19 @@ class DefaultImageScalingFactory:
                 parameters["quality"] = quality
         return parameters
 
-    def create_scale(self, data, direction, height, width, **parameters):
+    def create_scale(self, data, mode, height, width, **parameters):
+        if "direction" in parameters:
+            warnings.warn(
+                "The 'direction' option is deprecated, use 'mode' instead.",
+                DeprecationWarning,
+            )
+            mode = parameters.pop("direction")
         return scaleImage(
-            data, direction=direction, height=height, width=width, **parameters
+            data, mode=mode, height=height, width=width, **parameters
         )
 
     def handle_image(
-        self, orig_value, orig_data, direction, height, width, **parameters
+        self, orig_value, orig_data, mode, height, width, **parameters
     ):
         """Return a scaled image, its mimetype format, and width and height."""
         if getattr(orig_value, "contentType", "") == "image/svg+xml":
@@ -294,7 +301,7 @@ class DefaultImageScalingFactory:
             return result
         try:
             result = self.create_scale(
-                orig_data, direction=direction, height=height, width=width, **parameters
+                orig_data, mode=mode, height=height, width=width, **parameters
             )
         except (ConflictError, KeyboardInterrupt):
             raise
@@ -311,7 +318,7 @@ class DefaultImageScalingFactory:
     def __call__(
         self,
         fieldname=None,
-        direction="thumbnail",
+        mode="scale",
         height=None,
         width=None,
         scale=None,
@@ -335,6 +342,14 @@ class DefaultImageScalingFactory:
             # as image value (the first argument).
             dummy, format_ = orig_value.contentType.split("/", 1)
             return None, format_, (orig_value._width, orig_value._height)
+        if "direction" in parameters:
+            warnings.warn(
+                "The 'direction' option is deprecated, use 'mode' instead.",
+                DeprecationWarning,
+            )
+            # We must get rid of this duplicate parameter, otherwise it ends up in
+            # hashes and it negates the next condition.
+            mode = parameters.pop("direction")
         if (
             not parameters
             and height
@@ -356,7 +371,7 @@ class DefaultImageScalingFactory:
             del parameters["modified"]
         try:
             result = self.handle_image(
-                orig_value, orig_data, direction, height, width, **parameters
+                orig_value, orig_data, mode, height, width, **parameters
             )
         finally:
             # Make sure the file is closed to avoid error:
@@ -448,9 +463,10 @@ class ImageScaling(BrowserView):
     @deprecate("use property available_sizes instead")
     def getAvailableSizes(self, fieldname=None):
         if fieldname:
-            logger.warning(
+            warnings.warn(
                 "fieldname was passed to deprecated getAvailableSizes, but "
                 "will be ignored.",
+                DeprecationWarning,
             )
         return self.available_sizes
 
@@ -521,7 +537,7 @@ class ImageScaling(BrowserView):
         scale=None,
         height=None,
         width=None,
-        direction="thumbnail",
+        mode="scale",
         pre=False,
         include_srcset=None,
         **parameters,
@@ -536,9 +552,9 @@ class ImageScaling(BrowserView):
             fieldname = primary.fieldname
         if scale is not None:
             if width is not None or height is not None:
-                logger.warn(
-                    "A scale name and width/heigth are given. Those are"
-                    "mutually exclusive: solved by ignoring width/heigth and "
+                logger.warning(
+                    "A scale name and width/height are given. Those are "
+                    "mutually exclusive: solved by ignoring width/height and "
                     "taking name",
                 )
             available = self.available_sizes
@@ -557,7 +573,7 @@ class ImageScaling(BrowserView):
             fieldname=fieldname,
             height=height,
             width=width,
-            direction=direction,
+            mode=mode,
             scale=scale,
             **parameters,
         )
@@ -576,7 +592,7 @@ class ImageScaling(BrowserView):
                     fieldname=fieldname,
                     height=height,
                     width=width,
-                    direction=direction,
+                    mode=mode,
                     scale=scale,
                     storage=storage,
                     **parameters,
@@ -592,7 +608,7 @@ class ImageScaling(BrowserView):
         scale=None,
         height=None,
         width=None,
-        direction="thumbnail",
+        mode="scale",
         storage=None,
         **parameters,
     ):
@@ -610,7 +626,7 @@ class ImageScaling(BrowserView):
                 fieldname=fieldname,
                 height=height * hdScale["scale"] if height else height,
                 width=width * hdScale["scale"] if width else width,
-                direction=direction,
+                mode=mode,
                 **parameters,
             )
             if scale_src is None:
@@ -625,10 +641,10 @@ class ImageScaling(BrowserView):
         scale=None,
         height=None,
         width=None,
-        direction="thumbnail",
+        mode="scale",
         **kwargs,
     ):
-        scale = self.scale(fieldname, scale, height, width, direction, pre=True)
+        scale = self.scale(fieldname, scale, height, width, mode, pre=True)
         return scale.tag(**kwargs) if scale else None
 
     def picture(
@@ -733,7 +749,7 @@ class NavigationRootScaling(ImageScaling):
         """Try to get a tag from the image_scales metadata.
 
         If we have any non-standard keyword arguments, we cannot use this method.
-        Especially you cannot set a direction: we must use the default "thumbnail".
+        Especially you cannot set a mode: we must use the default "scale" mode.
 
         Also, no old-style hidpi srcsets are included.  If the site has enabled this,
         we return nothing: this information is not (easily) available in the brain.

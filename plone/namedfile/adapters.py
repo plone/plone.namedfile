@@ -121,7 +121,6 @@ class ImageFieldScales:
             fieldname,
             width=width,
             height=height,
-            direction="thumbnail",
             pre=True,
             include_srcset=False,
         )
