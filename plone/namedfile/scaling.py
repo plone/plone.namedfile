@@ -342,6 +342,14 @@ class DefaultImageScalingFactory:
             # as image value (the first argument).
             dummy, format_ = orig_value.contentType.split("/", 1)
             return None, format_, (orig_value._width, orig_value._height)
+        if "direction" in parameters:
+            warnings.warn(
+                "The 'direction' option is deprecated, use 'mode' instead.",
+                DeprecationWarning,
+            )
+            # We must get rid of this duplicate parameter, otherwise it ends up in
+            # hashes and it negates the next condition.
+            mode = parameters.pop("direction")
         if (
             not parameters
             and height
