@@ -8,6 +8,23 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0b5 (2022-10-03)
+--------------------
+
+Breaking changes:
+
+
+- No longer test Plone 5.2 on 3.6 and Plone 6.0 on 3.7.
+  [maurits] (#3637)
+
+
+Bug fixes:
+
+
+- Use ``mode`` parameter instead of deprecated ``direction`` and warn user about it.
+  [petschki, maurits] (#102)
+
+
 6.0.0b4 (2022-09-07)
 --------------------
 
