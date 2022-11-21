@@ -282,13 +282,9 @@ class DefaultImageScalingFactory:
                 DeprecationWarning,
             )
             mode = parameters.pop("direction")
-        return scaleImage(
-            data, mode=mode, height=height, width=width, **parameters
-        )
+        return scaleImage(data, mode=mode, height=height, width=width, **parameters)
 
-    def handle_image(
-        self, orig_value, orig_data, mode, height, width, **parameters
-    ):
+    def handle_image(self, orig_value, orig_data, mode, height, width, **parameters):
         """Return a scaled image, its mimetype format, and width and height."""
         if getattr(orig_value, "contentType", "") == "image/svg+xml":
             # No need to scale, we can simply use the original data,
