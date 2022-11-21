@@ -318,7 +318,6 @@ class DefaultImageScalingFactory:
         height=None,
         width=None,
         scale=None,
-        want_original=None,
         **parameters,
     ):
 
@@ -333,26 +332,25 @@ class DefaultImageScalingFactory:
         orig_value = self.get_original_value()
         if orig_value is None:
             return
-        if height is None and width is None and want_original is None:
-            # We don't seem to want an image, so we return nothing
-            # as image value (the first argument).
-            dummy, format_ = orig_value.contentType.split("/", 1)
-            return None, format_, (orig_value._width, orig_value._height)
-        if "direction" in parameters:
-            warnings.warn(
-                "The 'direction' option is deprecated, use 'mode' instead.",
-                DeprecationWarning,
-            )
-            # We must get rid of this duplicate parameter, otherwise it ends up in
-            # hashes and it negates the next condition.
-            mode = parameters.pop("direction")
-        if (
-            not parameters
-            and height
-            and width
-            and height == getattr(orig_value, "_height", None)
-            and width == getattr(orig_value, "_width", None)
-        ) or want_original:
+        want_original = height is None and width is None
+        if not want_original:
+            if "direction" in parameters:
+                warnings.warn(
+                    "The 'direction' option is deprecated, use 'mode' instead.",
+                    DeprecationWarning,
+                )
+                # We must get rid of this duplicate parameter, otherwise it ends up in
+                # hashes and it negates the next condition.
+                mode = parameters.pop("direction")
+            if (
+                not parameters
+                and height
+                and width
+                and height == getattr(orig_value, "_height", None)
+                and width == getattr(orig_value, "_width", None)
+            ):
+                want_original = True
+        if want_original:
             # No special wishes, and the original image already has the
             # requested height and width.  Return the original.
             dummy, format_ = orig_value.contentType.split("/", 1)
