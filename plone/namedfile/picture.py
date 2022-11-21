@@ -63,7 +63,7 @@ class Img2PictureTag:
         soup = BeautifulSoup("", "html.parser")
         allowed_scales = get_allowed_scales()
         if uid:
-            obj = uuidToObject(uid)
+            obj = uuidToObject(uid, unrestricted=True)
         else:
             obj = self.resolve_uid_url(src)
         picture_tag = soup.new_tag("picture")
@@ -135,7 +135,7 @@ class Img2PictureTag:
         match = resolveuid_re.match(subpath)
         if match is not None:
             uid, _subpath = match.groups()
-            obj = uuidToObject(uid)
+            obj = uuidToObject(uid, unrestricted=True)
         return obj
 
     def update_src_scale(self, src, scale):
