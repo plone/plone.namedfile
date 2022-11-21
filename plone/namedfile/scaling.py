@@ -322,6 +322,7 @@ class DefaultImageScalingFactory:
         height=None,
         width=None,
         scale=None,
+        want_original=None,
         **parameters,
     ):
 
@@ -336,8 +337,7 @@ class DefaultImageScalingFactory:
         orig_value = self.get_original_value()
         if orig_value is None:
             return
-
-        if height is None and width is None:
+        if height is None and width is None and want_original is None:
             # We don't seem to want an image, so we return nothing
             # as image value (the first argument).
             dummy, format_ = orig_value.contentType.split("/", 1)
@@ -356,7 +356,7 @@ class DefaultImageScalingFactory:
             and width
             and height == getattr(orig_value, "_height", None)
             and width == getattr(orig_value, "_width", None)
-        ):
+        ) or want_original:
             # No special wishes, and the original image already has the
             # requested height and width.  Return the original.
             dummy, format_ = orig_value.contentType.split("/", 1)
