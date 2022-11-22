@@ -8,6 +8,25 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.0 (2022-11-22)
+------------------
+
+Bug fixes:
+
+
+- Log a warning when a scale for a picture variant is not found.
+  Until now this gave an exception.
+  [maurits] (#134)
+- Prevent exception when an anonymous user is the first to load a page with a private image.
+  Anonymous still gets an Unauthorized when loading the image, but that is to be expected.
+  The html at least shows normally.
+  Fixes `issue 135 <https://github.com/plone/plone.namedfile/issues/135>`_.
+  [maurits] (#135)
+- Fixed writing to the database each time an original is requested.
+  This happens when requesting the original under a unique id.
+  [maurits] (#3678)
+
+
 6.0.0b5 (2022-10-03)
 --------------------
 

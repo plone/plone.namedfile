@@ -1,3 +1,0 @@
-Log a warning when a scale for a picture variant is not found.
-Until now this gave an exception.
-[maurits]

@@ -1,3 +1,0 @@
-Fixed writing to the database each time an original is requested.
-This happens when requesting the original under a unique id.
-[maurits]
