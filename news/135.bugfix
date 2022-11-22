@@ -1,0 +1,5 @@
+Prevent exception when an anonymous user is the first to load a page with a private image.
+Anonymous still gets an Unauthorized when loading the image, but that is to be expected.
+The html at least shows normally.
+Fixes `issue 135 <https://github.com/plone/plone.namedfile/issues/135>`_.
+[maurits]

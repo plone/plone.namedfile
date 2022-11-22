@@ -48,7 +48,7 @@ setup(
     install_requires=[
         "persistent",
         "piexif",
-        "plone.app.uuid",
+        "plone.app.uuid>=2.2.0",
         "plone.rfc822>=2.0.0",
         "plone.scale[storage] >=3.0",
         "plone.schemaeditor",
