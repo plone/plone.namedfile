@@ -4,7 +4,7 @@ from setuptools import setup
 import os
 
 
-version = "6.0.0"
+version = "6.0.1.dev0"
 
 description = "File types and fields for images, files and blob files with " "filenames"
 long_description = "\n\n".join(
