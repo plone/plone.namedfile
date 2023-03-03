@@ -1,0 +1,1 @@
+Tox: explicitly test only the ``plone.namedfile`` package.  [maurits]
