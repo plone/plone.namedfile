@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.1 (2023-03-14)
+------------------
+
+Tests
+
+
+- Tox: explicitly test only the ``plone.namedfile`` package.  [maurits] (#50)
+
+
 6.0.0 (2022-11-22)
 ------------------
 
