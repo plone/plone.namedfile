@@ -145,5 +145,15 @@ class Img2PictureTag:
             src_scale = "/".join(parts[:-1]) + f"/{field_name}/{scale}"
             src_scale
         else:
-            src_scale = "/".join(parts[:-1]) + f"/{scale}"
+            # Usually the url has '@@images/fieldname/other_scale',
+            # and then we replace the other scale.
+            # But the url may use the original image, e.g. @@images/image.
+            # Then we want to keep the fieldname and return '.../image/scale'.
+            try:
+                full = len(parts) - parts.index("@@images") == 2
+            except ValueError:
+                full = False
+            if not full:
+                parts = parts[:-1]
+            src_scale = "/".join(parts) + f"/{scale}"
         return src_scale
