@@ -980,6 +980,34 @@ class StorageTests(unittest.TestCase):
         )
 
 
+class Img2PictureTagTests(unittest.TestCase):
+    """Low level tests for Img2PictureTag."""
+
+    def _makeOne(self):
+        return plone.namedfile.picture.Img2PictureTag()
+
+    def test_update_src_scale(self):
+        update_src_scale = self._makeOne().update_src_scale
+        self.assertEqual(
+            update_src_scale("foo/fieldname/old", "new"),
+            "foo/fieldname/new"
+        )
+        self.assertEqual(
+            update_src_scale("@@images/fieldname/old", "mini"),
+            "@@images/fieldname/mini"
+        )
+        self.assertEqual(
+            update_src_scale("@@images/fieldname", "preview"),
+            "@@images/fieldname/preview"
+        )
+        self.assertEqual(
+            update_src_scale(
+                "photo.jpg/@@images/image-1200-4a03b0a8227d28737f5d9e3e481bdbd6.jpeg",
+                "teaser"),
+            "photo.jpg/@@images/image/teaser",
+        )
+
+
 def test_suite():
     from unittest import defaultTestLoader
 
