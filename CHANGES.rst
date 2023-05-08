@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+6.0.2 (2023-05-08)
+------------------
+
+Bug fixes:
+
+
+- Fix picture tag when original image is used instead of a scale.
+  [maurits] (#142)
+
+
 6.0.1 (2023-03-14)
 ------------------
 
