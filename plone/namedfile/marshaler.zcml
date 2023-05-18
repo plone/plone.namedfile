@@ -4,5 +4,7 @@
   <adapter factory=".marshaler.NamedImageFieldMarshaler" />
   <adapter factory=".marshaler.NamedBlobFileFieldMarshaler" />
   <adapter factory=".marshaler.NamedBlobImageFieldMarshaler" />
+  <adapter factory=".marshaler.NamedS3FileFieldMarshaler" />
+  <adapter factory=".marshaler.NamedS3ImageFieldMarshaler" />
 
 </configure>

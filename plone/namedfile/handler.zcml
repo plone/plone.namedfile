@@ -22,4 +22,13 @@
       name="plone.namedfile.field.NamedBlobImage"
       />
 
+  <utility
+      component=".handler.NamedS3FileHandler"
+      name="plone.namedfile.field.NamedS3File"
+      />
+  <utility
+      component=".handler.NamedS3ImageHandler"
+      name="plone.namedfile.field.NamedS3Image"
+      />
+
 </configure>

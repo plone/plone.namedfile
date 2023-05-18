@@ -12,3 +12,6 @@ NamedImageHandler = FileFieldHandler(field.NamedImage)
 
 NamedBlobFileHandler = FileFieldHandler(field.NamedBlobFile)
 NamedBlobImageHandler = FileFieldHandler(field.NamedBlobImage)
+
+NamedS3FileHandler = FileFieldHandler(field.NamedS3File)
+NamedS3ImageHandler = FileFieldHandler(field.NamedS3Image)

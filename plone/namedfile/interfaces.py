@@ -130,6 +130,19 @@ class INamedBlobImage(INamedImage, IBlobby):
     """A BLOB image with a filename"""
 
 
+class IS3y(Interface):
+    """Marker interface for objects that support S3."""
+
+
+class INamedS3File(INamedFile, IS3y):
+    """A S3 file with a filename"""
+    s3id = schema.TextLine(title="S3 ID", required=False, default=None)
+
+
+class INamedS3Image(INamedImage, IS3y):
+    """A S3 image with a filename"""
+
+
 # Fields
 
 
@@ -139,3 +152,12 @@ class INamedBlobFileField(INamedFileField):
 
 class INamedBlobImageField(INamedImageField):
     """Field for storing INamedBlobImage objects."""
+
+
+class INamedS3FileField(INamedFileField):
+    """Field for storing INamedS3File objects."""
+
+
+class INamedS3ImageField(INamedImageField):
+    """Field for storing INamedS3Image objects."""
+

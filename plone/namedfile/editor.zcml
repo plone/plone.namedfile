@@ -16,4 +16,20 @@
       component=".editor.NamedBlobImageFactory"
       />
 
+  <class class=".field.NamedS3File">
+    <implements interface=".editor.INamedS3FileField" />
+  </class>
+  <utility
+      name="plone.namedfile.field.NamedS3File"
+      component=".editor.NamedS3FileFactory"
+      />
+
+  <class class=".field.NamedS3Image">
+    <implements interface=".editor.INamedS3ImageField" />
+  </class>
+  <utility
+      name="plone.namedfile.field.NamedS3Image"
+      component=".editor.NamedS3ImageFactory"
+      />
+
 </configure>

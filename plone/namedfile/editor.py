@@ -73,3 +73,36 @@ class INamedBlobImageField(interfaces.INamedBlobImageField):
 
 NamedBlobFileFactory = FieldFactory(field.NamedBlobFile, _("File Upload"))
 NamedBlobImageFactory = FieldFactory(field.NamedBlobImage, _("Image"))
+
+class INamedS3FileField(interfaces.INamedS3FileField):
+
+    default = field.NamedS3File(
+        title=interfaces.INamedS3FileField["default"].title,
+        description=interfaces.INamedS3FileField["default"].description,
+        required=False,
+    )
+
+    missing_value = field.NamedS3File(
+        title=interfaces.INamedS3FileField["missing_value"].title,
+        description=interfaces.INamedS3FileField["missing_value"].description,
+        required=False,
+    )
+
+
+class INamedS3ImageField(interfaces.INamedS3ImageField):
+
+    default = field.NamedS3Image(
+        title=interfaces.INamedS3ImageField["default"].title,
+        description=interfaces.INamedS3ImageField["default"].description,
+        required=False,
+    )
+
+    missing_value = field.NamedS3Image(
+        title=interfaces.INamedS3ImageField["missing_value"].title,
+        description=interfaces.INamedS3ImageField["missing_value"].description,
+        required=False,
+    )
+
+
+NamedS3FileFactory = FieldFactory(field.NamedS3File, _("File Upload"))
+NamedS3ImageFactory = FieldFactory(field.NamedS3Image, _("Image"))

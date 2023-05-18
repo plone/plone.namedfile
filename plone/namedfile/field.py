@@ -2,10 +2,16 @@ from plone.namedfile.file import NamedBlobFile as BlobFileValueType
 from plone.namedfile.file import NamedBlobImage as BlobImageValueType
 from plone.namedfile.file import NamedFile as FileValueType
 from plone.namedfile.file import NamedImage as ImageValueType
+from plone.namedfile.file import NamedS3File as S3FileValueType
+from plone.namedfile.file import NamedS3Image as S3ImageValueType
 from plone.namedfile.interfaces import INamedBlobFile
 from plone.namedfile.interfaces import INamedBlobFileField
 from plone.namedfile.interfaces import INamedBlobImage
 from plone.namedfile.interfaces import INamedBlobImageField
+from plone.namedfile.interfaces import INamedS3File
+from plone.namedfile.interfaces import INamedS3FileField
+from plone.namedfile.interfaces import INamedS3Image
+from plone.namedfile.interfaces import INamedS3ImageField
 from plone.namedfile.interfaces import INamedFile
 from plone.namedfile.interfaces import INamedFileField
 from plone.namedfile.interfaces import INamedImage
@@ -33,6 +39,7 @@ class ImageContenttypeValidator:
         self.value = value
 
     def __call__(self):
+        breakpoint()
         if self.value is None:
             return
         mimetype = get_contenttype(self.value)
@@ -116,6 +123,41 @@ class NamedBlobImage(Object):
 
     _type = BlobImageValueType
     schema = INamedBlobImage
+
+    def __init__(self, **kw):
+        if "schema" in kw:
+            self.schema = kw.pop("schema")
+        super().__init__(schema=self.schema, **kw)
+
+    def _validate(self, value):
+        super()._validate(value)
+        validate_image_field(self, value)
+
+# experimental code
+
+@implementer(INamedS3FileField)
+class NamedS3File(Object):
+    """A NamedS3File field"""
+
+    _type = S3FileValueType
+    schema = INamedS3File
+
+    def __init__(self, **kw):
+        if "schema" in kw:
+            self.schema = kw.pop("schema")
+        super().__init__(schema=self.schema, **kw)
+
+    def _validate(self, value):
+        super()._validate(value)
+        validate_file_field(self, value)
+
+
+@implementer(INamedS3ImageField)
+class NamedS3Image(Object):
+    """A NamedS3Image field"""
+
+    _type = S3ImageValueType
+    schema = INamedS3Image
 
     def __init__(self, **kw):
         if "schema" in kw:

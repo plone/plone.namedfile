@@ -5,6 +5,8 @@ from logging import getLogger
 from persistent import Persistent
 from plone.namedfile.interfaces import INamedBlobFile
 from plone.namedfile.interfaces import INamedBlobImage
+from plone.namedfile.interfaces import INamedS3File
+from plone.namedfile.interfaces import INamedS3Image
 from plone.namedfile.interfaces import INamedFile
 from plone.namedfile.interfaces import INamedImage
 from plone.namedfile.interfaces import IStorage
@@ -416,6 +418,140 @@ class NamedBlobImage(NamedBlobFile):
             self.contentType = contentType
 
     data = property(NamedBlobFile._getData, _setData)
+
+    def getFirstBytes(self, start=0, length=IMAGE_INFO_BYTES):
+        """Returns the first bytes of the file.
+
+        Returns an amount which is sufficient to determine the image type.
+        """
+        with self.open("r") as fp:
+            fp.seek(start)
+            firstbytes = fp.read(length)
+        return firstbytes
+
+    def getImageSize(self):
+        """See interface `IImage`"""
+        if (self._width, self._height) != (-1, -1):
+            return (self._width, self._height)
+
+        contentType, self._width, self._height = getImageInfo(self.data)
+        return (self._width, self._height)
+
+@implementer(INamedS3File, HTTPRangeSupport.HTTPRangeInterface)
+class NamedS3File(NamedFile):
+    """A file stored in a S3, with a filename"""
+
+    filename = FieldProperty(INamedFile["filename"])
+    s3id = FieldProperty(INamedS3File["s3id"])
+
+    def __init__(self, data=b"", contentType="", filename=None):
+        breakpoint()
+        if filename is not None and contentType in ("", "application/octet-stream"):
+            contentType = get_contenttype(filename=filename)
+        self.contentType = contentType
+        self.filename = filename
+        self.data = data
+
+    def open(self, mode="r"):
+        if mode != "r" and "size" in self.__dict__:
+            del self.__dict__["size"]
+        return open(f"blob-{self.s3id}-{self.filename}", "rb")
+
+    def openDetached(self):
+        return open(f"blob-{self.s3id}-{self.filename}", "rb")
+
+    @property
+    def data(self):
+        # actually get the data from S3 and return as bytes
+        # return data
+        ...
+        breakpoint()
+        with open(f"blob-{self.s3id}-{self.filename}", "rb") as fh:
+            data = fh.read()
+        return data
+
+    @data.setter
+    def data(self, data):
+        # TODO: Actually store the data in S3
+        ...
+        import uuid
+        self.s3id = str(uuid.uuid4())
+        breakpoint()
+        with open(f"blob-{self.s3id}-{self.filename}", "wb") as fh:
+            fh.write(data)
+        self._after_set_data(data)
+
+    def _after_set_data(self, data):
+        """Called after data is set"""
+        if "size" in self.__dict__:
+            del self.__dict__["size"]
+
+    @property
+    def size(self):
+        if "size" in self.__dict__:
+            return self.__dict__["size"]
+        # TODO: somehwo get the size of the file from S3
+        size = 1234
+        self.__dict__["size"] = size
+        return size
+
+    def getSize(self):
+        return self.size
+
+
+@implementer(INamedS3Image)
+class NamedS3Image(NamedS3File):
+    """An image stored in a ZODB BLOB with a filename"""
+
+    def __init__(self, data=b"", contentType="", filename=None):
+        super().__init__(data, contentType=contentType, filename=filename)
+        breakpoint()
+        # TODO: DRY this up
+
+        # Allow override of the image sniffer
+        if contentType:
+            self.contentType = contentType
+        exif_data = get_exif(self.data)
+        if exif_data is not None:
+            log.debug(
+                "Image contains Exif Informations. "
+                "Test for Image Orientation and Rotate if necessary."
+                "Exif Data: %s",
+                exif_data,
+            )
+            orientation = exif_data["0th"].get(piexif.ImageIFD.Orientation, 1)
+            if 1 < orientation <= 8:
+                try:
+                    self.data, self._width, self._height, self.exif = rotate_image(
+                        self.data
+                    )
+                except KeyboardInterrupt:
+                    raise
+                except Exception:
+                    log.warning(
+                        "Error rotating image %s based on exif data.",
+                        filename,
+                        exc_info=1,
+                    )
+            else:
+                self.exif = exif_data
+
+    def _after_set_data(self, data):
+        super()._after_set_data(data)
+        # TODO: DRY this up
+        firstbytes = self.getFirstBytes()
+        res = getImageInfo(firstbytes)
+        if res == ("image/jpeg", -1, -1) or res == ("image/tiff", -1, -1):
+            # header was longer than firstbytes
+            start = len(firstbytes)
+            length = max(0, MAX_INFO_BYTES - start)
+            firstbytes += self.getFirstBytes(start, length)
+            res = getImageInfo(firstbytes)
+        contentType, self._width, self._height = res
+        if contentType:
+            self.contentType = contentType
+
+# DRY up below here
 
     def getFirstBytes(self, start=0, length=IMAGE_INFO_BYTES):
         """Returns the first bytes of the file.

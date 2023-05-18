@@ -1,9 +1,13 @@
 from plone.namedfile import NamedBlobFile
 from plone.namedfile import NamedBlobImage
+from plone.namedfile.field import NamedS3File
+from plone.namedfile.field import NamedS3Image
 from plone.namedfile import NamedFile
 from plone.namedfile import NamedImage
 from plone.namedfile.interfaces import INamedBlobFileField
 from plone.namedfile.interfaces import INamedBlobImageField
+from plone.namedfile.interfaces import INamedS3FileField
+from plone.namedfile.interfaces import INamedS3ImageField
 from plone.namedfile.interfaces import INamedFileField
 from plone.namedfile.interfaces import INamedImageField
 from plone.rfc822.defaultfields import BaseFieldMarshaler
@@ -92,3 +96,17 @@ class NamedBlobImageFieldMarshaler(BaseNamedFileFieldMarshaler):
     """Marshaler for an INamedBlobImage field"""
 
     factory = NamedBlobImage
+
+
+@adapter(Interface, INamedS3FileField)
+class NamedS3FileFieldMarshaler(BaseNamedFileFieldMarshaler):
+    """Marshaler for an INamedS3File field"""
+
+    factory = NamedS3File
+
+
+@adapter(Interface, INamedS3ImageField)
+class NamedS3ImageFieldMarshaler(BaseNamedFileFieldMarshaler):
+    """Marshaler for an INamedS3Image field"""
+
+    factory = NamedS3Image
