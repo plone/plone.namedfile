@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+6.1.0 (2023-05-22)
+------------------
+
+New features:
+
+
+- Move ``Zope2FileUploadStorable`` code from plone.app.z3cform to here to break a cyclic dependency.
+  [gforcada] (#3764)
+
+
 6.0.2 (2023-05-08)
 ------------------
 
