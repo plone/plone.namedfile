@@ -21,6 +21,7 @@ from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.utils import safe_encode
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
+from zExceptions import BadRequest
 from zExceptions import Unauthorized
 from ZODB.blob import BlobFile
 from ZODB.POSException import ConflictError
@@ -451,6 +452,10 @@ class ImageScaling(BrowserView):
         if image is not None:
             return image.tag()
         raise TraversalError(self, name)
+
+    def __call__(self):
+        # There's nothing in the path after /@@images
+        raise BadRequest("Missing image scale path")
 
     _sizes = None
 
