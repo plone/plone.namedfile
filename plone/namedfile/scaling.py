@@ -31,7 +31,7 @@ from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import alsoProvides
 from zope.interface import implementer
-from zope.publisher.interfaces import IPublishTraverse
+from zope.publisher.interfaces.browser import IBrowserPublisher
 from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import ITraversable
 from zope.traversing.interfaces import TraversalError
@@ -391,7 +391,7 @@ class DefaultImageScalingFactory:
         return value, format_, dimensions
 
 
-@implementer(ITraversable, IPublishTraverse)
+@implementer(ITraversable, IBrowserPublisher)
 class ImageScaling(BrowserView):
     """view used for generating (and storing) image scales"""
 
@@ -435,6 +435,10 @@ class ImageScaling(BrowserView):
             return scale_view
         raise NotFound(self, name, self.request)
 
+    def browserDefault(self, request):
+        # There's nothing in the path after /@@images
+        raise BadRequest("Missing image scale path")
+
     def traverse(self, name, furtherPath):
         """used for path traversal, i.e. in zope page templates"""
         # validate access
@@ -452,10 +456,6 @@ class ImageScaling(BrowserView):
         if image is not None:
             return image.tag()
         raise TraversalError(self, name)
-
-    def __call__(self):
-        # There's nothing in the path after /@@images
-        raise BadRequest("Missing image scale path")
 
     _sizes = None
 
