@@ -1,0 +1,2 @@
+Fix tests to work with various ``beautifulsoup4`` versions.
+[maurits]
