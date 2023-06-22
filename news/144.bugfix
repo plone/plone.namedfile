@@ -1,1 +1,0 @@
-Return a 400 Bad Request response if the `@@images` view is published without a subpath. @davisagli

@@ -8,6 +8,22 @@ Changelog
 
 .. towncrier release notes start
 
+6.1.1 (2023-06-22)
+------------------
+
+Bug fixes:
+
+
+- Return a 400 Bad Request response if the `@@images` view is published without a subpath. @davisagli (#144)
+
+
+Tests
+
+
+- Fix tests to work with various ``beautifulsoup4`` versions.
+  [maurits] (#867)
+
+
 6.1.0 (2023-05-22)
 ------------------
 
