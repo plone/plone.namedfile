@@ -27,6 +27,7 @@ from plone.namedfile.tests.test_image import zptlogo
 from zope.component import provideUtility
 from zope.interface.verify import verifyClass
 
+import os
 import struct
 import transaction
 import unittest
@@ -79,7 +80,7 @@ class TestImage(unittest.TestCase):
         self.assertTrue(INamedBlobImage.implementedBy(NamedBlobImage))
         self.assertTrue(verifyClass(INamedBlobFile, NamedBlobImage))
 
-    def testDataMutatorWithLargeHeader(self):
+    def testDataMutatorWithLargeJPGHeader(self):
         from plone.namedfile.file import IMAGE_INFO_BYTES
 
         bogus_header_length = struct.pack(">H", IMAGE_INFO_BYTES * 2)
@@ -92,6 +93,23 @@ class TestImage(unittest.TestCase):
         image = self._makeImage()
         image._setData(data)
         self.assertEqual(image.getImageSize(), (1024, 680))
+
+    def testDataMutatorWithLargeSVGHeader(self):
+        from plone.namedfile.file import IMAGE_INFO_BYTES
+
+        to_big_header_data = b'd' * (IMAGE_INFO_BYTES * 2)
+
+        data = (
+            b'<svg xmlns="http://www.w3.org/2000/svg" '
+            b'width="1024px" '
+            b'height="680px" '
+            b'foobar="' + to_big_header_data + b'">'
+            b'</svg>"'
+        )
+        image = self._makeImage()
+        image._setData(data)
+        self.assertEqual(image.getImageSize(), (1024, 680))
+        self.assertGreater(len(to_big_header_data), IMAGE_INFO_BYTES)
 
 
 class TestImageFunctional(unittest.TestCase):
