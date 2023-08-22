@@ -547,9 +547,17 @@ http://nohost/item/@@images/image-400-....png 400w,
 http://nohost/item/@@images/image-800-....png 800w,
 http://nohost/item/@@images/image-1000-....png 1000w,
 http://nohost/item/@@images/image-1200-....png 1200w"/>
- <img height="200" loading="lazy" src="http://nohost/item/@@images/image-600-....png" title="foo" width="200"/>
+ <img...src="http://nohost/item/@@images/image-600-....png".../>
 </picture>"""
-        self.assertTrue(_ellipsis_match(expected, tag))
+        self.assertTrue(_ellipsis_match(expected, tag.strip()))
+
+        # The exact placement of the img tag attributes can differ, especially
+        # with different beautifulsoup versions.
+        # So check here that all attributes are present.
+        self.assertIn('height="200"', tag)
+        self.assertIn('loading="lazy"', tag)
+        self.assertIn('title="foo"', tag)
+        self.assertIn('width="200"', tag)
 
     @patch.object(
         plone.namedfile.scaling,
@@ -580,9 +588,18 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 {base}/@@images/image-800-....png 800w,
 {base}/@@images/image-1000-....png 1000w,
 {base}/@@images/image-1200-....png 1200w"/>
- <img alt="Alternative text" height="200" loading="lazy" src="{base}/@@images/image-600-....png" title="Custom title" width="200"/>
+ <img...src="{base}/@@images/image-600-....png".../>
 </picture>"""
-        self.assertTrue(_ellipsis_match(expected, tag))
+        self.assertTrue(_ellipsis_match(expected, tag.strip()))
+
+        # The exact placement of the img tag attributes can differ, especially
+        # with different beautifulsoup versions.
+        # So check here that all attributes are present.
+        self.assertIn('alt="Alternative text"', tag)
+        self.assertIn('height="200"', tag)
+        self.assertIn('loading="lazy"', tag)
+        self.assertIn('title="Custom title"', tag)
+        self.assertIn('width="200"', tag)
 
     @patch.object(
         plone.namedfile.scaling,
@@ -601,8 +618,15 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
         tag = self.scaling.picture("image", picture_variant="medium")
-        expected = """<img src="http://nohost/item/@@images/image-0-....png" title="foo" height="200" width="200" />"""
-        self.assertTrue(_ellipsis_match(expected, tag))
+        expected = """<img...src="http://nohost/item/@@images/image-0-....png".../>"""
+        self.assertTrue(_ellipsis_match(expected, tag.strip()))
+
+        # The exact placement of the img tag attributes can differ, especially
+        # with different beautifulsoup versions.
+        # So check here that all attributes are present.
+        self.assertIn('height="200"', tag)
+        self.assertIn('title="foo"', tag)
+        self.assertIn('width="200"', tag)
 
     def testGetUnknownScale(self):
         foo = self.scaling.scale("image", scale="foo?")
@@ -977,6 +1001,34 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(
             scaling.tag("image", alt="own alt", title="own title"),
             '<img src="http://fake.image/@@images/image.jpeg" alt="own alt" title="own title" height="4" width="6" />'
+        )
+
+
+class Img2PictureTagTests(unittest.TestCase):
+    """Low level tests for Img2PictureTag."""
+
+    def _makeOne(self):
+        return plone.namedfile.picture.Img2PictureTag()
+
+    def test_update_src_scale(self):
+        update_src_scale = self._makeOne().update_src_scale
+        self.assertEqual(
+            update_src_scale("foo/fieldname/old", "new"),
+            "foo/fieldname/new"
+        )
+        self.assertEqual(
+            update_src_scale("@@images/fieldname/old", "mini"),
+            "@@images/fieldname/mini"
+        )
+        self.assertEqual(
+            update_src_scale("@@images/fieldname", "preview"),
+            "@@images/fieldname/preview"
+        )
+        self.assertEqual(
+            update_src_scale(
+                "photo.jpg/@@images/image-1200-4a03b0a8227d28737f5d9e3e481bdbd6.jpeg",
+                "teaser"),
+            "photo.jpg/@@images/image/teaser",
         )
 
 
