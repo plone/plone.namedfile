@@ -1,0 +1,6 @@
+Fixed the issue where SVG images containing extensive metadata were not being displayed
+correctly (resulting in a width/height of 1px). This problem could occur when the
+<svg> tag exceeded the MAX_INFO_BYTES limit.
+
+Fixes `issue 147 <https://github.com/plone/plone.namedfile/issues/147>`_.
+[mliebischer]
