@@ -1,10 +1,10 @@
+import unittest
+
 from plone.namedfile.file import NamedImage
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import get_contenttype
 from plone.namedfile.utils.svg_utils import dimension_int
 from plone.namedfile.utils.svg_utils import process_svg
-
-import unittest
 
 
 class TestSvg(unittest.TestCase):
@@ -22,6 +22,25 @@ class TestSvg(unittest.TestCase):
         self.assertEqual(content_type, "image/svg+xml")
         self.assertEqual(width, 158)
         self.assertEqual(height, 40)
+
+    def test_process_svg__indicate_header_truncation(self):
+        """ Check that we can detect SVG files where the file header was
+         larger than the requested first bytes. process_svg() should
+         return -1 as dimensions to indicate the truncation."""
+
+        truncated_data = getFile("image_large_header.svg", length=1024)
+        content_type, width, height = process_svg(truncated_data)
+        self.assertEqual(content_type, "image/svg+xml")
+        self.assertEqual(width, -1)
+        self.assertEqual(height, -1)
+
+    def test_process_svg__can_handle_large_header(self):
+
+        data = getFile("image_large_header.svg")
+        content_type, width, height = process_svg(data)
+        self.assertEqual(content_type, "image/svg+xml")
+        self.assertEqual(width, 1041)
+        self.assertEqual(height, 751)
 
     def test_dimension_int(self):
 
