@@ -4,6 +4,9 @@ from DateTime import DateTime
 from io import BytesIO
 from plone.memoize import ram
 from plone.namedfile.file import FILECHUNK_CLASSES
+from plone.namedfile.browser import ALLOWED_INLINE_MIMETYPES
+from plone.namedfile.browser import DISALLOWED_INLINE_MIMETYPES
+from plone.namedfile.browser import USE_DENYLIST
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.picture import get_picture_variants
@@ -74,6 +77,14 @@ class ImageScale(BrowserView):
     __roles__ = ("Anonymous",)
     __allow_access_to_unprotected_subobjects__ = 1
     data = None
+
+    # You can control which mimetypes may be shown inline
+    # and which must always be downloaded, for security reasons.
+    # Make the configuration available on the class.
+    # Then subclasses can override this.
+    allowed_inline_mimetypes = ALLOWED_INLINE_MIMETYPES
+    disallowed_inline_mimetypes = DISALLOWED_INLINE_MIMETYPES
+    use_denylist = USE_DENYLIST
 
     def __init__(self, context, request, **info):
         self.context = context
@@ -167,10 +178,37 @@ class ImageScale(BrowserView):
         fieldname = getattr(self.data, "fieldname", getattr(self, "fieldname", None))
         guarded_getattr(self.context, fieldname)
 
+    def _should_force_download(self):
+        # If this returns True, the caller should call set_headers with a filename.
+        if not hasattr(self.data, "contentType"):
+            return
+        mimetype = self.data.contentType
+        if self.use_denylist:
+            # We explicitly deny a few mimetypes, and allow the rest.
+            return mimetype in self.disallowed_inline_mimetypes
+        # Use the allowlist.
+        # We only explicitly allow a few mimetypes, and deny the rest.
+        return mimetype not in self.allowed_inline_mimetypes
+
+    def set_headers(self, response=None):
+        # set headers for the image
+        image = self.data
+        if response is None:
+            response = self.request.response
+        filename = None
+        if self._should_force_download():
+            # We MUST pass a filename, even a dummy one if needed.
+            filename = getattr(image, "filename", getattr(self, "filename", None))
+            if filename is None:
+                filename = getattr(image, "fieldname", getattr(self, "fieldname", None))
+                if filename is None:
+                    filename = "image.ext"
+        set_headers(image, response, filename=filename)
+
     def index_html(self):
         """download the image"""
         self.validate_access()
-        set_headers(self.data, self.request.response)
+        self.set_headers()
         return stream_data(self.data)
 
     def manage_DAVget(self):
@@ -190,7 +228,7 @@ class ImageScale(BrowserView):
         without transfer of the image itself
         """
         self.validate_access()
-        set_headers(self.data, REQUEST.response)
+        self.set_headers(response=REQUEST.response)
         return ""
 
     HEAD.__roles__ = ("Anonymous",)
