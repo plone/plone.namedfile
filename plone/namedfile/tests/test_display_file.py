@@ -4,12 +4,15 @@ from plone.app.testing import SITE_OWNER_NAME
 from plone.app.testing import SITE_OWNER_PASSWORD
 from plone.namedfile import field
 from plone.namedfile import file
+from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
 from plone.testing.zope import Browser
 from Products.CMFPlone.utils import safe_unicode
+from zope.annotation import IAnnotations
 from zope.annotation import IAttributeAnnotatable
+from zope.component import getSiteManager
 from zope.interface import implementer
 
 import os
@@ -48,6 +51,11 @@ def get_disposition_header(browser):
     return browser.headers.get(name, None)
 
 
+def custom_available_sizes():
+    # Define available image scales.
+    return {"custom": (10, 10)}
+
+
 class TestAttackVectorNamedImage(unittest.TestCase):
     layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
     field_class = file.NamedImage
@@ -58,6 +66,12 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         item = DummyContent()
         self.layer["app"]._setOb("item", item)
         self.item = self.layer["app"].item
+        sm = getSiteManager()
+        sm.registerUtility(component=custom_available_sizes, provided=IAvailableSizes)
+
+    def tearDown(self):
+        sm = getSiteManager()
+        sm.unregisterUtility(provided=IAvailableSizes)
 
     def get_admin_browser(self):
         browser = Browser(self.layer["app"])
@@ -100,12 +114,50 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         self.assertIn("attachment", header)
         self.assertIn("filename", header)
 
+    def assert_scale_view_works(self, base_url):
+        # Test that accessing a scale view shows the image inline.
+        browser = self.get_anon_browser()
+        browser.open(base_url + "/@@images/{}".format(self.field_name))
+        self.assertIsNone(get_disposition_header(browser))
+
+        # Note: the 'custom' scale is defined in an adapter above.
+        browser.open(base_url + "/@@images/{}/custom".format(self.field_name))
+        self.assertIsNone(get_disposition_header(browser))
+
+        unique_scale_id = list(IAnnotations(self.item)["plone.scale"].keys())[0]
+        browser.open(base_url + "/@@images/{}".format(unique_scale_id))
+        self.assertIsNone(get_disposition_header(browser))
+
+    def assert_scale_view_is_download(self, base_url):
+        # Test that accessing a scale view turns into a download.
+        browser = self.get_anon_browser()
+        browser.open(base_url + "/@@images/{}".format(self.field_name))
+        header = get_disposition_header(browser)
+        self.assertIsNotNone(header)
+        self.assertIn("attachment", header)
+        self.assertIn("filename", header)
+
+        browser.open(base_url + "/@@images/{}/custom".format(self.field_name))
+        header = get_disposition_header(browser)
+        self.assertIsNotNone(header)
+        self.assertIn("attachment", header)
+        self.assertIn("filename", header)
+
+        unique_scale_id = list(IAnnotations(self.item)["plone.scale"].keys())[0]
+        browser.open(base_url + "/@@images/{}".format(unique_scale_id))
+        header = get_disposition_header(browser)
+        self.assertIsNotNone(header)
+        self.assertIn("attachment", header)
+        self.assertIn("filename", header)
+
     def test_png_image(self):
         setattr(self.item, self.field_name, self._named_file("image.png"))
         transaction.commit()
         base_url = self.item.absolute_url()
         self.assert_download_works(base_url)
         self.assert_display_inline_works(base_url)
+        if self.field_name == "image":
+            self.assert_scale_view_works(base_url)
 
     def test_svg_image(self):
         setattr(self.item, self.field_name, self._named_file("image.svg"))
@@ -113,10 +165,13 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         base_url = self.item.absolute_url()
         self.assert_download_works(base_url)
         self.assert_display_inline_is_download(base_url)
+        if self.field_name == "image":
+            self.assert_scale_view_is_download(base_url)
 
     def test_filename_none(self):
-        # A 'None' filename None probably does not happen during normal upload,
-        # but if an attacker manages this, even @@download will show inline.
+        # A 'None' filename probably does not happen during normal upload,
+        # but if an attacker manages this, even @@download would show inline.
+        # We prevent this.
         data = self._named_file("image.svg")
         data.filename = None
         setattr(self.item, self.field_name, data)
@@ -124,6 +179,8 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         base_url = self.item.absolute_url()
         self.assert_download_works(base_url)
         self.assert_display_inline_is_download(base_url)
+        if self.field_name == "image":
+            self.assert_scale_view_is_download(base_url)
 
     def test_filename_empty(self):
         # An empty filename is probably no problem, but let's check.
@@ -134,6 +191,8 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         base_url = self.item.absolute_url()
         self.assert_download_works(base_url)
         self.assert_display_inline_is_download(base_url)
+        if self.field_name == "image":
+            self.assert_scale_view_is_download(base_url)
 
 
 class TestAttackVectorNamedBlobImage(TestAttackVectorNamedImage):
