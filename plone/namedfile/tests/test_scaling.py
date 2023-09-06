@@ -11,6 +11,7 @@ from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
+from plone.namedfile.tests import MockNamedImage
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.storage import IImageScaleStorage
@@ -141,10 +142,6 @@ class PrimaryFieldInfo:
     @property
     def value(self):
         return self.field
-
-
-class MockNamedImage(NamedImage):
-    _p_mtime = DateTime().millis()
 
 
 @implementer(IScaledImageQuality)
