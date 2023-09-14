@@ -8,6 +8,18 @@ Changelog
 
 .. towncrier release notes start
 
+6.2.0 (2023-09-14)
+------------------
+
+New features:
+
+
+- Add internal modification timestamp with fallback to _p_mtime.
+  [mathias.leimgruber] (#149)
+- Use new internal modification timestamp as part of the hash key for scales.
+  [mathias.leimgruber] (#150)
+
+
 6.1.2 (2023-08-31)
 ------------------
 
