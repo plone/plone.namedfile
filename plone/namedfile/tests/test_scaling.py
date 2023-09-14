@@ -634,7 +634,6 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 
         # Test that different parameters give different scale
         self.item.modified = lambda: dt
-        self.item.image._p_mtime = dt.millis()
         scale1a = self.scaling.scale("image", width=100, height=80)
         scale2a = self.scaling.scale("image", width=80, height=60)
         self.assertNotEqual(scale1a.data, scale2a.data)
@@ -647,13 +646,32 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         self.assertEqual(scale1a.data, scale1b.data)
         self.assertEqual(scale2a.data, scale2b.data)
 
-        # Test that field modification invalidates scales
+        # Test changing _p_mtime on the field no longer invalidates a scale
         self.item.image._p_mtime = (dt + 1).millis()
         scale1b = self.scaling.scale("image", width=100, height=80)
         scale2b = self.scaling.scale("image", width=80, height=60)
         self.assertNotEqual(scale1b.data, scale2b.data)
-        self.assertNotEqual(scale1a.data, scale1b.data, "scale not updated?")
-        self.assertNotEqual(scale2a.data, scale2b.data, "scale not updated?")
+        self.assertEqual(scale1a.data, scale1b.data)
+        self.assertEqual(scale2a.data, scale2b.data)
+
+        # Test changing the fields modified timestamp invalidates scales
+        self.item.image._modified = (dt + 1).millis()
+        scale1c = self.scaling.scale("image", width=100, height=80)
+        scale2c = self.scaling.scale("image", width=80, height=60)
+        self.assertNotEqual(scale1c.data, scale2c.data)
+        self.assertNotEqual(scale1a.data, scale1c.data, "scale not updated?")
+        self.assertNotEqual(scale2a.data, scale2c.data, "scale not updated?")
+
+    def testFallBackToDatabaseModifiedTimeStamp(self):
+        dt = self.item.modified()
+        scale_a = self.scaling.scale("image", width=100, height=80)
+
+        delattr(self.item.image, "_modified")
+
+        # Since there is no _modified timestamp, _p_mtime is the fallback.
+        self.item.image._p_mtime = (dt + 1).millis()
+        scale_b = self.scaling.scale("image", width=100, height=80)
+        self.assertNotEqual(scale_a.data, scale_b.data)
 
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
@@ -761,9 +779,11 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 
         Image quality is not available for PNG images.
         """
+        dt = DateTime()
         data = getFile("image.jpg")
         item = DummyContent()
         item.image = NamedImage(data, "image/png", "image.jpg")
+        item.image._modified = dt.millis()
         scaling = ImageScaling(item, None)
 
         # scale an image, record its size
@@ -774,7 +794,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         gsm = getGlobalSiteManager()
         qualitySupplier = DummyQualitySupplier()
         gsm.registerUtility(qualitySupplier.getQuality, IScaledImageQuality)
-        wait_to_ensure_modified()
+        item.image._modified = (dt + 1).millis()
         # now scale again
         bar = scaling.scale("image", width=100, height=80)
         size_bar = bar.data.getSize()

@@ -524,8 +524,8 @@ class ImageScaling(BrowserView):
         context = aq_base(self.context)
         if fieldname is not None:
             field = getattr(context, fieldname, None)
-            field_p_mtime = getattr(field, "_p_mtime", None)
-            date = DateTime(field_p_mtime or context._p_mtime)
+            modified = getattr(field, "modified", None)
+            date = DateTime(modified or context._p_mtime)
         else:
             date = DateTime(context._p_mtime)
         return date.millis()
