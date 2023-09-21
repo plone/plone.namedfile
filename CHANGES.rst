@@ -8,6 +8,18 @@ Changelog
 
 .. towncrier release notes start
 
+5.6.1 (2023-09-21)
+------------------
+
+Bug fixes:
+
+
+- Fix stored XSS (Cross Site Scripting) for SVG images.
+  Done by forcing a download instead of displaying inline.
+  See `security advisory <https://github.com/plone/plone.namedfile/security/advisories/GHSA-jj7c-jrv4-c65x>`_.
+  [maurits] (#1)
+
+
 5.6.0 (2021-12-29)
 ------------------
 
