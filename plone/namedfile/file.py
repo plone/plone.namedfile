@@ -75,7 +75,7 @@ class ModifiedPropertyMixin:
     @property
     def modified(self):
         if hasattr(self, "_modified"):
-            return self._modified
+            return self._modified / 1000
         # Fall back to modification time in database.
         return self._p_mtime
 

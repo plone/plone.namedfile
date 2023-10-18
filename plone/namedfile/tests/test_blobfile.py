@@ -81,19 +81,19 @@ class TestImage(unittest.TestCase):
         image = self._makeImage()
         old_timestamp = image.modified
         time.sleep(1/1000)  # make sure at least 1ms passes
+        now = DateTime()
+        self.assertGreater(now, DateTime(old_timestamp))
         image._setData(zptlogo)
         self.assertNotEqual(image.modified, old_timestamp)
 
     def testFallBackToDatabaseModifiedTimeStamp(self):
         dt = DateTime()
         image = MockNamedBlobImage()
-        image._p_mtime = dt.millis()
+        image._p_mtime = int(dt)
         image._modified = (dt + 1).millis()
 
         delattr(image, "_modified")
-        marker = object()
-        self.assertEqual(marker, getattr(image, "_modified", marker))
-        self.assertEqual(dt.millis(), image._p_mtime)
+        self.assertEqual(image.modified, image._p_mtime)
 
     def testInterface(self):
         self.assertTrue(INamedBlobImage.implementedBy(NamedBlobImage))
