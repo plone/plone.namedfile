@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+6.2.2 (2023-10-18)
+------------------
+
+Bug fixes:
+
+
+- Fix calculation of file modification time. @davisagli (#153)
+
+
 6.2.1 (2023-09-21)
 ------------------
 
