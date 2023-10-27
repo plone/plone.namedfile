@@ -1,4 +1,4 @@
-# This file is borrowed from zope.app.file and licensed ZPL.
+# This file is partially borrowed from zope.app.file and licensed ZPL.
 
 from DateTime import DateTime
 from plone.namedfile.file import NamedImage
@@ -81,6 +81,15 @@ class TestImage(unittest.TestCase):
     def testInterface(self):
         self.assertTrue(INamedImage.implementedBy(NamedImage))
         self.assertTrue(verifyClass(INamedImage, NamedImage))
+
+    def test_extract_media_type(self):
+        from plone.namedfile.utils import extract_media_type as extract
+
+        self.assertIsNone(extract(None))
+        self.assertEqual(extract("text/plain"), "text/plain")
+        self.assertEqual(extract("TEXT/PLAIN"), "text/plain")
+        self.assertEqual(extract("text / plain"), "text/plain")
+        self.assertEqual(extract(" text/plain ; charset=utf-8"), "text/plain")
 
     def test_get_contenttype(self):
         self.assertEqual(
