@@ -31,6 +31,26 @@ try:
 except ImportError:
     from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 
+try:
+    # Zope 5.8.6+
+    from OFS.Image import extract_media_type
+except ImportError:
+
+    def extract_media_type(content_type):
+        """extract the proper media type from *content_type*.
+
+        Ignore parameters and whitespace and normalize to lower case.
+        See https://github.com/zopefoundation/Zope/pull/1167
+        """
+        if not content_type:
+            return content_type
+        # ignore parameters
+        content_type = content_type.split(";", 1)[0]
+        # ignore whitespace
+        content_type = "".join(content_type.split())
+        # normalize to lowercase
+        return content_type.lower()
+
 
 @implementer(IStreamIterator)
 class filestream_range_iterator(Iterable):
@@ -110,22 +130,6 @@ def get_contenttype(file=None, filename=None, default="application/octet-stream"
         return mimetypes.types_map.get(extension, "application/octet-stream")
 
     return default
-
-
-def extract_media_type(content_type):
-    """extract the proper media type from *content_type*.
-
-    Ignore parameters and whitespace and normalize to lower case.
-    See https://github.com/zopefoundation/Zope/pull/1167
-    """
-    if not content_type:
-        return content_type
-    # ignore parameters
-    content_type = content_type.split(";", 1)[0]
-    # ignore whitespace
-    content_type = "".join(content_type.split())
-    # normalize to lowercase
-    return content_type.lower()
 
 
 def set_headers(file, response, filename=None):
