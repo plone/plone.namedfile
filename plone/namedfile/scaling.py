@@ -11,6 +11,7 @@ from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.picture import get_picture_variants
 from plone.namedfile.picture import Img2PictureTag
+from plone.namedfile.utils import extract_media_type
 from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
@@ -182,7 +183,7 @@ class ImageScale(BrowserView):
         # If this returns True, the caller should call set_headers with a filename.
         if not hasattr(self.data, "contentType"):
             return
-        mimetype = self.data.contentType
+        mimetype = extract_media_type(self.data.contentType)
         if self.use_denylist:
             # We explicitly deny a few mimetypes, and allow the rest.
             return mimetype in self.disallowed_inline_mimetypes

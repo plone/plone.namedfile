@@ -1,4 +1,5 @@
 from AccessControl.ZopeGuards import guarded_getattr
+from plone.namedfile.utils import extract_media_type
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
@@ -174,7 +175,7 @@ class DisplayFile(Download):
 
     def set_headers(self, file):
         if hasattr(file, "contentType"):
-            mimetype = file.contentType
+            mimetype = extract_media_type(file.contentType)
             if self.use_denylist:
                 if mimetype in self.disallowed_inline_mimetypes:
                     # Let the Download view handle this.
