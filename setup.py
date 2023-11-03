@@ -6,7 +6,7 @@ import os
 
 version = "6.2.4.dev0"
 
-description = "File types and fields for images, files and blob files with " "filenames"
+description = "File types and fields for images, files and blob files with filenames"
 long_description = "\n\n".join(
     [
         open("README.rst").read(),
