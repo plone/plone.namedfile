@@ -20,7 +20,7 @@ from zope.interface import implementer
 from zope.interface import Interface
 from zope.schema import Object
 from zope.schema import ValidationError
-
+from zope.schema._bootstrapinterfaces import SchemaNotProvided
 
 _ = MessageFactory("plone")
 
@@ -106,7 +106,12 @@ class NamedBlobFile(Object):
         super().__init__(schema=self.schema, **kw)
 
     def _validate(self, value):
-        super()._validate(value)
+        # we don't want default validation of super()._validate(value)
+        # as that will read the whole file into memory
+        # schema has to be provided by value
+        if not self.schema.providedBy(value):
+            raise SchemaNotProvided(self.schema, value).with_field_and_value(
+                self, value)
         validate_file_field(self, value)
 
 
@@ -123,5 +128,10 @@ class NamedBlobImage(Object):
         super().__init__(schema=self.schema, **kw)
 
     def _validate(self, value):
-        super()._validate(value)
+        # we don't want default validation of super()._validate(value)
+        # as that will read the whole file into memory
+        # schema has to be provided by value
+        if not self.schema.providedBy(value):
+            raise SchemaNotProvided(self.schema, value).with_field_and_value(
+                self, value)
         validate_image_field(self, value)
