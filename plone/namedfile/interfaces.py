@@ -82,15 +82,14 @@ class INamed(Interface):
 
 
 class INamedTyped(INamed, ITyped):
-    ""
-    pass
+    """An item with a filename and contentType"""
 
 
-class INamedFile(INamed, IFile):
+class INamedFile(INamedTyped, IFile):
     """A non-BLOB file with a filename"""
 
 
-class INamedImage(INamed, IImage):
+class INamedImage(INamedTyped, IImage):
     """A non-BLOB image with a filename"""
 
 
@@ -129,14 +128,12 @@ class IBlobby(Interface):
     """Marker interface for objects that support blobs."""
 
 
-class INamedBlobFile(INamedTyped, IBlobby):
+class INamedBlobFile(INamedFile, IBlobby):
     """A BLOB file with a filename"""
-    # Note: Doesn't inherit from IFile because default validation will read whole file into memory
 
 
-class INamedBlobImage(INamedTyped, IBlobby):
+class INamedBlobImage(INamedImage, IBlobby):
     """A BLOB image with a filename"""
-    # Note: Doesn't inherit from IFile because default validation will read whole file into memory
 
 
 # Fields

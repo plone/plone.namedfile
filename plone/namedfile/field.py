@@ -2,7 +2,7 @@ from plone.namedfile.file import NamedBlobFile as BlobFileValueType
 from plone.namedfile.file import NamedBlobImage as BlobImageValueType
 from plone.namedfile.file import NamedFile as FileValueType
 from plone.namedfile.file import NamedImage as ImageValueType
-from plone.namedfile.interfaces import INamedBlobFile
+from plone.namedfile.interfaces import INamedBlobFile, INamedTyped
 from plone.namedfile.interfaces import INamedBlobFileField
 from plone.namedfile.interfaces import INamedBlobImage
 from plone.namedfile.interfaces import INamedBlobImageField
@@ -98,7 +98,7 @@ class NamedBlobFile(Object):
     """A NamedBlobFile field"""
 
     _type = BlobFileValueType
-    schema = INamedBlobFile
+    schema = INamedTyped  # Note: Don't validate against IFile as will read in whole file
 
     def __init__(self, **kw):
         if "schema" in kw:
@@ -114,7 +114,7 @@ class NamedBlobImage(Object):
     """A NamedBlobImage field"""
 
     _type = BlobImageValueType
-    schema = INamedBlobImage
+    schema = INamedTyped  # Note: Don't validate against IFile as will read in whole file
 
     def __init__(self, **kw):
         if "schema" in kw:
