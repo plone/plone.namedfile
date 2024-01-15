@@ -74,31 +74,28 @@ class TestStorable(unittest.TestCase):
             blob_write += 1 if "w" in mode else 0
             return old_open(self, mode)
 
-        ZODB.blob.Blob.open = count_open
+        with unittest.mock.patch.object(ZODB.blob.Blob, 'open', count_open):
+            data = getFile("image.gif")
+            f = tempfile.NamedTemporaryFile(delete=False)
+            try:
+                path = f.name
+                f.write(data)
+                f.close()
+                with open(path, "rb") as f:
+                    fi = NamedBlobFile(f, filename="image.gif")
+            finally:
+                if os.path.exists(path):
+                    os.remove(path)
+            self.assertEqual(303, fi.getSize())
+            self.assertEqual(blob_read, 1, "blob should have only been opened to get size")
+            self.assertEqual(
+                blob_write,
+                1,
+                "Slow write to blob instead of os rename. Should be only 1 on init",
+            )
+            blob_read = 0
 
-        data = getFile("image.gif")
-        f = tempfile.NamedTemporaryFile(delete=False)
-        try:
-            path = f.name
-            f.write(data)
-            f.close()
-            with open(path, "rb") as f:
-                fi = NamedBlobFile(f, filename="image.gif")
-        finally:
-            if os.path.exists(path):
-                os.remove(path)
-        self.assertEqual(303, fi.getSize())
-        self.assertEqual(blob_read, 1, "blob should have only been opened to get size")
-        self.assertEqual(
-            blob_write,
-            1,
-            "Slow write to blob instead of os rename. Should be only 1 on init",
-        )
-        blob_read = 0
+            blob_field = field.NamedBlobFile()
+            blob_field.validate(fi)
 
-        blob_field = field.NamedBlobFile()
-        blob_field.validate(fi)
-
-        self.assertEqual(blob_read, 0, "Validation is reading the whole blob in memory")
-
-        ZODB.blob.Blob.open = old_open
+            self.assertEqual(blob_read, 0, "Validation is reading the whole blob in memory")
