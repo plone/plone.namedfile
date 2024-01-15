@@ -6,8 +6,8 @@ from zope.schema.interfaces import IObject
 HAVE_BLOBS = True
 
 
-class IFile(Interface):
 
+class ITyped(Interface):
     contentType = schema.NativeStringLine(
         title="Content Type",
         description="The content type identifies the type of data.",
@@ -15,6 +15,8 @@ class IFile(Interface):
         required=False,
         missing_value="",
     )
+
+class IFile(Interface):
 
     data = schema.Bytes(
         title="Data",
@@ -79,6 +81,11 @@ class INamed(Interface):
     filename = schema.TextLine(title="Filename", required=False, default=None)
 
 
+class INamedTyped(INamed, ITyped):
+    ""
+    pass
+
+
 class INamedFile(INamed, IFile):
     """A non-BLOB file with a filename"""
 
@@ -122,12 +129,14 @@ class IBlobby(Interface):
     """Marker interface for objects that support blobs."""
 
 
-class INamedBlobFile(INamedFile, IBlobby):
+class INamedBlobFile(INamedTyped, IBlobby):
     """A BLOB file with a filename"""
+    # Note: Doesn't inherit from IFile because default validation will read whole file into memory
 
 
-class INamedBlobImage(INamedImage, IBlobby):
+class INamedBlobImage(INamedTyped, IBlobby):
     """A BLOB image with a filename"""
+    # Note: Doesn't inherit from IFile because default validation will read whole file into memory
 
 
 # Fields
