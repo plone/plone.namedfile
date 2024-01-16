@@ -63,6 +63,10 @@ def validate_file_field(field, value):
 
 
 class CustomValidator(object):
+    """ Mixin that overrides Object._validate with the same code except it will
+    use self.validation_schema instead of self.schema. It will also execute
+    self.extra_validator if it exists.
+    """
 
     def __init__(self, **kw):
         if "schema" in kw:
@@ -101,8 +105,9 @@ class CustomValidator(object):
                 del invariant_errors
                 del schema_error_dict
                 del errors
-        
-        self.extra_validator(value)
+
+        if hasattr(self, 'extra_validator'):
+            self.extra_validator(value)
 
 
 @implementer(INamedFileField)
@@ -130,10 +135,9 @@ class NamedBlobFile(CustomValidator, Object):
     """A NamedBlobFile field"""
 
     _type = BlobFileValueType
-    schema = INamedFile  
+    schema = INamedFile
     validation_schema = INamedTyped  # Note: Don't validate data as will read in whole file
     extra_validator = validate_file_field
-
 
 
 @implementer(INamedBlobImageField)
@@ -141,7 +145,7 @@ class NamedBlobImage(CustomValidator, Object):
     """A NamedBlobImage field"""
 
     _type = BlobImageValueType
-    schema = INamedImage  
+    schema = INamedImage
     validation_schema = INamedTyped  # Note: Don't validate data as will read in whole file
     extra_validator = validate_image_field
 
