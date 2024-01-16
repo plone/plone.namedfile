@@ -6,8 +6,8 @@ from zope.schema.interfaces import IObject
 HAVE_BLOBS = True
 
 
-class IFile(Interface):
 
+class ITyped(Interface):
     contentType = schema.NativeStringLine(
         title="Content Type",
         description="The content type identifies the type of data.",
@@ -15,6 +15,8 @@ class IFile(Interface):
         required=False,
         missing_value="",
     )
+
+class IFile(Interface):
 
     data = schema.Bytes(
         title="Data",
@@ -79,11 +81,15 @@ class INamed(Interface):
     filename = schema.TextLine(title="Filename", required=False, default=None)
 
 
-class INamedFile(INamed, IFile):
+class INamedTyped(INamed, ITyped):
+    """An item with a filename and contentType"""
+
+
+class INamedFile(INamedTyped, IFile):
     """A non-BLOB file with a filename"""
 
 
-class INamedImage(INamed, IImage):
+class INamedImage(INamedTyped, IImage):
     """A non-BLOB image with a filename"""
 
 
