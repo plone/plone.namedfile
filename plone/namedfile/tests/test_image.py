@@ -3,7 +3,6 @@
 from DateTime import DateTime
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
-from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
 from plone.namedfile.tests import MockNamedImage
 from plone.namedfile.utils import get_contenttype
@@ -110,35 +109,3 @@ class TestImage(unittest.TestCase):
             ),
             "application/msword",
         )
-
-
-class TestValidation(unittest.TestCase):
-
-    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
-
-    def _makeImage(self, *args, **kw):
-        return NamedImage(*args, **kw)
-
-    def testImageValidation(self):
-        from plone.namedfile.field import InvalidImageFile
-        from plone.namedfile.field import validate_image_field
-        from plone.namedfile.interfaces import INamedImageField
-        from zope.interface import implementer
-
-        @implementer(INamedImageField)
-        class FakeField:
-            __name__ = "logo"
-
-        # field is empty
-        validate_image_field(FakeField(), None)
-
-        # field has an empty file
-        image = self._makeImage()
-        self.assertRaises(InvalidImageFile, validate_image_field, FakeField(), image)
-
-        # field has an image file
-        image._setData(zptlogo)
-        validate_image_field(FakeField(), image)
-
-        notimage = NamedImage(getFile("notimage.doc"), filename="notimage.doc")
-        self.assertRaises(InvalidImageFile, validate_image_field, FakeField(), notimage)

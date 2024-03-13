@@ -41,13 +41,23 @@ Named file
 
 ::
 
-    >>> field = NamedFile(__name__="dummy", title=u"Test",
-    ...     description=u"Test desc", required=False, readonly=True)
+    >>> field = NamedFile(
+    ...     __name__="dummy",
+    ...     accept=("audio/ogg", "audio/flac"),
+    ...     title=u"Test",
+    ...     description=u"Test desc",
+    ...     required=False,
+    ...     readonly=True
+    ... )
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
     >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
     >>> print(prettyXML(element))
     <field name="dummy" type="plone.namedfile.field.NamedFile">
+      <accept>
+        <element>audio/ogg</element>
+        <element>audio/flac</element>
+      </accept>
       <description>Test desc</description>
       <readonly>True</readonly>
       <required>False</required>
@@ -56,6 +66,10 @@ Named file
 
     >>> element = etree.XML("""\
     ... <field name="dummy" type="plone.namedfile.field.NamedFile">
+    ...   <accept>
+    ...     <element>audio/ogg</element>
+    ...     <element>audio/flac</element>
+    ...   </accept>
     ...   <description>Test desc</description>
     ...   <missing_value />
     ...   <readonly>True</readonly>
@@ -69,6 +83,8 @@ Named file
     <class 'plone.namedfile.field.NamedFile'>
     >>> reciprocal.__name__
     'dummy'
+    >>> reciprocal.accept
+    ('audio/ogg', 'audio/flac')
     >>> print(reciprocal.title)
     Test
     >>> print(reciprocal.description)
@@ -84,13 +100,23 @@ Named image
 
 ::
 
-    >>> field = NamedImage(__name__="dummy", title=u"Test",
-    ...     description=u"Test desc", required=False, readonly=True)
+    >>> field = NamedImage(
+    ...     __name__="dummy",
+    ...     accept=("image/png", "image/webp"),
+    ...     title=u"Test",
+    ...     description=u"Test desc",
+    ...     required=False,
+    ...     readonly=True
+    ... )
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
     >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
     >>> print(prettyXML(element))
     <field name="dummy" type="plone.namedfile.field.NamedImage">
+      <accept>
+        <element>image/png</element>
+        <element>image/webp</element>
+      </accept>
       <description>Test desc</description>
       <readonly>True</readonly>
       <required>False</required>
@@ -99,6 +125,10 @@ Named image
 
     >>> element = etree.XML("""\
     ... <field name="dummy" type="plone.namedfile.field.NamedImage">
+    ...   <accept>
+    ...     <element>image/png</element>
+    ...     <element>image/webp</element>
+    ...   </accept>
     ...   <description>Test desc</description>
     ...   <missing_value />
     ...   <readonly>True</readonly>
@@ -112,6 +142,8 @@ Named image
     <class 'plone.namedfile.field.NamedImage'>
     >>> reciprocal.__name__
     'dummy'
+    >>> reciprocal.accept
+    ('image/png', 'image/webp')
     >>> print(reciprocal.title)
     Test
     >>> print(reciprocal.description)
@@ -127,13 +159,23 @@ Named blob file
 
 ::
 
-    >>> field = NamedBlobFile(__name__="dummy", title=u"Test",
-    ...     description=u"Test desc", required=False, readonly=True)
+    >>> field = NamedBlobFile(
+    ...     __name__="dummy",
+    ...     accept=("audio/ogg", "audio/flac"),
+    ...     title=u"Test",
+    ...     description=u"Test desc",
+    ...     required=False,
+    ...     readonly=True
+    ... )
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
     >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
     >>> print(prettyXML(element))
     <field name="dummy" type="plone.namedfile.field.NamedBlobFile">
+      <accept>
+        <element>audio/ogg</element>
+        <element>audio/flac</element>
+      </accept>
       <description>Test desc</description>
       <readonly>True</readonly>
       <required>False</required>
@@ -142,6 +184,10 @@ Named blob file
 
     >>> element = etree.XML("""\
     ... <field name="dummy" type="plone.namedfile.field.NamedBlobFile">
+    ...   <accept>
+    ...     <element>audio/ogg</element>
+    ...     <element>audio/flac</element>
+    ...   </accept>
     ...   <description>Test desc</description>
     ...   <missing_value />
     ...   <readonly>True</readonly>
@@ -155,6 +201,8 @@ Named blob file
     <class 'plone.namedfile.field.NamedBlobFile'>
     >>> reciprocal.__name__
     'dummy'
+    >>> reciprocal.accept
+    ('audio/ogg', 'audio/flac')
     >>> print(reciprocal.title)
     Test
     >>> print(reciprocal.description)
@@ -170,13 +218,23 @@ Named blob image
 
 ::
 
-    >>> field = NamedBlobImage(__name__="dummy", title=u"Test",
-    ...     description=u"Test desc", required=False, readonly=True)
+    >>> field = NamedBlobImage(
+    ...     __name__="dummy",
+    ...     accept=("image/png", "image/webp"),
+    ...     title=u"Test",
+    ...     description=u"Test desc",
+    ...     required=False,
+    ...     readonly=True
+    ... )
     >>> fieldType = IFieldNameExtractor(field)()
     >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
     >>> element = handler.write(field, u'dummy', fieldType) #doctest: +ELLIPSIS
     >>> print(prettyXML(element))
     <field name="dummy" type="plone.namedfile.field.NamedBlobImage">
+      <accept>
+        <element>image/png</element>
+        <element>image/webp</element>
+      </accept>
       <description>Test desc</description>
       <readonly>True</readonly>
       <required>False</required>
@@ -185,6 +243,10 @@ Named blob image
 
     >>> element = etree.XML("""\
     ... <field name="dummy" type="plone.namedfile.field.NamedBlobImage">
+    ...   <accept>
+    ...     <element>image/png</element>
+    ...     <element>image/webp</element>
+    ...   </accept>
     ...   <description>Test desc</description>
     ...   <missing_value />
     ...   <readonly>True</readonly>
@@ -198,6 +260,8 @@ Named blob image
     <class 'plone.namedfile.field.NamedBlobImage'>
     >>> reciprocal.__name__
     'dummy'
+    >>> reciprocal.accept
+    ('image/png', 'image/webp')
     >>> print(reciprocal.title)
     Test
     >>> print(reciprocal.description)
@@ -206,3 +270,87 @@ Named blob image
     False
     >>> reciprocal.readonly
     True
+
+
+Test the default accepted media type
+------------------------------------
+
+Named file::
+
+    >>> field = NamedFile()
+    >>> field.accept
+    ()
+    >>> fieldType = IFieldNameExtractor(field)()
+    >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
+    >>> element = handler.write(field, u'dummy', fieldType)
+    >>> print(prettyXML(element))
+    <field name="dummy" type="plone.namedfile.field.NamedFile"/>
+
+    >>> element__ = etree.XML("""\
+    ... <field name="dummy" type="plone.namedfile.field.NamedFile"/>
+    ... """)
+
+    >>> reciprocal__ = handler.read(element__)
+    >>> reciprocal__.accept
+    ()
+
+
+Named image::
+
+    >>> field = NamedImage()
+    >>> field.accept
+    ('image/*',)
+    >>> fieldType = IFieldNameExtractor(field)()
+    >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
+    >>> element = handler.write(field, u'dummy', fieldType)
+    >>> print(prettyXML(element))
+    <field name="dummy" type="plone.namedfile.field.NamedImage"/>
+
+    >>> element = etree.XML("""\
+    ... <field type="plone.namedfile.field.NamedImage"/>
+    ... """)
+
+    >>> reciprocal = handler.read(element)
+    >>> reciprocal.accept
+    ('image/*',)
+
+
+Named blob file::
+
+    >>> field = NamedBlobFile()
+    >>> field.accept
+    ()
+    >>> fieldType = IFieldNameExtractor(field)()
+    >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
+    >>> element = handler.write(field, u'dummy', fieldType)
+    >>> print(prettyXML(element))
+    <field name="dummy" type="plone.namedfile.field.NamedBlobFile"/>
+
+    >>> element = etree.XML("""\
+    ... <field type="plone.namedfile.field.NamedBlobFile"/>
+    ... """)
+
+    >>> reciprocal = handler.read(element)
+    >>> reciprocal.accept
+    ()
+
+
+Named blob image::
+
+    >>> field = NamedBlobImage()
+    >>> field.accept
+    ('image/*',)
+    >>> fieldType = IFieldNameExtractor(field)()
+    >>> handler = getUtility(IFieldExportImportHandler, name=fieldType)
+    >>> element = handler.write(field, u'dummy', fieldType)
+    >>> print(prettyXML(element))
+    <field name="dummy" type="plone.namedfile.field.NamedBlobImage"/>
+
+    >>> element = etree.XML("""\
+    ... <field type="plone.namedfile.field.NamedBlobImage"/>
+    ... """)
+
+    >>> reciprocal = handler.read(element)
+    >>> reciprocal.accept
+    ('image/*',)
+
