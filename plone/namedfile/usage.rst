@@ -153,6 +153,55 @@ The filename must be set to a unicode string, not a bytestring::
     zope.schema._bootstrapinterfaces.WrongType: ...
 
 
+Restricting media types
+-----------------------
+
+It is possible to define accepted media types, just like with the "accept"
+attribute of HTML file inputs. You can pass a tuple of file extensions or media
+type values::
+
+
+    >>> class IFileContainerConstrained(Interface):
+    ...     file = field.NamedFile(title=u"File", accept=("text/plain", ".pdf"))
+
+    >>> @implementer(IFileContainerConstrained)
+    ... class FileContainerConstrained:
+    ...     __allow_access_to_unprotected_subobjects__ = 1
+    ...     def __init__(self):
+    ...         self.file = namedfile.NamedFile()
+
+    >>> container_constrained = FileContainerConstrained()
+
+
+Adding valid file types and checking passes. Note, that the validation logic is
+called by the framework and does not need to be called manualle, like in this
+test.
+::
+
+    >>> container_constrained.file = namedfile.NamedFile(
+    ...     'dummy test data',
+    ...     filename=u"test.txt"
+    ... )
+    >>> IFileContainerConstrained["file"].validate(container_constrained.file)
+
+    >>> container_constrained.file = namedfile.NamedFile(
+    ...     'dummy test data',
+    ...     filename=u"test.pdf"
+    ... )
+    >>> IFileContainerConstrained["file"].validate(container_constrained.file)
+
+Adding invalid file types and checking fails with a ValidationError::
+
+    >>> container_constrained.file = namedfile.NamedFile(
+    ...     'dummy test data',
+    ...     filename=u"test.wav"
+    ... )
+    >>> IFileContainerConstrained["file"].validate(container_constrained.file)
+    Traceback (most recent call last):
+    ...
+    plone.namedfile.field.InvalidFile: ('audio/x-wav', 'file')
+
+
 Download view
 -------------
 

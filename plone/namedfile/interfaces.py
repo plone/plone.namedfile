@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 from zope import schema
+from zope.i18nmessageid import MessageFactory
 from zope.interface import Interface
 from zope.schema.interfaces import IObject
+
+
+# We don't have translations here, but this allows
+_ = MessageFactory("plone")
 
 
 HAVE_BLOBS = True
@@ -109,10 +114,45 @@ class INamedFileField(INamedField):
     """Field for storing INamedFile objects.
     """
 
+    accept = schema.Tuple(
+        title=_("namedfile_accept_title", default="accept types"),
+        description=_(
+            "namedfile_accept_description",
+            default=(
+                'The media types which are allowed for this field. '
+                'Unset to allow any type. '
+                'Can be any valid identifier for the "accept" attribute of '
+                'the HTML file input, like extensions (e.g. ".mp3") or IANA '
+                'media types (e.g. "image/webp").'
+            ),
+        ),
+        value_type=schema.TextLine(),
+        default=(),
+        required=False,
+    )
+
 
 class INamedImageField(INamedField):
     """Field for storing INamedImage objects.
     """
+
+    accept = schema.Tuple(
+        title=_("namedimage_accept_title", default="accept types"),
+        description=_(
+            "namedimage_accept_description",
+            default=(
+                'The media types which are allowed for this image field. '
+                'The default is to allow any "image/*" content type. '
+                'Unset to allow any type. '
+                'Can be any valid identifier for the "accept" attribute of '
+                'the HTML file input, like extensions (e.g. ".jpg") or IANA '
+                'media types (e.g. "image/webp").'
+            ),
+        ),
+        value_type=schema.TextLine(),
+        default=("image/*",),
+        required=False,
+    )
 
 
 class IStorage(Interface):
