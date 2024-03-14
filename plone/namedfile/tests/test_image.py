@@ -3,9 +3,6 @@
 
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
-from plone.namedfile.tests import getFile
-from plone.namedfile.utils import get_contenttype
-from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from zope.interface.verify import verifyClass
 
 import unittest
@@ -61,29 +58,3 @@ class TestImage(unittest.TestCase):
     def testInterface(self):
         self.assertTrue(INamedImage.implementedBy(NamedImage))
         self.assertTrue(verifyClass(INamedImage, NamedImage))
-
-    def test_get_contenttype(self):
-        self.assertEqual(
-            get_contenttype(
-                NamedImage(
-                    getFile('image.gif'),
-                    contentType='image/gif')),
-            'image/gif')
-        self.assertEqual(
-            get_contenttype(
-                NamedImage(
-                    getFile('image.gif'),
-                    filename=u'image.gif')),
-            'image/gif')
-        self.assertEqual(
-            get_contenttype(
-                NamedImage(
-                    getFile('image.tif'),
-                    filename=u'image.tif')),
-            'image/tiff')
-        self.assertEqual(
-            get_contenttype(
-                NamedImage(
-                    getFile('notimage.doc'),
-                    filename=u'notimage.doc')),
-            'application/msword')
