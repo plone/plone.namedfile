@@ -14,7 +14,6 @@ from zope.interface import implementer
 from ZPublisher.Iterators import IStreamIterator
 
 import mimetypes
-import os.path
 import piexif
 import PIL.Image
 import re
@@ -126,8 +125,7 @@ def get_contenttype(file=None, filename=None, default="application/octet-stream"
 
     filename = getattr(file, "filename", filename)
     if filename:
-        extension = os.path.splitext(filename)[1].lower()
-        return mimetypes.types_map.get(extension, "application/octet-stream")
+        return mimetypes.guess_type(filename, strict=False)[0] or default
 
     return default
 

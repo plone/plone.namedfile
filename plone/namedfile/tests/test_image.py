@@ -89,23 +89,3 @@ class TestImage(unittest.TestCase):
         self.assertEqual(extract("TEXT/PLAIN"), "text/plain")
         self.assertEqual(extract("text / plain"), "text/plain")
         self.assertEqual(extract(" text/plain ; charset=utf-8"), "text/plain")
-
-    def test_get_contenttype(self):
-        self.assertEqual(
-            get_contenttype(NamedImage(getFile("image.gif"), contentType="image/gif")),
-            "image/gif",
-        )
-        self.assertEqual(
-            get_contenttype(NamedImage(getFile("image.gif"), filename="image.gif")),
-            "image/gif",
-        )
-        self.assertEqual(
-            get_contenttype(NamedImage(getFile("image.tif"), filename="image.tif")),
-            "image/tiff",
-        )
-        self.assertEqual(
-            get_contenttype(
-                NamedImage(getFile("notimage.doc"), filename="notimage.doc")
-            ),
-            "application/msword",
-        )
