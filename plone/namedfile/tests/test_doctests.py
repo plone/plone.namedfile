@@ -26,6 +26,7 @@ class Py23DocChecker(doctest.OutputChecker):
                 "WrongType", "zope.schema._bootstrapinterfaces.WrongType", got)
             got = got.replace(
                 "filename*=\"utf-8''test.txt\"", "filename*=utf-8''test.txt")
+            got = re.sub("InvalidFile", "plone.namedfile.field.InvalidFile", got)
 
         if six.PY3:
             got = re.sub("b'(.*?)'", "'\\1'", got)

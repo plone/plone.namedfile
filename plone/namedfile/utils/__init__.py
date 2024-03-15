@@ -14,7 +14,6 @@ from zope.deprecation import deprecate
 from zope.interface import implementer
 
 import mimetypes
-import os.path
 import piexif
 import PIL.Image
 import six
@@ -103,8 +102,7 @@ def get_contenttype(
 
     filename = getattr(file, 'filename', filename)
     if filename:
-        extension = os.path.splitext(filename)[1].lower()
-        return mimetypes.types_map.get(extension, 'application/octet-stream')
+        return mimetypes.guess_type(filename, strict=False)[0] or default
 
     return default
 

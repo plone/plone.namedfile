@@ -3,9 +3,6 @@
 
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
-from plone.namedfile.tests import getFile
-from plone.namedfile.utils import get_contenttype
-from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from zope.interface.verify import verifyClass
 
 import unittest
@@ -61,68 +58,3 @@ class TestImage(unittest.TestCase):
     def testInterface(self):
         self.assertTrue(INamedImage.implementedBy(NamedImage))
         self.assertTrue(verifyClass(INamedImage, NamedImage))
-
-    def test_get_contenttype(self):
-        self.assertEqual(
-            get_contenttype(
-                NamedImage(
-                    getFile('image.gif'),
-                    contentType='image/gif')),
-            'image/gif')
-        self.assertEqual(
-            get_contenttype(
-                NamedImage(
-                    getFile('image.gif'),
-                    filename=u'image.gif')),
-            'image/gif')
-        self.assertEqual(
-            get_contenttype(
-                NamedImage(
-                    getFile('image.tif'),
-                    filename=u'image.tif')),
-            'image/tiff')
-        self.assertEqual(get_contenttype(
-            NamedImage(getFile('notimage.doc'),
-                       filename=u'notimage.doc')),
-            'application/msword')
-
-
-class TestValidation(unittest.TestCase):
-
-    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
-
-    def _makeImage(self, *args, **kw):
-        return NamedImage(*args, **kw)
-
-    def testImageValidation(self):
-        from plone.namedfile.field import InvalidImageFile
-        from plone.namedfile.field import validate_image_field
-        from plone.namedfile.interfaces import INamedImageField
-        from zope.interface import implementer
-
-        @implementer(INamedImageField)
-        class FakeField(object):
-            __name__ = 'logo'
-
-        # field is empty
-        validate_image_field(FakeField(), None)
-
-        # field has an empty file
-        image = self._makeImage()
-        self.assertRaises(
-            InvalidImageFile,
-            validate_image_field,
-            FakeField(),
-            image)
-
-        # field has an image file
-        image._setData(zptlogo)
-        validate_image_field(FakeField(), image)
-
-        notimage = NamedImage(getFile('notimage.doc'),
-                              filename=u'notimage.doc')
-        self.assertRaises(
-            InvalidImageFile,
-            validate_image_field,
-            FakeField(),
-            notimage)

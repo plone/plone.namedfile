@@ -18,7 +18,7 @@ See the ``usage.rst`` doctest for more details.
 Source Code
 ===========
 
- Note: This packages is licensed under a *BSD license*. 
+ Note: This package is licensed under a *BSD license*.
  Please do not add dependencies on GPL code!
 
 Contributors please read the document `Process for Plone core's development <https://docs.plone.org/develop/coredev/docs/index.html>`_
