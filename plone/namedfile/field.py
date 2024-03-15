@@ -21,13 +21,24 @@ from zope.interface import Interface
 from zope.schema import Object
 from zope.schema import ValidationError
 
+import mimetypes
 
 _ = MessageFactory("plone")
 
 
-@implementer(IPluggableImageFieldValidation)
-@adapter(INamedImageField, Interface)
-class ImageContenttypeValidator:
+class InvalidFile(ValidationError):
+    """Exception for a invalid file."""
+
+    __doc__ = _("Invalid file")
+
+
+class InvalidImageFile(ValidationError):
+    """Exception for a invalid image file."""
+
+    __doc__ = _("Invalid image file")
+
+
+class BinaryContenttypeValidator:
     def __init__(self, field, value):
         self.field = field
         self.value = value
@@ -35,93 +46,108 @@ class ImageContenttypeValidator:
     def __call__(self):
         if self.value is None:
             return
+
+        if not self.field.accept:
+            # No restrictions.
+            return
+
         mimetype = get_contenttype(self.value)
-        if mimetype.split("/")[0] != "image":
-            raise InvalidImageFile(mimetype, self.field.__name__)
+
+        for accept in self.field.accept:
+            if accept[0] == ".":
+                # This is a file extension. Get a media type from it.
+                accept = mimetypes.guess_type(f"dummy{accept}", strict=False)[0]
+                if accept is None:
+                    # This extension is unknown. Skip it.
+                    continue
+
+            try:
+                accept_type, accept_subtype = accept.split("/")
+                content_type, content_subtype = mimetype.split("/")
+            except ValueError:
+                # The accept type is invalid. Skip it.
+                continue
+
+            if accept_type == content_type and (
+                accept_subtype == content_subtype or accept_subtype == "*"
+            ):
+                # This file is allowed, just don't raise a ValidationError.
+                return
+
+        # The file's content type is not allowed. Raise a ValidationError.
+        raise self.exception(mimetype, self.field.__name__)
 
 
-class InvalidImageFile(ValidationError):
-    """Exception for invalid image file"""
-
-    __doc__ = _("Invalid image file")
-
-
-def validate_binary_field(interface, field, value):
-    for name, validator in getAdapters((field, value), interface):
-        validator()
+@implementer(IPluggableFileFieldValidation)
+@adapter(INamedFileField, Interface)
+class FileContenttypeValidator(BinaryContenttypeValidator):
+    exception = InvalidFile
 
 
-def validate_image_field(field, value):
-    validate_binary_field(IPluggableImageFieldValidation, field, value)
+@implementer(IPluggableImageFieldValidation)
+@adapter(INamedImageField, Interface)
+class ImageContenttypeValidator(BinaryContenttypeValidator):
+    exception = InvalidImageFile
 
 
-def validate_file_field(field, value):
-    validate_binary_field(IPluggableFileFieldValidation, field, value)
+class NamedField(Object):
+
+    def __init__(self, **kw):
+        if "accept" in kw:
+            self.accept = kw.pop("accept")
+        if "schema" in kw:
+            self.schema = kw.pop("schema")
+        super().__init__(schema=self.schema, **kw)
+
+    def validate(self, value, interface):
+        super().validate(value)
+        for name, validator in getAdapters((self, value), interface):
+            validator()
 
 
 @implementer(INamedFileField)
-class NamedFile(Object):
+class NamedFile(NamedField):
     """A NamedFile field"""
 
     _type = FileValueType
     schema = INamedFile
+    accept = ()
 
-    def __init__(self, **kw):
-        if "schema" in kw:
-            self.schema = kw.pop("schema")
-        super().__init__(schema=self.schema, **kw)
-
-    def _validate(self, value):
-        super()._validate(value)
-        validate_file_field(self, value)
+    def validate(self, value):
+        super().validate(value, IPluggableFileFieldValidation)
 
 
 @implementer(INamedImageField)
-class NamedImage(Object):
+class NamedImage(NamedField):
     """A NamedImage field"""
 
     _type = ImageValueType
     schema = INamedImage
+    accept = ("image/*",)
 
-    def __init__(self, **kw):
-        if "schema" in kw:
-            self.schema = kw.pop("schema")
-        super().__init__(schema=self.schema, **kw)
-
-    def _validate(self, value):
-        super()._validate(value)
-        validate_image_field(self, value)
+    def validate(self, value):
+        super().validate(value, IPluggableImageFieldValidation)
 
 
 @implementer(INamedBlobFileField)
-class NamedBlobFile(Object):
+class NamedBlobFile(NamedField):
     """A NamedBlobFile field"""
 
     _type = BlobFileValueType
     schema = INamedBlobFile
+    accept = ()
 
-    def __init__(self, **kw):
-        if "schema" in kw:
-            self.schema = kw.pop("schema")
-        super().__init__(schema=self.schema, **kw)
-
-    def _validate(self, value):
-        super()._validate(value)
-        validate_file_field(self, value)
+    def validate(self, value):
+        super().validate(value, IPluggableFileFieldValidation)
 
 
 @implementer(INamedBlobImageField)
-class NamedBlobImage(Object):
+class NamedBlobImage(NamedField):
     """A NamedBlobImage field"""
 
     _type = BlobImageValueType
     schema = INamedBlobImage
+    accept = ("image/*",)
 
-    def __init__(self, **kw):
-        if "schema" in kw:
-            self.schema = kw.pop("schema")
-        super().__init__(schema=self.schema, **kw)
-
-    def _validate(self, value):
-        super()._validate(value)
-        validate_image_field(self, value)
+    def validate(self, value):
+        super().validate(value, IPluggableImageFieldValidation)
