@@ -21,7 +21,7 @@ class TestUtils(unittest.TestCase):
             get_contenttype(
                 NamedImage(
                     getFile("image.gif"),
-                    filename="image.gif",
+                    filename=u"image.gif",
                 )
             ),
             "image/gif",
@@ -30,7 +30,7 @@ class TestUtils(unittest.TestCase):
             get_contenttype(
                 NamedImage(
                     getFile("image.tif"),
-                    filename="image.tif",
+                    filename=u"image.tif",
                 )
             ),
             "image/tiff",
@@ -39,7 +39,7 @@ class TestUtils(unittest.TestCase):
             get_contenttype(
                 NamedImage(
                     getFile("notimage.doc"),
-                    filename="notimage.doc",
+                    filename=u"notimage.doc",
                 )
             ),
             "application/msword",
@@ -47,18 +47,18 @@ class TestUtils(unittest.TestCase):
 
         # Filename only detection of a non-IANA registered type.
         self.assertEqual(
-            get_contenttype(filename="image.webp"),
+            get_contenttype(filename=u"image.webp"),
             "image/webp",
         )
 
         # Filename only detection of a non-IANA registered type.
         self.assertEqual(
-            get_contenttype(filename="song.midi"),
+            get_contenttype(filename=u"song.midi"),
             "audio/midi",
         )
 
         # Detection of a surely not registered type.
         self.assertEqual(
-            get_contenttype(filename="nothing.plonenamedfile"),
+            get_contenttype(filename=u"nothing.plonenamedfile"),
             "application/octet-stream",
         )

@@ -57,7 +57,7 @@ class BinaryContenttypeValidator:
         for accept in self.field.accept:
             if accept[0] == ".":
                 # This is a file extension. Get a media type from it.
-                accept = mimetypes.guess_type(f"dummy{accept}", strict=False)[0]
+                accept = mimetypes.guess_type("dummy" + accept, strict=False)[0]
                 if accept is None:
                     # This extension is unknown. Skip it.
                     continue
@@ -98,10 +98,10 @@ class NamedField(Object):
             self.accept = kw.pop("accept")
         if "schema" in kw:
             self.schema = kw.pop("schema")
-        super().__init__(schema=self.schema, **kw)
+        super(NamedField, self).__init__(schema=self.schema, **kw)
 
     def validate(self, value, interface):
-        super().validate(value)
+        super(NamedField, self).validate(value)
         for name, validator in getAdapters((self, value), interface):
             validator()
 
@@ -115,7 +115,7 @@ class NamedFile(NamedField):
     accept = ()
 
     def validate(self, value):
-        super().validate(value, IPluggableFileFieldValidation)
+        super(NamedFile, self).validate(value, IPluggableFileFieldValidation)
 
 
 @implementer(INamedImageField)
@@ -127,7 +127,7 @@ class NamedImage(NamedField):
     accept = ("image/*",)
 
     def validate(self, value):
-        super().validate(value, IPluggableImageFieldValidation)
+        super(NamedImage, self).validate(value, IPluggableImageFieldValidation)
 
 
 @implementer(INamedBlobFileField)
@@ -139,7 +139,7 @@ class NamedBlobFile(NamedField):
     accept = ()
 
     def validate(self, value):
-        super().validate(value, IPluggableFileFieldValidation)
+        super(NamedBlobFile, self).validate(value, IPluggableFileFieldValidation)
 
 
 @implementer(INamedBlobImageField)
@@ -151,4 +151,4 @@ class NamedBlobImage(NamedField):
     accept = ("image/*",)
 
     def validate(self, value):
-        super().validate(value, IPluggableImageFieldValidation)
+        super(NamedBlobImage, self).validate(value, IPluggableImageFieldValidation)

@@ -28,15 +28,15 @@ class TestValidation(unittest.TestCase):
         self.assertRaises(field.InvalidImageFile, image_field.validate, named_image)
 
         # field has an png image file, passes
-        named_image = file.NamedImage(getFile("image.png"), filename="image.png")
+        named_image = file.NamedImage(getFile("image.png"), filename=u"image.png")
         image_field.validate(named_image)
 
         # field has an gif image file, passes
-        named_image = file.NamedImage(getFile("image.gif"), filename="image.gif")
+        named_image = file.NamedImage(getFile("image.gif"), filename=u"image.gif")
         image_field.validate(named_image)
 
         # field has a non-image file, fails
-        named_image = file.NamedImage(getFile("notimage.doc"), filename="notimage.doc")
+        named_image = file.NamedImage(getFile("notimage.doc"), filename=u"notimage.doc")
         self.assertRaises(field.InvalidImageFile, image_field.validate, named_image)
 
     def test_validation_NamedImage_custom(self):
@@ -58,20 +58,20 @@ class TestValidation(unittest.TestCase):
         self.assertRaises(field.InvalidImageFile, image_field.validate, named_image)
 
         # field has a png image file, passes
-        named_image = file.NamedImage(getFile("image.png"), filename="image.png")
+        named_image = file.NamedImage(getFile("image.png"), filename=u"image.png")
         image_field.validate(named_image)
 
         # field has a jpg image file, passes also
-        named_image = file.NamedImage(getFile("image.jpg"), filename="image.jpg")
+        named_image = file.NamedImage(getFile("image.jpg"), filename=u"image.jpg")
         image_field.validate(named_image)
 
         # field has a gif image file, fails because it's not in the accepted
         # media types
-        named_image = file.NamedImage(getFile("image.gif"), filename="image.gif")
+        named_image = file.NamedImage(getFile("image.gif"), filename=u"image.gif")
         self.assertRaises(field.InvalidImageFile, image_field.validate, named_image)
 
         # field has a non-image file, fails
-        named_image = file.NamedImage(getFile("notimage.doc"), filename="notimage.doc")
+        named_image = file.NamedImage(getFile("notimage.doc"), filename=u"notimage.doc")
         self.assertRaises(field.InvalidImageFile, image_field.validate, named_image)
 
     def test_validation_NamedFile_default(self):
@@ -84,11 +84,11 @@ class TestValidation(unittest.TestCase):
         file_field.validate(None)
 
         # field has n pdf file file, passes
-        named_file = file.NamedFile(getFile("file.pdf"), filename="file.pdf")
+        named_file = file.NamedFile(getFile("file.pdf"), filename=u"file.pdf")
         file_field.validate(named_file)
 
         # field has a gif file, passes
-        named_file = file.NamedFile(getFile("image.gif"), filename="image.gif")
+        named_file = file.NamedFile(getFile("image.gif"), filename=u"image.gif")
         file_field.validate(named_file)
 
     def test_validation_NamedFile_custom(self):
@@ -102,14 +102,14 @@ class TestValidation(unittest.TestCase):
         file_field.validate(None)
 
         # field has a pdf file file, passes
-        named_file = file.NamedFile(getFile("file.pdf"), filename="file.pdf")
+        named_file = file.NamedFile(getFile("file.pdf"), filename=u"file.pdf")
         file_field.validate(named_file)
 
         # field has a jpg file file, passes also
-        named_file = file.NamedFile(getFile("image.jpg"), filename="image.jpg")
+        named_file = file.NamedFile(getFile("image.jpg"), filename=u"image.jpg")
         file_field.validate(named_file)
 
         # field has a gif file, fails because it's not in the accepted media
         # types
-        named_file = file.NamedFile(getFile("image.gif"), filename="image.gif")
+        named_file = file.NamedFile(getFile("image.gif"), filename=u"image.gif")
         self.assertRaises(field.InvalidFile, file_field.validate, named_file)
