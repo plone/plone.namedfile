@@ -8,6 +8,29 @@ Changelog
 
 .. towncrier release notes start
 
+5.7.0 (2024-03-15)
+------------------
+
+New features:
+
+
+- Improve contenttype detection logic for unregistered but common types.
+
+  Change get_contenttype to support common types which are or were not registered
+  with IANA, like image/webp or audio/midi.
+
+  Note: image/webp is already a IANA registered type and also added by
+  Products.MimetypesRegistry.
+  [thet] (157-2)
+- Support for allowed media types.
+
+  Support to constrain files to specific media types with a "accept" attribute on
+  file and image fields, just like the "accept" attribute of the HTML file input.
+
+  Fixes: #157
+  [thet] (#157)
+
+
 5.6.1 (2023-09-21)
 ------------------
 
