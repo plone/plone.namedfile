@@ -10,9 +10,7 @@ log = getLogger(__name__)
 def calculate_dimensions_from_viewbox(view_box):
         parts = [float(x) for x in view_box.split()]
         if len(parts) == 4:
-            width = int(parts[2] - parts[0])
-            height = int(parts[3] - parts[1])
-            return width, height
+            return int(parts[2]), int(parts[3])
         return 1, 1
 
 
