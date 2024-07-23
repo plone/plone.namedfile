@@ -35,7 +35,6 @@ def process_svg(data):
 
         if (w == 0 or h == 0) and view_box:
             w, h = calculate_dimensions_from_viewbox(view_box)
-        print(w,h)
         w = w if w > 1 else 1
         h = h if h > 1 else 1
     except et.ParseError as e:
