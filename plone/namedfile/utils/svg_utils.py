@@ -7,34 +7,6 @@ import xml.etree.ElementTree as et
 
 log = getLogger(__name__)
 
-
-def process_svg(data):
-    content_type = None
-    w = -1
-    h = -1
-    size = len(data)
-
-    tag = None
-    try:
-        for event, el in et.iterparse(BytesIO(data), ("start",)):
-            tag = el.tag
-            w = dimension_int(el.attrib.get("width"))
-            h = dimension_int(el.attrib.get("height"))
-            break
-        w = w if w > 1 else 1
-        h = h if h > 1 else 1
-    except et.ParseError as e:
-        log.debug(f"Failed to parse SVG dimensions: {e}")
-        pass
-
-    if tag == "{http://www.w3.org/2000/svg}svg" or (
-        size == 1024 and b"http://www.w3.org/2000/svg" in data
-    ):
-        content_type = "image/svg+xml"
-
-    return content_type, w, h
-
-
 def dimension_int(dimension):
     if isinstance(dimension, str):
         try:
@@ -49,3 +21,46 @@ def dimension_int(dimension):
         _dimension = 0
 
     return _dimension
+
+
+def calculate_dimensions_from_viewbox(view_box):
+        parts = [float(x) for x in view_box.split()]
+        print(f"Parsed viewBox parts: {parts}")
+        if len(parts) == 4:
+            width = int(parts[2] - parts[0])
+            height = int(parts[3] - parts[1])
+            return width, height
+        return 1, 1
+
+
+def process_svg(data):
+    content_type = None
+    w = -1
+    h = -1
+    size = len(data)
+
+    tag = None
+    view_box = None
+    try:
+        for event, el in et.iterparse(BytesIO(data), ("start",)):
+            tag = el.tag
+            w = dimension_int(el.attrib.get("width"))
+            h = dimension_int(el.attrib.get("height"))
+            view_box = el.attrib.get("viewBox")
+            break
+
+        if (w == 0 or h == 0) and view_box:
+            w, h = calculate_dimensions_from_viewbox(view_box)
+        print(w,h)
+        w = w if w > 1 else 1
+        h = h if h > 1 else 1
+    except et.ParseError as e:
+        log.debug(f"Failed to parse SVG dimensions: {e}")
+        pass
+
+    if tag == "{http://www.w3.org/2000/svg}svg" or (
+        size == 1024 and b"http://www.w3.org/2000/svg" in data
+    ):
+        content_type = "image/svg+xml"
+
+    return content_type, w, h
