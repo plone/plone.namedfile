@@ -7,22 +7,6 @@ import xml.etree.ElementTree as et
 
 log = getLogger(__name__)
 
-def dimension_int(dimension):
-    if isinstance(dimension, str):
-        try:
-            _dimension = int(float(re.sub(r"[^\d\.]", "", dimension)))
-        except ValueError:
-            _dimension = 0
-    elif isinstance(dimension, int):
-        _dimension = dimension
-    elif isinstance(dimension, float):
-        _dimension = int(dimension)
-    else:
-        _dimension = 0
-
-    return _dimension
-
-
 def calculate_dimensions_from_viewbox(view_box):
         parts = [float(x) for x in view_box.split()]
         print(f"Parsed viewBox parts: {parts}")
@@ -64,3 +48,19 @@ def process_svg(data):
         content_type = "image/svg+xml"
 
     return content_type, w, h
+
+
+def dimension_int(dimension):
+    if isinstance(dimension, str):
+        try:
+            _dimension = int(float(re.sub(r"[^\d\.]", "", dimension)))
+        except ValueError:
+            _dimension = 0
+    elif isinstance(dimension, int):
+        _dimension = dimension
+    elif isinstance(dimension, float):
+        _dimension = int(dimension)
+    else:
+        _dimension = 0
+
+    return _dimension
