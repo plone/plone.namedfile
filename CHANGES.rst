@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+6.3.1 (2024-07-30)
+------------------
+
+Bug fixes:
+
+
+- Fix: Upload a svg without width and height set  @dobri1408 (#161)
+
+
 6.3.0 (2024-03-15)
 ------------------
 
