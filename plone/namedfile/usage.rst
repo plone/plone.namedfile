@@ -32,6 +32,9 @@ These store data with the following types::
     ...         self.image = namedfile.NamedImage()
     ...         self.blob = namedfile.NamedBlobFile()
     ...         self.blobimage = namedfile.NamedBlobImage()
+    ...
+    ...     def absolute_url(self):
+    ...         return "http://foo/bar"
 
 
 File data and content type
