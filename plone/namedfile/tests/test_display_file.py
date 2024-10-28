@@ -49,15 +49,6 @@ def get_disposition_header(browser):
     return browser.headers.get(name, None)
 
 
-def get_canonical_header(browser):
-    name = "Link"
-    for header, value in browser.headers.items():
-        if header == name or header == name.lower():
-            if 'rel="canonical"' in map(str.strip, value.split(";")):
-                return value
-    return None
-
-
 def custom_available_sizes():
     # Define available image scales.
     return {"custom": (10, 10)}
@@ -105,16 +96,12 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)
         self.assertIn("filename", header)
-        header = get_canonical_header(browser)
-        self.assertTrue(header.startswith(f"<{base_url}/@@download/{self.field_name}>"))
 
     def assert_display_inline_works(self, base_url):
         # Test that displaying this file inline works.
         browser = self.get_anon_browser()
         browser.open(base_url + f"/@@display-file/{self.field_name}")
         self.assertIsNone(get_disposition_header(browser))
-        header = get_canonical_header(browser)
-        self.assertTrue(header.startswith(f"<{base_url}/@@download/{self.field_name}>"))
 
     def assert_display_inline_is_download(self, base_url):
         # Test that displaying this file inline turns into a download.
@@ -124,8 +111,6 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)
         self.assertIn("filename", header)
-        header = get_canonical_header(browser)
-        self.assertTrue(header.startswith(f"<{base_url}/@@download/{self.field_name}>"))
 
     def assert_scale_view_works(self, base_url):
         # Test that accessing a scale view shows the image inline.

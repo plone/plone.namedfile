@@ -229,6 +229,8 @@ We will test this with a dummy request, faking traversal::
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''test.txt"
+    >>> request.response.getHeader('Link')
+    '<http://foo/bar/@@download/simple/test.txt>; rel="canonical"'
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blob')
@@ -241,6 +243,8 @@ We will test this with a dummy request, faking traversal::
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''test.txt"
+    >>> request.response.getHeader('Link')
+    '<http://foo/bar/@@download/blob/test.txt>; rel="canonical"'
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'image')
@@ -253,6 +257,8 @@ We will test this with a dummy request, faking traversal::
     'image/foo'
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''zpt.gif"
+    >>> request.response.getHeader('Link')
+    '<http://foo/bar/@@download/image/zpt.gif>; rel="canonical"'
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blobimage')
@@ -265,6 +271,8 @@ We will test this with a dummy request, faking traversal::
     'image/foo'
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''zpt.gif"
+    >>> request.response.getHeader('Link')
+    '<http://foo/bar/@@download/blobimage/zpt.gif>; rel="canonical"'
 
 Range support
 -------------

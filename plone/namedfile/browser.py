@@ -132,7 +132,7 @@ class Download(BrowserView):
         if filename is None:
             return f"{self.context.absolute_url()}/@@download/{self.fieldname}"
         else:
-            return f"{self.context.absolute_url()}/@@download/{self.fieldname}/filename"
+            return f"{self.context.absolute_url()}/@@download/{self.fieldname}/{filename}"
 
     def set_headers(self, file):
         # With filename None, set_headers will not add the download headers.
