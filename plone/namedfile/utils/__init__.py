@@ -130,7 +130,7 @@ def get_contenttype(file=None, filename=None, default="application/octet-stream"
     return default
 
 
-def set_headers(file, response, filename=None):
+def set_headers(file, response, filename=None, canonical=None):
     """Set response headers for the given file. If filename is given, set
     the Content-Disposition to attachment.
     """
@@ -149,6 +149,8 @@ def set_headers(file, response, filename=None):
             "Content-Disposition", f"attachment; filename*=UTF-8''{filename}"
         )
 
+    if canonical is not None:
+        response.setHeader("Link", f'<{canonical}>; rel="canonical"')
 
 def stream_data(file, start=0, end=None):
     """Return the given file as a stream if possible."""
