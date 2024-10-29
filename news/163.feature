@@ -1,1 +1,1 @@
-set canonical header for file. @mamico
+Set `Link` header with `rel="canonical"` for file downloads. @mamico
