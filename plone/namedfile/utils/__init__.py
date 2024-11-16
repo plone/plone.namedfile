@@ -150,7 +150,7 @@ def set_headers(file, response, filename=None, canonical=None):
         )
 
     if canonical is not None:
-        response.setHeader("Link", f'<{quote(canonical, safe='')}>; rel="canonical"')
+        response.setHeader("Link", f'<{quote(canonical, safe="/:&?=@")}>; rel="canonical"')
 
 def stream_data(file, start=0, end=None):
     """Return the given file as a stream if possible."""
