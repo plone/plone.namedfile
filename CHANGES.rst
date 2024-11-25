@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+6.4.0 (2024-11-25)
+------------------
+
+New features:
+
+
+- Set `Link` header with `rel="canonical"` for file downloads. @mamico (#163)
+
+
 6.3.1 (2024-07-30)
 ------------------
 
