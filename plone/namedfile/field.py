@@ -143,7 +143,7 @@ class NamedBlobFile(NamedField):
         # because schema validation checks the property exists
         # which loads the entire file into memory for no reaon.
         # This can slow down imports and uploads a lot.
-        # TODO: better fix might be get DX to check for a decorator first 
+        # TODO: better fix might be get zope.schema to check for a decorator first 
         # - https://stackoverflow.com/questions/16169948/check-if-something-is-an-attribute-or-decorator-in-python
         self.schema = INamedTyped
         try:

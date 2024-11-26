@@ -10,6 +10,7 @@ _ = MessageFactory("plone")
 
 HAVE_BLOBS = True
 
+
 class ITyped(Interface):
 
     contentType = schema.NativeStringLine(
@@ -19,6 +20,7 @@ class ITyped(Interface):
         required=False,
         missing_value="",
     )
+
 
 class IFile(Interface):
 
