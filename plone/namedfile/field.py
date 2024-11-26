@@ -10,6 +10,7 @@ from plone.namedfile.interfaces import INamedFile
 from plone.namedfile.interfaces import INamedFileField
 from plone.namedfile.interfaces import INamedImage
 from plone.namedfile.interfaces import INamedImageField
+from plone.namedfile.interfaces import INamedTyped
 from plone.namedfile.interfaces import IPluggableFileFieldValidation
 from plone.namedfile.interfaces import IPluggableImageFieldValidation
 from plone.namedfile.utils import get_contenttype
@@ -138,7 +139,17 @@ class NamedBlobFile(NamedField):
     accept = ()
 
     def validate(self, value):
-        super().validate(value, IPluggableFileFieldValidation)
+        # Bit of a hack but we avoid loading the .data into memory
+        # because schema validation checks the property exists
+        # which loads the entire file into memory for no reaon.
+        # This can slow down imports and uploads a lot.
+        # TODO: better fix might be get DX to check for a decorator first 
+        # - https://stackoverflow.com/questions/16169948/check-if-something-is-an-attribute-or-decorator-in-python
+        self.schema = INamedTyped
+        try:
+            super().validate(value, IPluggableFileFieldValidation)
+        finally:
+            self.schema = INamedBlobFile
 
 
 @implementer(INamedBlobImageField)
@@ -150,4 +161,9 @@ class NamedBlobImage(NamedField):
     accept = ("image/*",)
 
     def validate(self, value):
-        super().validate(value, IPluggableImageFieldValidation)
+        # see NamedBlobFile comment
+        self.schema = INamedTyped
+        try:
+            super().validate(value, IPluggableImageFieldValidation)
+        finally:
+            self.schema = INamedBlobImage
