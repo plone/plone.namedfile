@@ -227,17 +227,19 @@ def getImageInfo(data):
     return content_type, width, height
 
 
-def get_exif(image):
+def get_exif(image, content_type=None, width=None, height=None):
     #
     exif_data = None
-    image_data = _ensure_data(image)
 
-    content_type, width, height = getImageInfo(image_data)
+    if None in (content_type, width, height):
+        # if we already got the image info don't read the while file into memory
+        content_type, width, height = getImageInfo(_ensure_data(image))
     if content_type in ["image/jpeg", "image/tiff"]:
         # Only this two Image Types could have Exif informations
         # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
         try:
-            exif_data = piexif.load(image_data)
+            # if possible pass filename in instead to prevent reading all data into memory
+            exif_data = piexif.load(image.name if getattr(image, "name") else _ensure_data(image))
         except Exception as e:
             # TODO: determ wich error really happens
             # Should happen if data is to short --> first_bytes

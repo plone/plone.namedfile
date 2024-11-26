@@ -18,6 +18,8 @@
 from OFS.Image import Pdata
 from plone.namedfile.file import FileChunk
 from plone.namedfile.file import NamedBlobImage
+from plone.namedfile.file import NamedBlobFile
+from plone.namedfile import field
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
 
@@ -56,3 +58,54 @@ class TestStorable(unittest.TestCase):
             if os.path.exists(path):
                 os.remove(path)
         self.assertEqual(303, fi.getSize())
+
+    def test_upload_no_read(self):
+        # ensure we don't read the whole file into memory
+
+        import ZODB.blob
+
+        old_open = ZODB.blob.Blob.open
+        blob_read = 0
+        blob_write = 0
+        old_read = ZODB.blob.BlobFile.read
+        read_bytes = 0
+
+        def count_open(self, mode="r"):
+            nonlocal blob_read, blob_write
+            blob_read += 1 if "r" in mode else 0
+            blob_write += 1 if "w" in mode else 0
+            return old_open(self, mode)
+        
+        def count_reads(self, size=-1):
+            nonlocal read_bytes
+            res = old_read(self, size)
+            read_bytes += len(res)
+            return res
+
+        with unittest.mock.patch.object(ZODB.blob.Blob, 'open', count_open), unittest.mock.patch.object(ZODB.blob.BlobFile, 'read', count_reads):
+            data = getFile("image.jpg")
+            f = tempfile.NamedTemporaryFile(delete=False)
+            try:
+                path = f.name
+                f.write(data)
+                f.close()
+                with open(path, "rb") as f:
+                    fi = NamedBlobImage(f, filename="image.gif")
+            finally:
+                if os.path.exists(path):
+                    os.remove(path)
+            self.assertEqual(3641, fi.getSize())
+            self.assertIn('Exif', fi.exif)
+            self.assertLess(read_bytes, 3641, "Images should not need to read all data to get exif and size etc")
+            #self.assertEqual(blob_read, 1, "blob should have only been opened to get size")
+            self.assertEqual(
+                blob_write,
+                1,
+                "Slow write to blob instead of os rename. Should be only 1 on init",
+            )
+            blob_read = 0
+
+            blob_field = field.NamedBlobFile()
+            blob_field.validate(fi)
+
+            self.assertEqual(blob_read, 0, "Validation is reading the whole blob in memory")
