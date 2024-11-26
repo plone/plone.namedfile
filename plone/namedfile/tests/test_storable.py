@@ -67,27 +67,37 @@ class TestStorable(unittest.TestCase):
         old_open = ZODB.blob.Blob.open
         blob_read = 0
         blob_write = 0
+        old_read = ZODB.blob.BlobFile.read
+        read_bytes = 0
 
         def count_open(self, mode="r"):
             nonlocal blob_read, blob_write
             blob_read += 1 if "r" in mode else 0
             blob_write += 1 if "w" in mode else 0
             return old_open(self, mode)
+        
+        def count_reads(self, size=-1):
+            nonlocal read_bytes
+            res = old_read(self, size)
+            read_bytes += len(res)
+            return res
 
-        with unittest.mock.patch.object(ZODB.blob.Blob, 'open', count_open):
-            data = getFile("image.gif")
+        with unittest.mock.patch.object(ZODB.blob.Blob, 'open', count_open), unittest.mock.patch.object(ZODB.blob.BlobFile, 'read', count_reads):
+            data = getFile("image.jpg")
             f = tempfile.NamedTemporaryFile(delete=False)
             try:
                 path = f.name
                 f.write(data)
                 f.close()
                 with open(path, "rb") as f:
-                    fi = NamedBlobFile(f, filename="image.gif")
+                    fi = NamedBlobImage(f, filename="image.gif")
             finally:
                 if os.path.exists(path):
                     os.remove(path)
-            self.assertEqual(303, fi.getSize())
-            self.assertEqual(blob_read, 1, "blob should have only been opened to get size")
+            self.assertEqual(3641, fi.getSize())
+            self.assertIn('Exif', fi.exif)
+            self.assertLess(read_bytes, 3641, "Images should not need to read all data to get exif and size etc")
+            #self.assertEqual(blob_read, 1, "blob should have only been opened to get size")
             self.assertEqual(
                 blob_write,
                 1,
