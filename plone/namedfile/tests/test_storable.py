@@ -99,16 +99,21 @@ class TestStorable(unittest.TestCase):
             self.assertIn('Exif', fi.exif)
             self.assertEqual(500, fi._width)
             self.assertEqual(200, fi._height)
-            self.assertLess(read_bytes, fi.getSize(), "Images should not need to read all data to get exif, dimensions, and also schema validation")
+            self.assertLess(read_bytes, fi.getSize(), "Images should not need to read all data to get exif, dimensions")
             self.assertEqual(blob_read, 3, "blob opening for getsize, get_exif and getImageInfo only")
             self.assertEqual(
                 blob_write,
                 1,
                 "Slow write to blob instead of os rename. Should be only 1 on __init__ to create empty file",
             )
-            blob_read = 0
 
-            blob_field = field.NamedBlobFile()
+            # Test validation which should also not read all the data.
+            blob_read = read_bytes = 0
+
+            blob_field = field.NamedBlobImage()
+            blob_field.validate(fi)
+            blob_field = field.NamedBlobFile()  # Image is subclass of file
             blob_field.validate(fi)
 
             self.assertEqual(blob_read, 0, "Validation is reading the whole blob in memory")
+            self.assertEqual(read_bytes, 0, "Validation is reading the whole blob in memory")
