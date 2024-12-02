@@ -26,6 +26,9 @@ from plone.namedfile.tests import getFile
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
+from ZODB.blob import Blob
+from ZODB.blob import BlobFile
 
 
 class TestStorable(unittest.TestCase):
@@ -62,12 +65,10 @@ class TestStorable(unittest.TestCase):
     def test_upload_no_read(self):
         # ensure we don't read the whole file into memory
 
-        import ZODB.blob
-
-        old_open = ZODB.blob.Blob.open
+        old_open = Blob.open
         blob_read = 0
         blob_write = 0
-        old_read = ZODB.blob.BlobFile.read
+        old_read = BlobFile.read
         read_bytes = 0
 
         def count_open(self, mode="r"):
@@ -82,7 +83,7 @@ class TestStorable(unittest.TestCase):
             read_bytes += len(res)
             return res
 
-        with unittest.mock.patch.object(ZODB.blob.Blob, 'open', count_open), unittest.mock.patch.object(ZODB.blob.BlobFile, 'read', count_reads):
+        with patch.object(Blob, 'open', count_open), patch.object(BlobFile, 'read', count_reads):
             data = getFile("image.jpg")
             f = tempfile.NamedTemporaryFile(delete=False)
             try:
@@ -96,12 +97,14 @@ class TestStorable(unittest.TestCase):
                     os.remove(path)
             self.assertEqual(3641, fi.getSize())
             self.assertIn('Exif', fi.exif)
-            self.assertLess(read_bytes, 3641, "Images should not need to read all data to get exif and size etc")
-            #self.assertEqual(blob_read, 1, "blob should have only been opened to get size")
+            self.assertEqual(500, fi._width)
+            self.assertEqual(200, fi._height)
+            self.assertLess(read_bytes, fi.getSize(), "Images should not need to read all data to get exif, dimensions, and also schema validation")
+            self.assertEqual(blob_read, 3, "blob opening for getsize, get_exif and getImageInfo only")
             self.assertEqual(
                 blob_write,
                 1,
-                "Slow write to blob instead of os rename. Should be only 1 on init",
+                "Slow write to blob instead of os rename. Should be only 1 on __init__ to create empty file",
             )
             blob_read = 0
 

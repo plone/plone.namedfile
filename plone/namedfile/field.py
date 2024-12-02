@@ -141,10 +141,9 @@ class NamedBlobFile(NamedField):
     def validate(self, value):
         # Bit of a hack but we avoid loading the .data into memory
         # because schema validation checks the property exists
-        # which loads the entire file into memory for no reaon.
+        # which loads the entire file into memory without checking the data.
         # This can slow down imports and uploads a lot.
-        # TODO: better fix might be get zope.schema to check for a decorator first 
-        # - https://stackoverflow.com/questions/16169948/check-if-something-is-an-attribute-or-decorator-in-python
+        # TODO: mighe be better fixed in zope.schema - https://github.com/zopefoundation/zope.schema/issues/127
         self.schema = INamedTyped
         try:
             super().validate(value, IPluggableFileFieldValidation)

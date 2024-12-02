@@ -233,7 +233,8 @@ def get_exif(image, content_type=None, width=None, height=None):
 
     if None in (content_type, width, height):
         # if we already got the image info don't read the while file into memory
-        content_type, width, height = getImageInfo(_ensure_data(image))
+        image = _ensure_data(image)
+        content_type, width, height = getImageInfo(image)
     if content_type in ["image/jpeg", "image/tiff"]:
         # Only this two Image Types could have Exif informations
         # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
