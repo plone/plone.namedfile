@@ -69,25 +69,48 @@
   </section>
   <hr />
   <section id="examples">
-    <h2>Examples with mode</h2>
+    <h2>Examples with direction/mode</h2>
+    <p>
+      There are three modes to scale an image: <code>scale</code>, <code>cover</code> and <code>contain</code>.
+    </p>
+    <p>Scaling methods do never stretch/distort the image in one direction only.</p>
 
-    <h3>Mini</h3>
+    <h3>Mini direction=scale</h3>
+    <p>
+      Scales to the requested dimensions without cropping.
+      The resulting image may have a different size than requested.
+      This option requires both, width and height, to be specified.
+      Does not scale up. <small>[from doc-string]</small>
+    </p>
+    <p>
+      Here direction is not explicit set, it uses by default <code>direction="scale"</code>.
+    </p>
+    <p>Deprecated spellings: <code>keep</code>, <code>thumbnail</code>.</p>
     <figure class="figure"
       tal:define="img_tag python:images.tag('image', scale='mini')">
       <img tal:replace="structure img_tag" />
       <br /><code tal:content="img_tag" />
     </figure>
 
-    <h3 id="cover">Mini mode=cover</h3>
+    <h3 id="cover">Mini direction=cover</h3>
+    <p>
+      Scales the relatively largest dimension up to the required size.
+      Despite the alternative spelling, I see no cropping happening. <small>[from doc-string]</small>
+    </p>
+    <p>Deprecated spellings: <code>scale-crop-to-fill</code>, <code>up</code>.</p>
     <figure class="figure"
       tal:define="img_tag python:images.tag('image', scale='mini', mode='cover')">
       <img tal:replace="structure img_tag" />
       <br /><code tal:content="img_tag" />
     </figure>
 
-    <h3 id="contain">Mini mode=contain</h3>
-    <figure class="figure"
-      tal:define="img_tag python:images.tag('image', scale='mini', mode='contain')">
+    <h3 id="contain">Mini direction=contain</h3>
+    <p>
+      Starts by scaling the relatively smallest dimension to the required size and crops the other dimension if needed. <small>[from doc-string]</small>
+    </p>
+    <p>Deprecated spellings: <code>scale-crop-to-fit</code>, <code>down</code>.</p>
+      <figure class="figure"
+      tal:define="img_tag python:images.tag('image', scale='mini', direction='contain')">
       <img tal:replace="structure img_tag" />
       <br /><code tal:content="img_tag" />
     </figure>
