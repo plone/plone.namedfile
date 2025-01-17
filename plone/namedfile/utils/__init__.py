@@ -14,7 +14,6 @@ from zope.interface import implementer
 from ZPublisher.Iterators import IStreamIterator
 
 import mimetypes
-import os.path
 import piexif
 import PIL.Image
 import re
@@ -30,6 +29,26 @@ try:
     from plone.base.interfaces.controlpanel import IImagingSchema
 except ImportError:
     from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
+
+try:
+    # Zope 5.8.6+
+    from OFS.Image import extract_media_type
+except ImportError:
+
+    def extract_media_type(content_type):
+        """extract the proper media type from *content_type*.
+
+        Ignore parameters and whitespace and normalize to lower case.
+        See https://github.com/zopefoundation/Zope/pull/1167
+        """
+        if not content_type:
+            return content_type
+        # ignore parameters
+        content_type = content_type.split(";", 1)[0]
+        # ignore whitespace
+        content_type = "".join(content_type.split())
+        # normalize to lowercase
+        return content_type.lower()
 
 
 @implementer(IStreamIterator)
@@ -94,7 +113,11 @@ def safe_basename(filename):
 
 
 def get_contenttype(file=None, filename=None, default="application/octet-stream"):
-    """Get the MIME content type of the given file and/or filename."""
+    """Get the MIME content type of the given file and/or filename.
+
+    Note: depending on your use case, you may want to call 'extract_media_type'
+    on the result.
+    """
 
     file_type = getattr(file, "contentType", None)
     if file_type:
@@ -102,13 +125,12 @@ def get_contenttype(file=None, filename=None, default="application/octet-stream"
 
     filename = getattr(file, "filename", filename)
     if filename:
-        extension = os.path.splitext(filename)[1].lower()
-        return mimetypes.types_map.get(extension, "application/octet-stream")
+        return mimetypes.guess_type(filename, strict=False)[0] or default
 
     return default
 
 
-def set_headers(file, response, filename=None):
+def set_headers(file, response, filename=None, canonical=None):
     """Set response headers for the given file. If filename is given, set
     the Content-Disposition to attachment.
     """
@@ -127,6 +149,8 @@ def set_headers(file, response, filename=None):
             "Content-Disposition", f"attachment; filename*=UTF-8''{filename}"
         )
 
+    if canonical is not None:
+        response.setHeader("Link", f'<{quote(canonical, safe="/:&?=@")}>; rel="canonical"')
 
 def stream_data(file, start=0, end=None):
     """Return the given file as a stream if possible."""

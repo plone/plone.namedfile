@@ -1,6 +1,7 @@
 # The implementations in this file are largely borrowed
 # from zope.app.file and z3c.blobfile
 # and are licensed under the ZPL.
+from DateTime import DateTime
 from logging import getLogger
 from persistent import Persistent
 from plone.namedfile.interfaces import INamedBlobFile
@@ -70,8 +71,17 @@ except ImportError:
     pass
 
 
+class ModifiedPropertyMixin:
+    @property
+    def modified(self):
+        if hasattr(self, "_modified"):
+            return self._modified / 1000
+        # Fall back to modification time in database.
+        return self._p_mtime
+
+
 @implementer(INamedFile)
-class NamedFile(Persistent):
+class NamedFile(Persistent, ModifiedPropertyMixin):
     """A non-BLOB file that stores a filename
 
     Let's test the constructor:
@@ -169,6 +179,7 @@ class NamedFile(Persistent):
         self.data = data
         self.contentType = contentType
         self.filename = filename
+        self._modified = DateTime().millis()
 
     def _getData(self):
         if isinstance(self._data, tuple(FILECHUNK_CLASSES)):
@@ -177,6 +188,7 @@ class NamedFile(Persistent):
             return self._data
 
     def _setData(self, data):
+        self._modified = DateTime().millis()
 
         # Handle case when data is a string
         if isinstance(data, str):
@@ -310,7 +322,7 @@ class NamedImage(NamedFile):
 
 
 @implementer(INamedBlobFile, HTTPRangeSupport.HTTPRangeInterface)
-class NamedBlobFile(Persistent):
+class NamedBlobFile(Persistent, ModifiedPropertyMixin):
     """A file stored in a ZODB BLOB, with a filename"""
 
     filename = FieldProperty(INamedFile["filename"])
@@ -325,6 +337,7 @@ class NamedBlobFile(Persistent):
         f.close()
         self._setData(data)
         self.filename = filename
+        self._modified = DateTime().millis()
 
     def open(self, mode="r"):
         if mode != "r" and "size" in self.__dict__:
@@ -342,6 +355,7 @@ class NamedBlobFile(Persistent):
         log.debug("Storage selected for data: %s", dottedName)
         storable = getUtility(IStorage, name=dottedName)
         storable.store(data, self._blob)
+        self._modified = DateTime().millis()
 
     def _getData(self):
         fp = self._blob.open("r")
@@ -405,7 +419,8 @@ class NamedBlobImage(NamedBlobFile):
         super()._setData(data)
         firstbytes = self.getFirstBytes()
         res = getImageInfo(firstbytes)
-        if res == ("image/jpeg", -1, -1) or res == ("image/tiff", -1, -1):
+        if res == ("image/jpeg", -1, -1) or res == ("image/tiff", -1, -1) or \
+                res == ("image/svg+xml", -1, -1):
             # header was longer than firstbytes
             start = len(firstbytes)
             length = max(0, MAX_INFO_BYTES - start)

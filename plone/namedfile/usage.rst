@@ -32,6 +32,9 @@ These store data with the following types::
     ...         self.image = namedfile.NamedImage()
     ...         self.blob = namedfile.NamedBlobFile()
     ...         self.blobimage = namedfile.NamedBlobImage()
+    ...
+    ...     def absolute_url(self):
+    ...         return "http://foo/bar"
 
 
 File data and content type
@@ -153,6 +156,55 @@ The filename must be set to a unicode string, not a bytestring::
     zope.schema._bootstrapinterfaces.WrongType: ...
 
 
+Restricting media types
+-----------------------
+
+It is possible to define accepted media types, just like with the "accept"
+attribute of HTML file inputs. You can pass a tuple of file extensions or media
+type values::
+
+
+    >>> class IFileContainerConstrained(Interface):
+    ...     file = field.NamedFile(title=u"File", accept=("text/plain", ".pdf"))
+
+    >>> @implementer(IFileContainerConstrained)
+    ... class FileContainerConstrained:
+    ...     __allow_access_to_unprotected_subobjects__ = 1
+    ...     def __init__(self):
+    ...         self.file = namedfile.NamedFile()
+
+    >>> container_constrained = FileContainerConstrained()
+
+
+Adding valid file types and checking passes. Note, that the validation logic is
+called by the framework and does not need to be called manualle, like in this
+test.
+::
+
+    >>> container_constrained.file = namedfile.NamedFile(
+    ...     'dummy test data',
+    ...     filename=u"test.txt"
+    ... )
+    >>> IFileContainerConstrained["file"].validate(container_constrained.file)
+
+    >>> container_constrained.file = namedfile.NamedFile(
+    ...     'dummy test data',
+    ...     filename=u"test.pdf"
+    ... )
+    >>> IFileContainerConstrained["file"].validate(container_constrained.file)
+
+Adding invalid file types and checking fails with a ValidationError::
+
+    >>> container_constrained.file = namedfile.NamedFile(
+    ...     'dummy test data',
+    ...     filename=u"test.wav"
+    ... )
+    >>> IFileContainerConstrained["file"].validate(container_constrained.file)
+    Traceback (most recent call last):
+    ...
+    plone.namedfile.field.InvalidFile: ('audio/x-wav', 'file')
+
+
 Download view
 -------------
 
@@ -177,6 +229,8 @@ We will test this with a dummy request, faking traversal::
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''test.txt"
+    >>> request.response.getHeader('Link')
+    '<http://foo/bar/@@download/simple/test.txt>; rel="canonical"'
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blob')
@@ -189,6 +243,8 @@ We will test this with a dummy request, faking traversal::
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''test.txt"
+    >>> request.response.getHeader('Link')
+    '<http://foo/bar/@@download/blob/test.txt>; rel="canonical"'
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'image')
@@ -201,6 +257,8 @@ We will test this with a dummy request, faking traversal::
     'image/foo'
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''zpt.gif"
+    >>> request.response.getHeader('Link')
+    '<http://foo/bar/@@download/image/zpt.gif>; rel="canonical"'
 
     >>> request = TestRequest()
     >>> download = Download(container, request).publishTraverse(request, 'blobimage')
@@ -213,6 +271,8 @@ We will test this with a dummy request, faking traversal::
     'image/foo'
     >>> request.response.getHeader('Content-Disposition')
     "attachment; filename*=UTF-8''zpt.gif"
+    >>> request.response.getHeader('Link')
+    '<http://foo/bar/@@download/blobimage/zpt.gif>; rel="canonical"'
 
 Range support
 -------------
@@ -357,8 +417,8 @@ several ways that you may reference scales from page templates.
 
 1. for full control you may do the tag generation explicitly::
 
-     <img tal:define="scales context/@@images;
-                      thumbnail python: scales.scale('image', width=64, height=64);"
+     <img tal:define="images context/@@images;
+                      thumbnail python: images.scale('image', width=64, height=64);"
           tal:condition="thumbnail"
           tal:attributes="src thumbnail/url;
                           width thumbnail/width;
@@ -366,16 +426,16 @@ several ways that you may reference scales from page templates.
 
    This would create an up to 64 by 64 pixel scaled down version of the image
    stored in the "image" field.  It also allows for passing in additional
-   parameters support by `plone.scale`_'s ``scaleImage`` function, e.g.
-   ``direction`` or ``quality``.
+   parameters supported by the ``scaleImage`` function from ``plone.scale``,
+   e.g. ``mode`` or ``quality``.
 
-   .. _`plone.scale`: http://pypi.python.org/pypi/plone.scale
+   .. _`plone.scale`: https://pypi.org/project/plone.scale/
 
 2. for automatic tag generation with extra parameters you would use::
 
-     <img tal:define="scale context/@@images"
-          tal:replace="structure python: scale.scale('image',
-                       width=1200, height=800, direction='down').tag()" />
+     <img tal:define="images context/@@images"
+          tal:replace="structure python: images.tag('image',
+                       width=1200, height=800, mode='contain')" />
 
 3. It is possible to access scales via predefined named scale sizes, rather
    than hardcoding the dimensions every time you access a scale.  The scale
@@ -384,9 +444,8 @@ several ways that you may reference scales from page templates.
    scale name => (width, height).  A scale called 'mini' could then be accessed
    like this::
 
-     <img tal:define="scale context/@@images"
-          tal:replace="structure python: scale.scale('image',
-                       scale='mini').tag()" />
+     <img tal:define="images context/@@images"
+          tal:replace="structure python: images.tag('image', scale='mini')" />
 
    This would use the predefined scale size "mini" to determine the desired
    image dimensions, but still allow to pass in extra parameters.

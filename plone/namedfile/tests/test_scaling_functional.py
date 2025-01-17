@@ -10,6 +10,7 @@ from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
 from plone.testing.zope import Browser
+from zExceptions import BadRequest
 from zope.annotation import IAttributeAnnotatable
 from zope.interface import implementer
 
@@ -214,6 +215,11 @@ class ImagePublisherTests(unittest.TestCase):
         )
         self.assertEqual("image/svg+xml", self.browser.headers["content-type"])
         self.assertEqual(self.browser.contents, data)
+
+    def testImagesViewWithNoSubpath(self):
+        transaction.commit()
+        with self.assertRaises(BadRequest):
+            self.browser.open(self.layer["app"].absolute_url() + "/item/@@images")
 
 
 def test_suite():

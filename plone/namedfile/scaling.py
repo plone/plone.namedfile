@@ -6,10 +6,14 @@ from io import StringIO
 from io import TextIOWrapper
 from plone.memoize import ram
 from plone.namedfile.file import FILECHUNK_CLASSES
+from plone.namedfile.browser import ALLOWED_INLINE_MIMETYPES
+from plone.namedfile.browser import DISALLOWED_INLINE_MIMETYPES
+from plone.namedfile.browser import USE_DENYLIST
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.picture import get_picture_variants
 from plone.namedfile.picture import Img2PictureTag
+from plone.namedfile.utils import extract_media_type
 from plone.namedfile.utils import getHighPixelDensityScales
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
@@ -24,6 +28,7 @@ from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.utils import safe_text
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
+from zExceptions import BadRequest
 from zExceptions import Unauthorized
 from ZODB.blob import BlobFile
 from ZODB.POSException import ConflictError
@@ -33,13 +38,14 @@ from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import alsoProvides
 from zope.interface import implementer
-from zope.publisher.interfaces import IPublishTraverse
+from zope.publisher.interfaces.browser import IBrowserPublisher
 from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import ITraversable
 from zope.traversing.interfaces import TraversalError
 
 import functools
 import logging
+import warnings
 
 
 logger = logging.getLogger(__name__)
@@ -75,6 +81,14 @@ class ImageScale(BrowserView):
     __roles__ = ("Anonymous",)
     __allow_access_to_unprotected_subobjects__ = 1
     data = None
+
+    # You can control which mimetypes may be shown inline
+    # and which must always be downloaded, for security reasons.
+    # Make the configuration available on the class.
+    # Then subclasses can override this.
+    allowed_inline_mimetypes = ALLOWED_INLINE_MIMETYPES
+    disallowed_inline_mimetypes = DISALLOWED_INLINE_MIMETYPES
+    use_denylist = USE_DENYLIST
 
     def __init__(self, context, request, **info):
         self.context = context
@@ -168,10 +182,37 @@ class ImageScale(BrowserView):
         fieldname = getattr(self.data, "fieldname", getattr(self, "fieldname", None))
         guarded_getattr(self.context, fieldname)
 
+    def _should_force_download(self):
+        # If this returns True, the caller should call set_headers with a filename.
+        if not hasattr(self.data, "contentType"):
+            return
+        mimetype = extract_media_type(self.data.contentType)
+        if self.use_denylist:
+            # We explicitly deny a few mimetypes, and allow the rest.
+            return mimetype in self.disallowed_inline_mimetypes
+        # Use the allowlist.
+        # We only explicitly allow a few mimetypes, and deny the rest.
+        return mimetype not in self.allowed_inline_mimetypes
+
+    def set_headers(self, response=None):
+        # set headers for the image
+        image = self.data
+        if response is None:
+            response = self.request.response
+        filename = None
+        if self._should_force_download():
+            # We MUST pass a filename, even a dummy one if needed.
+            filename = getattr(image, "filename", getattr(self, "filename", None))
+            if filename is None:
+                filename = getattr(image, "fieldname", getattr(self, "fieldname", None))
+                if filename is None:
+                    filename = "image.ext"
+        set_headers(image, response, filename=filename)
+
     def index_html(self):
         """download the image"""
         self.validate_access()
-        set_headers(self.data, self.request.response)
+        self.set_headers()
         return stream_data(self.data)
 
     def manage_DAVget(self):
@@ -191,7 +232,7 @@ class ImageScale(BrowserView):
         without transfer of the image itself
         """
         self.validate_access()
-        set_headers(self.data, REQUEST.response)
+        self.set_headers(response=REQUEST.response)
         return ""
 
     HEAD.__roles__ = ("Anonymous",)
@@ -277,14 +318,16 @@ class DefaultImageScalingFactory:
                 parameters["quality"] = quality
         return parameters
 
-    def create_scale(self, data, direction, height, width, **parameters):
-        return scaleImage(
-            data, direction=direction, height=height, width=width, **parameters
-        )
+    def create_scale(self, data, mode, height, width, **parameters):
+        if "direction" in parameters:
+            warnings.warn(
+                "The 'direction' option is deprecated, use 'mode' instead.",
+                DeprecationWarning,
+            )
+            mode = parameters.pop("direction")
+        return scaleImage(data, mode=mode, height=height, width=width, **parameters)
 
-    def handle_image(
-        self, orig_value, orig_data, direction, height, width, **parameters
-    ):
+    def handle_image(self, orig_value, orig_data, mode, height, width, **parameters):
         """Return a scaled image, its mimetype format, and width and height."""
         if getattr(orig_value, "contentType", "") == "image/svg+xml":
             if isinstance(orig_data, bytes):
@@ -295,7 +338,7 @@ class DefaultImageScalingFactory:
             return scaled_data, "svg+xml", size
         try:
             result = self.create_scale(
-                orig_data, direction=direction, height=height, width=width, **parameters
+                orig_data, mode=mode, height=height, width=width, **parameters
             )
         except (ConflictError, KeyboardInterrupt):
             raise
@@ -312,7 +355,7 @@ class DefaultImageScalingFactory:
     def __call__(
         self,
         fieldname=None,
-        direction="thumbnail",
+        mode="scale",
         height=None,
         width=None,
         scale=None,
@@ -330,19 +373,25 @@ class DefaultImageScalingFactory:
         orig_value = self.get_original_value()
         if orig_value is None:
             return
-
-        if height is None and width is None:
-            # We don't seem to want an image, so we return nothing
-            # as image value (the first argument).
-            dummy, format_ = orig_value.contentType.split("/", 1)
-            return None, format_, (orig_value._width, orig_value._height)
-        if (
-            not parameters
-            and height
-            and width
-            and height == getattr(orig_value, "_height", None)
-            and width == getattr(orig_value, "_width", None)
-        ):
+        want_original = height is None and width is None
+        if not want_original:
+            if "direction" in parameters:
+                warnings.warn(
+                    "The 'direction' option is deprecated, use 'mode' instead.",
+                    DeprecationWarning,
+                )
+                # We must get rid of this duplicate parameter, otherwise it ends up in
+                # hashes and it negates the next condition.
+                mode = parameters.pop("direction")
+            if (
+                not parameters
+                and height
+                and width
+                and height == getattr(orig_value, "_height", None)
+                and width == getattr(orig_value, "_width", None)
+            ):
+                want_original = True
+        if want_original:
             # No special wishes, and the original image already has the
             # requested height and width.  Return the original.
             dummy, format_ = orig_value.contentType.split("/", 1)
@@ -357,7 +406,7 @@ class DefaultImageScalingFactory:
             del parameters["modified"]
         try:
             result = self.handle_image(
-                orig_value, orig_data, direction, height, width, **parameters
+                orig_value, orig_data, mode, height, width, **parameters
             )
         finally:
             # Make sure the file is closed to avoid error:
@@ -382,7 +431,7 @@ class DefaultImageScalingFactory:
         return value, format_, dimensions
 
 
-@implementer(ITraversable, IPublishTraverse)
+@implementer(ITraversable, IBrowserPublisher)
 class ImageScaling(BrowserView):
     """view used for generating (and storing) image scales"""
 
@@ -426,6 +475,10 @@ class ImageScaling(BrowserView):
             return scale_view
         raise NotFound(self, name, self.request)
 
+    def browserDefault(self, request):
+        # There's nothing in the path after /@@images
+        raise BadRequest("Missing image scale path")
+
     def traverse(self, name, furtherPath):
         """used for path traversal, i.e. in zope page templates"""
         # validate access
@@ -449,9 +502,10 @@ class ImageScaling(BrowserView):
     @deprecate("use property available_sizes instead")
     def getAvailableSizes(self, fieldname=None):
         if fieldname:
-            logger.warning(
+            warnings.warn(
                 "fieldname was passed to deprecated getAvailableSizes, but "
                 "will be ignored.",
+                DeprecationWarning,
             )
         return self.available_sizes
 
@@ -510,8 +564,8 @@ class ImageScaling(BrowserView):
         context = aq_base(self.context)
         if fieldname is not None:
             field = getattr(context, fieldname, None)
-            field_p_mtime = getattr(field, "_p_mtime", None)
-            date = DateTime(field_p_mtime or context._p_mtime)
+            modified = getattr(field, "modified", None)
+            date = DateTime(modified or context._p_mtime)
         else:
             date = DateTime(context._p_mtime)
         return date.millis()
@@ -522,7 +576,7 @@ class ImageScaling(BrowserView):
         scale=None,
         height=None,
         width=None,
-        direction="thumbnail",
+        mode="scale",
         pre=False,
         include_srcset=None,
         **parameters,
@@ -537,9 +591,9 @@ class ImageScaling(BrowserView):
             fieldname = primary.fieldname
         if scale is not None:
             if width is not None or height is not None:
-                logger.warn(
-                    "A scale name and width/heigth are given. Those are"
-                    "mutually exclusive: solved by ignoring width/heigth and "
+                logger.warning(
+                    "A scale name and width/height are given. Those are "
+                    "mutually exclusive: solved by ignoring width/height and "
                     "taking name",
                 )
             available = self.available_sizes
@@ -558,7 +612,7 @@ class ImageScaling(BrowserView):
             fieldname=fieldname,
             height=height,
             width=width,
-            direction=direction,
+            mode=mode,
             scale=scale,
             **parameters,
         )
@@ -577,7 +631,7 @@ class ImageScaling(BrowserView):
                     fieldname=fieldname,
                     height=height,
                     width=width,
-                    direction=direction,
+                    mode=mode,
                     scale=scale,
                     storage=storage,
                     **parameters,
@@ -593,7 +647,7 @@ class ImageScaling(BrowserView):
         scale=None,
         height=None,
         width=None,
-        direction="thumbnail",
+        mode="scale",
         storage=None,
         **parameters,
     ):
@@ -611,7 +665,7 @@ class ImageScaling(BrowserView):
                 fieldname=fieldname,
                 height=height * hdScale["scale"] if height else height,
                 width=width * hdScale["scale"] if width else width,
-                direction=direction,
+                mode=mode,
                 **parameters,
             )
             if scale_src is None:
@@ -626,10 +680,10 @@ class ImageScaling(BrowserView):
         scale=None,
         height=None,
         width=None,
-        direction="thumbnail",
+        mode="scale",
         **kwargs,
     ):
-        scale = self.scale(fieldname, scale, height, width, direction, pre=True)
+        scale = self.scale(fieldname, scale, height, width, mode, pre=True)
         return scale.tag(**kwargs) if scale else None
 
     def picture(
@@ -734,7 +788,7 @@ class NavigationRootScaling(ImageScaling):
         """Try to get a tag from the image_scales metadata.
 
         If we have any non-standard keyword arguments, we cannot use this method.
-        Especially you cannot set a direction: we must use the default "thumbnail".
+        Especially you cannot set a mode: we must use the default "scale" mode.
 
         Also, no old-style hidpi srcsets are included.  If the site has enabled this,
         we return nothing: this information is not (easily) available in the brain.

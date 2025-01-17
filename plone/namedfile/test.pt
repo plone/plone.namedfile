@@ -99,7 +99,7 @@
     </p>
     <p>Deprecated spellings: <code>scale-crop-to-fill</code>, <code>up</code>.</p>
     <figure class="figure"
-      tal:define="img_tag python:images.tag('image', scale='mini', direction='cover')">
+      tal:define="img_tag python:images.tag('image', scale='mini', mode='cover')">
       <img tal:replace="structure img_tag" />
       <br /><code tal:content="img_tag" />
     </figure>
@@ -119,8 +119,8 @@
   <section id="picture">
     <h2>Picture tags</h2>
     <p>
-      Temporary note:
-      Picture tags only work on Plone 6. If not available (like on Plone 5.2), an ordinary image tag is created.
+      Picture tags only work on Plone 6.
+      If not available (like on Plone 5.2), an ordinary image tag is created.
     </p>
 
     <h3 id="picture_tag_large">Picture Tag Large</h3>

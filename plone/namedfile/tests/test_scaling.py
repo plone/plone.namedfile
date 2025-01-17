@@ -11,6 +11,7 @@ from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
+from plone.namedfile.tests import MockNamedImage
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.storage import IImageScaleStorage
@@ -30,6 +31,7 @@ import plone.namedfile.scaling
 import re
 import time
 import unittest
+import warnings
 
 
 # Unique scale name used to be a uuid.uui4(),
@@ -140,10 +142,6 @@ class PrimaryFieldInfo:
     @property
     def value(self):
         return self.field
-
-
-class MockNamedImage(NamedImage):
-    _p_mtime = DateTime().millis()
 
 
 @implementer(IScaledImageQuality)
@@ -546,9 +544,17 @@ http://nohost/item/@@images/image-400-....png 400w,
 http://nohost/item/@@images/image-800-....png 800w,
 http://nohost/item/@@images/image-1000-....png 1000w,
 http://nohost/item/@@images/image-1200-....png 1200w"/>
- <img height="200" loading="lazy" src="http://nohost/item/@@images/image-600-....png" title="foo" width="200"/>
+ <img...src="http://nohost/item/@@images/image-600-....png".../>
 </picture>"""
-        self.assertTrue(_ellipsis_match(expected, tag))
+        self.assertTrue(_ellipsis_match(expected, tag.strip()))
+
+        # The exact placement of the img tag attributes can differ, especially
+        # with different beautifulsoup versions.
+        # So check here that all attributes are present.
+        self.assertIn('height="200"', tag)
+        self.assertIn('loading="lazy"', tag)
+        self.assertIn('title="foo"', tag)
+        self.assertIn('width="200"', tag)
 
     @patch.object(
         plone.namedfile.scaling,
@@ -579,9 +585,18 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 {base}/@@images/image-800-....png 800w,
 {base}/@@images/image-1000-....png 1000w,
 {base}/@@images/image-1200-....png 1200w"/>
- <img alt="Alternative text" height="200" loading="lazy" src="{base}/@@images/image-600-....png" title="Custom title" width="200"/>
+ <img...src="{base}/@@images/image-600-....png".../>
 </picture>"""
-        self.assertTrue(_ellipsis_match(expected, tag))
+        self.assertTrue(_ellipsis_match(expected, tag.strip()))
+
+        # The exact placement of the img tag attributes can differ, especially
+        # with different beautifulsoup versions.
+        # So check here that all attributes are present.
+        self.assertIn('alt="Alternative text"', tag)
+        self.assertIn('height="200"', tag)
+        self.assertIn('loading="lazy"', tag)
+        self.assertIn('title="Custom title"', tag)
+        self.assertIn('width="200"', tag)
 
     @patch.object(
         plone.namedfile.scaling,
@@ -600,8 +615,15 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
         tag = self.scaling.picture("image", picture_variant="medium")
-        expected = """<img src="http://nohost/item/@@images/image-0-....png" title="foo" height="200" width="200" />"""
-        self.assertTrue(_ellipsis_match(expected, tag))
+        expected = """<img...src="http://nohost/item/@@images/image-0-....png".../>"""
+        self.assertTrue(_ellipsis_match(expected, tag.strip()))
+
+        # The exact placement of the img tag attributes can differ, especially
+        # with different beautifulsoup versions.
+        # So check here that all attributes are present.
+        self.assertIn('height="200"', tag)
+        self.assertIn('title="foo"', tag)
+        self.assertIn('width="200"', tag)
 
     def testGetUnknownScale(self):
         foo = self.scaling.scale("image", scale="foo?")
@@ -612,7 +634,6 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 
         # Test that different parameters give different scale
         self.item.modified = lambda: dt
-        self.item.image._p_mtime = dt.millis()
         scale1a = self.scaling.scale("image", width=100, height=80)
         scale2a = self.scaling.scale("image", width=80, height=60)
         self.assertNotEqual(scale1a.data, scale2a.data)
@@ -625,13 +646,32 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         self.assertEqual(scale1a.data, scale1b.data)
         self.assertEqual(scale2a.data, scale2b.data)
 
-        # Test that field modification invalidates scales
+        # Test changing _p_mtime on the field no longer invalidates a scale
         self.item.image._p_mtime = (dt + 1).millis()
         scale1b = self.scaling.scale("image", width=100, height=80)
         scale2b = self.scaling.scale("image", width=80, height=60)
         self.assertNotEqual(scale1b.data, scale2b.data)
-        self.assertNotEqual(scale1a.data, scale1b.data, "scale not updated?")
-        self.assertNotEqual(scale2a.data, scale2b.data, "scale not updated?")
+        self.assertEqual(scale1a.data, scale1b.data)
+        self.assertEqual(scale2a.data, scale2b.data)
+
+        # Test changing the fields modified timestamp invalidates scales
+        self.item.image._modified = (dt + 1).millis()
+        scale1c = self.scaling.scale("image", width=100, height=80)
+        scale2c = self.scaling.scale("image", width=80, height=60)
+        self.assertNotEqual(scale1c.data, scale2c.data)
+        self.assertNotEqual(scale1a.data, scale1c.data, "scale not updated?")
+        self.assertNotEqual(scale2a.data, scale2c.data, "scale not updated?")
+
+    def testFallBackToDatabaseModifiedTimeStamp(self):
+        dt = self.item.modified()
+        scale_a = self.scaling.scale("image", width=100, height=80)
+
+        delattr(self.item.image, "_modified")
+
+        # Since there is no _modified timestamp, _p_mtime is the fallback.
+        self.item.image._p_mtime = (dt + 1).millis()
+        scale_b = self.scaling.scale("image", width=100, height=80)
+        self.assertNotEqual(scale_a.data, scale_b.data)
 
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
@@ -672,7 +712,29 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 
     def testGetAvailableSizes(self):
         self.scaling.available_sizes = {"foo": (60, 60)}
-        assert self.scaling.getAvailableSizes("image") == {"foo": (60, 60)}
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("once")
+            self.assertEqual(
+                self.scaling.getAvailableSizes(),
+                {"foo": (60, 60)},
+            )
+            self.assertEqual(len(w), 1)
+            self.assertIs(w[0].category, DeprecationWarning)
+            self.assertIn(
+                "use property available_sizes instead",
+                str(w[0].message),
+            )
+            self.assertEqual(
+                self.scaling.getAvailableSizes("image"),
+                {"foo": (60, 60)},
+            )
+            self.assertEqual(len(w), 2)
+            self.assertIs(w[1].category, DeprecationWarning)
+            self.assertIn(
+                "fieldname was passed to deprecated getAvailableSizes, but "
+                "will be ignored.",
+                str(w[1].message),
+            )
 
     def testGetImageSize(self):
         assert self.scaling.getImageSize("image") == (200, 200)
@@ -717,9 +779,11 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 
         Image quality is not available for PNG images.
         """
+        dt = DateTime()
         data = getFile("image.jpg")
         item = DummyContent()
         item.image = NamedImage(data, "image/png", "image.jpg")
+        item.image._modified = dt.millis()
         scaling = ImageScaling(item, None)
 
         # scale an image, record its size
@@ -730,7 +794,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         gsm = getGlobalSiteManager()
         qualitySupplier = DummyQualitySupplier()
         gsm.registerUtility(qualitySupplier.getQuality, IScaledImageQuality)
-        wait_to_ensure_modified()
+        item.image._modified = (dt + 1).millis()
         # now scale again
         bar = scaling.scale("image", width=100, height=80)
         size_bar = bar.data.getSize()
@@ -954,6 +1018,34 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(
             scaling.tag("image", alt="own alt", title="own title"),
             '<img src="http://fake.image/@@images/image.jpeg" alt="own alt" title="own title" height="4" width="6" />'
+        )
+
+
+class Img2PictureTagTests(unittest.TestCase):
+    """Low level tests for Img2PictureTag."""
+
+    def _makeOne(self):
+        return plone.namedfile.picture.Img2PictureTag()
+
+    def test_update_src_scale(self):
+        update_src_scale = self._makeOne().update_src_scale
+        self.assertEqual(
+            update_src_scale("foo/fieldname/old", "new"),
+            "foo/fieldname/new"
+        )
+        self.assertEqual(
+            update_src_scale("@@images/fieldname/old", "mini"),
+            "@@images/fieldname/mini"
+        )
+        self.assertEqual(
+            update_src_scale("@@images/fieldname", "preview"),
+            "@@images/fieldname/preview"
+        )
+        self.assertEqual(
+            update_src_scale(
+                "photo.jpg/@@images/image-1200-4a03b0a8227d28737f5d9e3e481bdbd6.jpeg",
+                "teaser"),
+            "photo.jpg/@@images/image/teaser",
         )
 
 

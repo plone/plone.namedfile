@@ -15,7 +15,7 @@ except ImportError:
     from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 
 
-logger = logging.getLogger("plone.outputfilter.picture_variant")
+logger = logging.getLogger(__name__)
 appendix_re = re.compile("^(.*)([?#].*)$")
 resolveuid_re = re.compile("^[./]*resolve[Uu]id/([^/]*)/?(.*)$")
 
@@ -47,6 +47,8 @@ class Img2PictureTag:
         """
         allowed_scales = get_allowed_scales()
         scale_info = allowed_scales.get(scale)
+        if not scale_info:
+            return
         return scale_info[0]
 
     def create_picture_tag(
@@ -61,7 +63,7 @@ class Img2PictureTag:
         soup = BeautifulSoup("", "html.parser")
         allowed_scales = get_allowed_scales()
         if uid:
-            obj = uuidToObject(uid)
+            obj = uuidToObject(uid, unrestricted=True)
         else:
             obj = self.resolve_uid_url(src)
         picture_tag = soup.new_tag("picture")
@@ -80,6 +82,10 @@ class Img2PictureTag:
             source_scales = [target_scale] + additional_scales
             source_srcset = []
             for scale in source_scales:
+                scale_width = self.get_scale_width(scale)
+                if not scale_width:
+                    logger.warning("No width found for scale %s.", scale)
+                    continue
                 if resolve_urls and obj:
                     scale_view = obj.unrestrictedTraverse("@@images", None)
                     scale_obj = scale_view.scale(fieldname, scale, pre=True)
@@ -90,7 +96,6 @@ class Img2PictureTag:
                     # scale_obj = scale_view.scale(fieldname, scale, pre=True)
                     # scale_url = scale_obj.url
                     scale_url = self.update_src_scale(src=src, scale=scale)
-                scale_width = self.get_scale_width(scale)
                 source_srcset.append(f"{scale_url} {scale_width}w")
             source_tag = soup.new_tag("source", srcset=",\n".join(source_srcset))
             if media:
@@ -130,7 +135,7 @@ class Img2PictureTag:
         match = resolveuid_re.match(subpath)
         if match is not None:
             uid, _subpath = match.groups()
-            obj = uuidToObject(uid)
+            obj = uuidToObject(uid, unrestricted=True)
         return obj
 
     def update_src_scale(self, src, scale):
@@ -140,5 +145,15 @@ class Img2PictureTag:
             src_scale = "/".join(parts[:-1]) + f"/{field_name}/{scale}"
             src_scale
         else:
-            src_scale = "/".join(parts[:-1]) + f"/{scale}"
+            # Usually the url has '@@images/fieldname/other_scale',
+            # and then we replace the other scale.
+            # But the url may use the original image, e.g. @@images/image.
+            # Then we want to keep the fieldname and return '.../image/scale'.
+            try:
+                full = len(parts) - parts.index("@@images") == 2
+            except ValueError:
+                full = False
+            if not full:
+                parts = parts[:-1]
+            src_scale = "/".join(parts) + f"/{scale}"
         return src_scale

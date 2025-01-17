@@ -8,6 +8,185 @@ Changelog
 
 .. towncrier release notes start
 
+6.4.0 (2024-11-25)
+------------------
+
+New features:
+
+
+- Set `Link` header with `rel="canonical"` for file downloads. @mamico (#163)
+
+
+6.3.1 (2024-07-30)
+------------------
+
+Bug fixes:
+
+
+- Fix: Upload a svg without width and height set  @dobri1408 (#161)
+
+
+6.3.0 (2024-03-15)
+------------------
+
+New features:
+
+
+- Improve contenttype detection logic for unregistered but common types.
+
+  Change get_contenttype to support common types which are or were not registered
+  with IANA, like image/webp or audio/midi.
+
+  Note: image/webp is already a IANA registered type and also added by
+  Products.MimetypesRegistry.
+  [thet] (157-2)
+- Support for allowed media types.
+
+  Support to constrain files to specific media types with a "accept" attribute on
+  file and image fields, just like the "accept" attribute of the HTML file input.
+
+  Fixes: #157
+  [thet] (#157)
+
+
+6.2.3 (2023-11-03)
+------------------
+
+Bug fixes:
+
+
+- Be more strict when checking if mimetype is allowed to be displayed inline.
+  [maurits] (#1167)
+
+
+6.2.2 (2023-10-18)
+------------------
+
+Bug fixes:
+
+
+- Fix calculation of file modification time. @davisagli (#153)
+
+
+6.2.1 (2023-09-21)
+------------------
+
+Bug fixes:
+
+
+- Fix stored XSS (Cross Site Scripting) for SVG images.
+  Done by forcing a download instead of displaying inline.
+  See `security advisory <https://github.com/plone/plone.namedfile/security/advisories/GHSA-jj7c-jrv4-c65x>`_.
+  [maurits] (#1)
+
+
+6.2.0 (2023-09-14)
+------------------
+
+New features:
+
+
+- Add internal modification timestamp with fallback to _p_mtime.
+  [mathias.leimgruber] (#149)
+- Use new internal modification timestamp as part of the hash key for scales.
+  [mathias.leimgruber] (#150)
+
+
+6.1.2 (2023-08-31)
+------------------
+
+Bug fixes:
+
+
+- Fixed the issue where SVG images containing extensive metadata were not being displayed
+  correctly (resulting in a width/height of 1px). This problem could occur when the
+  <svg> tag exceeded the MAX_INFO_BYTES limit.
+
+  Fixes `issue 147 <https://github.com/plone/plone.namedfile/issues/147>`_.
+  [mliebischer] (#147)
+
+
+6.1.1 (2023-06-22)
+------------------
+
+Bug fixes:
+
+
+- Return a 400 Bad Request response if the `@@images` view is published without a subpath. @davisagli (#144)
+
+
+Tests
+
+
+- Fix tests to work with various ``beautifulsoup4`` versions.
+  [maurits] (#867)
+
+
+6.1.0 (2023-05-22)
+------------------
+
+New features:
+
+
+- Move ``Zope2FileUploadStorable`` code from plone.app.z3cform to here to break a cyclic dependency.
+  [gforcada] (#3764)
+
+
+6.0.2 (2023-05-08)
+------------------
+
+Bug fixes:
+
+
+- Fix picture tag when original image is used instead of a scale.
+  [maurits] (#142)
+
+
+6.0.1 (2023-03-14)
+------------------
+
+Tests
+
+
+- Tox: explicitly test only the ``plone.namedfile`` package.  [maurits] (#50)
+
+
+6.0.0 (2022-11-22)
+------------------
+
+Bug fixes:
+
+
+- Log a warning when a scale for a picture variant is not found.
+  Until now this gave an exception.
+  [maurits] (#134)
+- Prevent exception when an anonymous user is the first to load a page with a private image.
+  Anonymous still gets an Unauthorized when loading the image, but that is to be expected.
+  The html at least shows normally.
+  Fixes `issue 135 <https://github.com/plone/plone.namedfile/issues/135>`_.
+  [maurits] (#135)
+- Fixed writing to the database each time an original is requested.
+  This happens when requesting the original under a unique id.
+  [maurits] (#3678)
+
+
+6.0.0b5 (2022-10-03)
+--------------------
+
+Breaking changes:
+
+
+- No longer test Plone 5.2 on 3.6 and Plone 6.0 on 3.7.
+  [maurits] (#3637)
+
+
+Bug fixes:
+
+
+- Use ``mode`` parameter instead of deprecated ``direction`` and warn user about it.
+  [petschki, maurits] (#102)
+
+
 6.0.0b4 (2022-09-07)
 --------------------
 
