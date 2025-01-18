@@ -67,7 +67,7 @@ setup(
             "plone.app.testing",
             "lxml",
             "Pillow",
-            "plone.testing[z2]",
+            "plone.testing",
         ],
     },
 )
