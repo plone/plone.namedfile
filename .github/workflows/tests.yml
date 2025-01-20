@@ -12,22 +12,25 @@ jobs:
       matrix:
         config:
         # [Python version, tox env]
-        - ["3.7",  "plone52-py37"]
-        - ["3.8",  "plone52-py38"]
-        - ["3.8",  "plone60-py38"]
         - ["3.9",  "plone60-py39"]
         - ["3.10", "plone60-py310"]
         - ["3.11", "plone60-py311"]
+        - ["3.12", "plone60-py312"]
+        - ["3.13", "plone60-py313"]
+        - ["3.10", "plone61-py310"]
+        - ["3.11", "plone61-py311"]
+        - ["3.12", "plone61-py312"]
+        - ["3.13", "plone61-py313"]
     runs-on: ubuntu-latest
     name: ${{ matrix.config[1] }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.config[0] }}
     - name: Pip cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.config[0] }}-${{ hashFiles('setup.*', 'tox.ini') }}
