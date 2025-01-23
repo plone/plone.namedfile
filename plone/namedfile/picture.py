@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from plone.app.uuid.utils import uuidToObject
+from plone.base.interfaces import IImagingSchema
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
@@ -7,12 +8,6 @@ from zope.component import queryUtility
 
 import logging
 import re
-
-
-try:
-    from plone.base.interfaces import IImagingSchema
-except ImportError:
-    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 
 
 logger = logging.getLogger(__name__)

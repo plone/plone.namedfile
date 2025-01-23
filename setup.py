@@ -4,7 +4,7 @@ from setuptools import setup
 import os
 
 
-version = "6.4.1.dev0"
+version = "7.0.0.dev0"
 
 description = "File types and fields for images, files and blob files with filenames"
 long_description = "\n\n".join(
@@ -24,15 +24,15 @@ setup(
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Framework :: Plone",
-        "Framework :: Plone :: 5.2",
         "Framework :: Plone :: 6.0",
+        "Framework :: Plone :: 6.1",
         "Framework :: Plone :: Core",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: BSD License",
     ],
@@ -45,7 +45,7 @@ setup(
     namespace_packages=["plone"],
     include_package_data=True,
     zip_safe=False,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=[
         "persistent",
         "piexif",
@@ -67,7 +67,7 @@ setup(
             "plone.app.testing",
             "lxml",
             "Pillow",
-            "plone.testing[z2]",
+            "plone.testing",
         ],
     },
 )
