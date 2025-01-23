@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from io import BytesIO
 from io import FileIO
 from logging import getLogger
+from plone.base.interfaces import IImagingSchema
 from plone.namedfile.interfaces import IBlobby
 from plone.namedfile.utils.jpeg_utils import process_jpeg
 from plone.namedfile.utils.png_utils import process_png
@@ -25,10 +26,6 @@ pattern = re.compile(r'^(.*)\s+(\d+)\s*:\s*(\d+)$')
 
 log = getLogger(__name__)
 
-try:
-    from plone.base.interfaces.controlpanel import IImagingSchema
-except ImportError:
-    from Products.CMFPlone.interfaces.controlpanel import IImagingSchema
 
 try:
     # Zope 5.8.6+
