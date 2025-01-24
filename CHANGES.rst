@@ -8,6 +8,21 @@ Changelog
 
 .. towncrier release notes start
 
+7.0.0 (2025-01-24)
+------------------
+
+Breaking changes:
+
+
+- Drop support for Plone 5.2.  [maurits] (#4090)
+
+
+Bug fixes:
+
+
+- Fix DeprecationWarnings. [maurits] (#4090)
+
+
 6.4.0 (2024-11-25)
 ------------------
 
