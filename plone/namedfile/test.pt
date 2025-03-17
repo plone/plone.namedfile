@@ -24,18 +24,36 @@
                      download_url python: '{}/@@download/image/{}'.format(context_url, filename);
                    "
       >
-        <p>
+        <p i18n:translate="">
     Go to:
-          <a href="#examples">examples</a>,
-          <a href="#cover">cover</a>,
-          <a href="#contain">contain</a>,
-          <a href="#picture">picture tags</a>,
-          <a href="#stored">stored scales</a>,
-          <a href="#clear">clear</a>
+          <a href="#examples"
+             i18n:name=""
+             i18n:translate=""
+          >examples</a>,
+          <a href="#cover"
+             i18n:name=""
+             i18n:translate=""
+          >cover</a>,
+          <a href="#contain"
+             i18n:name=""
+             i18n:translate=""
+          >contain</a>,
+          <a href="#picture"
+             i18n:name=""
+             i18n:translate=""
+          >picture tags</a>,
+          <a href="#stored"
+             i18n:name=""
+             i18n:translate=""
+          >stored scales</a>,
+          <a href="#clear"
+             i18n:name=""
+             i18n:translate=""
+          >clear</a>
         </p>
         <section class="section section-main">
-          <h3>Thumb with info</h3>
-          <p>Standard display of Image content type, but using thumb scale</p>
+          <h3 i18n:translate="">Thumb with info</h3>
+          <p i18n:translate="">Standard display of Image content type, but using thumb scale</p>
           <figure class="figure">
             <a href="${context_url}/image_view_fullscreen"
                tal:define="
@@ -49,6 +67,7 @@
           <div class="h5 mb-2">
             <a href="${python:download_url}"
                tal:content="python: filename"
+               i18n:translate=""
             >Filename</a>
           </div>
           <div class="metadata d-flex justify-content-center text-muted small">
@@ -71,8 +90,12 @@
               <span class="d-none"
                     i18n:translate="image_size_label"
               >File size</span>
-              <tal:mb condition="use_MB">${python:round(size/1024/1024, 1)} MB</tal:mb>
-              <tal:kb condition="not: use_MB">${python:round(size/1024, 1)} KB</tal:kb>
+              <tal:mb condition="use_MB"
+                      i18n:translate=""
+              >${python:round(size/1024/1024, 1)} MB</tal:mb>
+              <tal:kb condition="not: use_MB"
+                      i18n:translate=""
+              >${python:round(size/1024, 1)} KB</tal:kb>
             </div>
           </div>
 
@@ -89,9 +112,9 @@
         </section>
         <hr />
         <section id="examples">
-          <h2>Examples with mode</h2>
+          <h2 i18n:translate="">Examples with mode</h2>
 
-          <h3>Mini</h3>
+          <h3 i18n:translate="">Mini</h3>
           <figure class="figure"
                   tal:define="
                     img_tag python:images.tag('image', scale='mini');
@@ -101,7 +124,9 @@
             <br /><code tal:content="img_tag"></code>
           </figure>
 
-          <h3 id="cover">Mini mode=cover</h3>
+          <h3 id="cover"
+              i18n:translate=""
+          >Mini mode=cover</h3>
           <figure class="figure"
                   tal:define="
                     img_tag python:images.tag('image', scale='mini', mode='cover');
@@ -111,7 +136,9 @@
             <br /><code tal:content="img_tag"></code>
           </figure>
 
-          <h3 id="contain">Mini mode=contain</h3>
+          <h3 id="contain"
+              i18n:translate=""
+          >Mini mode=contain</h3>
           <figure class="figure"
                   tal:define="
                     img_tag python:images.tag('image', scale='mini', mode='contain');
@@ -123,22 +150,26 @@
         </section>
 
         <section id="picture">
-          <h2>Picture tags</h2>
-          <p>
+          <h2 i18n:translate="">Picture tags</h2>
+          <p i18n:translate="">
       Picture tags only work on Plone 6.
       If not available (like on Plone 5.2), an ordinary image tag is created.
           </p>
 
-          <h3 id="picture_tag_large">Picture Tag Large</h3>
-          <p>
+          <h3 id="picture_tag_large"
+              i18n:translate=""
+          >Picture Tag Large</h3>
+          <p i18n:translate="">
       Generate a picture tag from configured picture_variant `large`.
           </p>
           <p>
             <picture tal:replace="structure python:images.picture('image', picture_variant='large')"></picture>
           </p>
 
-          <h3 id="picture_tag_medium">Picture Tag Medium</h3>
-          <p>
+          <h3 id="picture_tag_medium"
+              i18n:translate=""
+          >Picture Tag Medium</h3>
+          <p i18n:translate="">
       Generate a picture tag from configured picture_variant `medium`.
       This picture tag contains multiple source tags with media queries for art direction.
           </p>
@@ -146,16 +177,20 @@
             <picture tal:replace="structure python:images.picture('image', picture_variant='medium')"></picture>
           </p>
 
-          <h3 id="picture_tag_small">Picture Tag Small</h3>
-          <p>
+          <h3 id="picture_tag_small"
+              i18n:translate=""
+          >Picture Tag Small</h3>
+          <p i18n:translate="">
       Generate a picture tag from configured picture_variant `small`.
           </p>
           <p>
             <picture tal:replace="structure python:images.picture('image', picture_variant='small', title='')"></picture>
           </p>
 
-          <h3 id="picture_tag_small">Picture Tag Small with title/alt</h3>
-          <p>
+          <h3 id="picture_tag_small"
+              i18n:translate=""
+          >Picture Tag Small with title/alt</h3>
+          <p i18n:translate="">
       Generate a picture tag from configured picture_variant `small` with title and alt attributes set.
           </p>
           <p>
@@ -166,7 +201,7 @@
         <section class="section"
                  id="stored"
         >
-          <h3>Stored scales</h3>
+          <h3 i18n:translate="">Stored scales</h3>
           <div class="accordion"
                id="accordion-stored"
           >
@@ -199,6 +234,7 @@
                   <br />
                   <a href="${context_url}/@@images/${uid}"
                      target="_blank"
+                     i18n:translate=""
                   >Open in new tab</a>
                 </div>
               </div>
@@ -209,11 +245,11 @@
         <section class="section"
                  id="clear"
         >
-          <h3>Clear scales</h3>
+          <h3 i18n:translate="">Clear scales</h3>
           <form action="${context/@@plone_context_state/object_url}/@@images-clear"
                 method="post"
           >
-            <button>Clear</button>
+            <button i18n:translate="">Clear</button>
           </form>
         </section>
 
