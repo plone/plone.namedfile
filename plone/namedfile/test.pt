@@ -26,7 +26,6 @@
       >
         <p i18n:translate="">
     Go to:
-<<<<<<< HEAD
           <a href="#examples"
              i18n:name=""
              i18n:translate=""
@@ -43,6 +42,7 @@
              i18n:name=""
              i18n:translate=""
           >picture tags</a>,
+          <a href="#srcset" i18n="name" i18n:translate="">img tag with srcset</a>,
           <a href="#stored"
              i18n:name=""
              i18n:translate=""
@@ -64,26 +64,6 @@
               <img tal:replace="structure img_tag" />
             </a>
           </figure>
-=======
-    <a href="#examples">examples</a>,
-    <a href="#cover">cover</a>,
-    <a href="#contain">contain</a>,
-    <a href="#picture">picture tags</a>,
-    <a href="#srcset">img tag with srcset</a>,
-    <a href="#stored">stored scales</a>,
-    <a href="#clear">clear</a>
-  </p>
-  <section class="section section-main">
-    <h3>Thumb with info</h3>
-    <p>Standard display of Image content type, but using thumb scale</p>
-    <figure class="figure">
-      <a href="${context_url}/image_view_fullscreen"
-         tal:define="img_tag python:images.tag('image', scale='thumb', css_class='figure-img img-fluid')"
-         >
-        <img tal:replace="structure img_tag" />
-      </a>
-    </figure>
->>>>>>> 14cb618 (add link in the images test)
 
           <div class="h5 mb-2">
             <a href="${python:download_url}"
@@ -219,8 +199,24 @@
           </p>
         </section>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
+<section class="section" id="srcset">
+    <h2 i18n:translate="">img with srcset attributes</h2>
+    <p i18n:translate="">
+      srcst allows the browser selecting the correct image depending on the space the image has on a page.
+    </p>
+    <p i18n:translate="">
+      To do so, the @@images view provides a srcset method, that will output the full srcset of this image, using all available image scales. It has a required paramter the value of the sizes attribute that the user of this method has to provide and will be outputed as is in the generated HTML.
+    </p>
+    <p>
+      <img tal:replace="structure python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
+    </p>
+    <p>
+      <code>
+        <img tal:replace="python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
+      </code>
+    </p>
+  </section>
+
         <section class="section"
                  id="stored"
         >
@@ -262,49 +258,6 @@
                 </div>
               </div>
             </div>
-=======
-=======
-  <section class="section" id="srcset">
-    <h2>img with srcset attributes</h2>
-    <p>
-      srcst allows the browser selecting the correct image depending on the space the image has on a page.
-    </p>
-    <p>
-      To do so, the @@images view provides a srcset method, that will output the full srcset of this image, using all available image scales. It has a required paramter the value of the sizes attribute that the user of this method has to provide and will be outputed as is in the generated HTML.
-    </p>
-    <p>
-      <img tal:replace="structure python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
-    </p>
-    <p>
-      <code>
-        <img tal:replace="python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
-      </code>
-    </p>
-  </section>
-
-
->>>>>>> 8c6eb8d (show the srcset example in the image-test view)
-  <section class="section" id="stored">
-    <h3>Stored scales</h3>
-    <div class="accordion" id="accordion-stored">
-      <div class="accordion-item" tal:repeat="(uid, info) view/stored_scales">
-        <h4 class="accordion-header" id="heading-${uid}">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${uid}" aria-expanded="false" aria-controls="collapse-${uid}">
-            <code>${uid}</code>
-          </button>
-        </h4>
-        <div id="collapse-${uid}" class="accordion-collapse collapse" aria-labelledby="heading-${uid}" data-bs-parent="#accordion-stored">
-          <div class="accordion-body">
-            <tal:block repeat="item python:sorted(info.items())">
-              <br tal:condition="not:repeat/item/start" />
-                <code >
-                <span tal:replace="python:item[0]"/>: <span tal:replace="python:item[1]" tal:on-error="string:Error rendering the value"/>
-                </code>
-            </tal:block>
-            <br />
-            <a target="_blank"
-               href="${context_url}/@@images/${uid}">Open in new tab</a>
->>>>>>> 4fe955e (fix: fix rendering unrenderable values)
           </div>
         </section>
 
