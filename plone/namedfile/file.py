@@ -295,7 +295,7 @@ class NamedImage(NamedFile):
         exif_data = get_exif(data)
         if exif_data is not None:
             log.debug(
-                "Image contains Exif Informations. "
+                "Image contains Exif Information. "
                 "Test for Image Orientation and Rotate if necessary."
                 "Exif Data: %s",
                 exif_data,
@@ -393,7 +393,7 @@ class NamedBlobImage(NamedBlobFile):
         exif_data = get_exif(self.data)
         if exif_data is not None:
             log.debug(
-                "Image contains Exif Informations. "
+                "Image contains Exif Information. "
                 "Test for Image Orientation and Rotate if necessary."
                 "Exif Data: %s",
                 exif_data,
