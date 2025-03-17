@@ -42,7 +42,10 @@
              i18n:name=""
              i18n:translate=""
           >picture tags</a>,
-          <a href="#srcset" i18n="name" i18n:translate="">img tag with srcset</a>,
+          <a href="#srcset"
+             i18n="name"
+             i18n:translate=""
+          >img tag with srcset</a>,
           <a href="#stored"
              i18n:name=""
              i18n:translate=""
@@ -199,23 +202,25 @@
           </p>
         </section>
 
-<section class="section" id="srcset">
-    <h2 i18n:translate="">img with srcset attributes</h2>
-    <p i18n:translate="">
+        <section class="section"
+                 id="srcset"
+        >
+          <h2 i18n:translate="">img with srcset attributes</h2>
+          <p i18n:translate="">
       srcst allows the browser selecting the correct image depending on the space the image has on a page.
-    </p>
-    <p i18n:translate="">
-      To do so, the @@images view provides a srcset method, that will output the full srcset of this image, using all available image scales. It has a required paramter the value of the sizes attribute that the user of this method has to provide and will be outputed as is in the generated HTML.
-    </p>
-    <p>
-      <img tal:replace="structure python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
-    </p>
-    <p>
-      <code>
-        <img tal:replace="python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
-      </code>
-    </p>
-  </section>
+          </p>
+          <p i18n:translate="">
+      To do so, the @@images view provides a srcset method, that will output the full srcset of this image, using all available image scales. It has a required parameter the value of the sizes attribute that the user of this method has to provide and will be outputted as is in the generated HTML.
+          </p>
+          <p>
+            <img tal:replace="structure python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
+          </p>
+          <p>
+            <code>
+              <img tal:replace="python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
+            </code>
+          </p>
+        </section>
 
         <section class="section"
                  id="stored"

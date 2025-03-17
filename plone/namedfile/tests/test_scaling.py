@@ -814,7 +814,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         self.assertEqual(foo.srcset[0]["scale"], 2)
 
     def testImgSrcSet(self):
-        """ test rendered srcset values """
+        """test rendered srcset values"""
         self.scaling.available_sizes = {
             "huge": (1600, 65536),
             "great": (1200, 65536),
@@ -828,16 +828,13 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
             "icon": (32, 32),
             "listing": (16, 16),
         }
-        tag = self.scaling.srcset(
-            "image",
-            sizes="50vw"
-        )
+        tag = self.scaling.srcset("image", sizes="50vw")
         base = self.item.absolute_url()
         expected = f"""<img title="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetCustomSrc(self):
-        """ test that we can select a custom scale in the src attribute """
+        """test that we can select a custom scale in the src attribute"""
         self.scaling.available_sizes = {
             "huge": (1600, 65536),
             "great": (1200, 65536),
@@ -858,7 +855,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
 
     def testImgSrcSetInexistentScale(self):
         """test that when requesting an inexistent scale for the src attribute
-           we provide the biggest scale we can produce
+        we provide the biggest scale we can produce
         """
         self.scaling.available_sizes = {
             "huge": (1600, 65536),
@@ -873,7 +870,9 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
             "icon": (32, 32),
             "listing": (16, 16),
         }
-        tag = self.scaling.srcset("image", sizes="50vw", scale_in_src="inexistent-scale-name")
+        tag = self.scaling.srcset(
+            "image", sizes="50vw", scale_in_src="inexistent-scale-name"
+        )
         base = self.item.absolute_url()
         expected = f"""<img title="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-200-....png".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
@@ -899,7 +898,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetAdditionalAttributes(self):
-        """test that additional parameters are outputed as is, like alt, loading, ..."""
+        """test that additional parameters are outputted as is, like alt, loading, ..."""
         self.scaling.available_sizes = {
             "huge": (1600, 65536),
             "great": (1200, 65536),
@@ -913,7 +912,13 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
             "icon": (32, 32),
             "listing": (16, 16),
         }
-        tag = self.scaling.srcset("image", sizes="50vw", title="My Custom Title", alt="This image shows nothing", loading="lazy")
+        tag = self.scaling.srcset(
+            "image",
+            sizes="50vw",
+            title="My Custom Title",
+            alt="This image shows nothing",
+            loading="lazy",
+        )
         base = self.item.absolute_url()
         expected = f"""<img title="My Custom Title" alt="This image shows nothing" loading="lazy" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
