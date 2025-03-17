@@ -3,9 +3,7 @@
 from DateTime import DateTime
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
-from plone.namedfile.tests import getFile
 from plone.namedfile.tests import MockNamedImage
-from plone.namedfile.utils import get_contenttype
 from zope.interface.verify import verifyClass
 
 import time
