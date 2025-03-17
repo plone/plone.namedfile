@@ -26,6 +26,7 @@
       >
         <p i18n:translate="">
     Go to:
+<<<<<<< HEAD
           <a href="#examples"
              i18n:name=""
              i18n:translate=""
@@ -63,6 +64,26 @@
               <img tal:replace="structure img_tag" />
             </a>
           </figure>
+=======
+    <a href="#examples">examples</a>,
+    <a href="#cover">cover</a>,
+    <a href="#contain">contain</a>,
+    <a href="#picture">picture tags</a>,
+    <a href="#srcset">img tag with srcset</a>,
+    <a href="#stored">stored scales</a>,
+    <a href="#clear">clear</a>
+  </p>
+  <section class="section section-main">
+    <h3>Thumb with info</h3>
+    <p>Standard display of Image content type, but using thumb scale</p>
+    <figure class="figure">
+      <a href="${context_url}/image_view_fullscreen"
+         tal:define="img_tag python:images.tag('image', scale='thumb', css_class='figure-img img-fluid')"
+         >
+        <img tal:replace="structure img_tag" />
+      </a>
+    </figure>
+>>>>>>> 14cb618 (add link in the images test)
 
           <div class="h5 mb-2">
             <a href="${python:download_url}"
