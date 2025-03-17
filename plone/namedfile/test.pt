@@ -198,6 +198,7 @@
           </p>
         </section>
 
+<<<<<<< HEAD
         <section class="section"
                  id="stored"
         >
@@ -239,6 +240,28 @@
                 </div>
               </div>
             </div>
+=======
+  <section class="section" id="stored">
+    <h3>Stored scales</h3>
+    <div class="accordion" id="accordion-stored">
+      <div class="accordion-item" tal:repeat="(uid, info) view/stored_scales">
+        <h4 class="accordion-header" id="heading-${uid}">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${uid}" aria-expanded="false" aria-controls="collapse-${uid}">
+            <code>${uid}</code>
+          </button>
+        </h4>
+        <div id="collapse-${uid}" class="accordion-collapse collapse" aria-labelledby="heading-${uid}" data-bs-parent="#accordion-stored">
+          <div class="accordion-body">
+            <tal:block repeat="item python:sorted(info.items())">
+              <br tal:condition="not:repeat/item/start" />
+                <code >
+                <span tal:replace="python:item[0]"/>: <span tal:replace="python:item[1]" tal:on-error="string:Error rendering the value"/>
+                </code>
+            </tal:block>
+            <br />
+            <a target="_blank"
+               href="${context_url}/@@images/${uid}">Open in new tab</a>
+>>>>>>> 4fe955e (fix: fix rendering unrenderable values)
           </div>
         </section>
 
