@@ -5,3 +5,7 @@
 template = "default"
 commit-id = "2.0.1.dev0"
 
+[pyproject]
+dependencies_mappings = [
+    "'Pillow' = ['PIL', 'PIL.Image']",
+]
