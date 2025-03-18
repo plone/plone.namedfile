@@ -120,8 +120,9 @@ Zope = [
 ]
 python-dateutil = ['dateutil']
 pytest-plone = ['pytest', 'zope.pytestlayer', 'plone.testing', 'plone.app.testing']
-ignore-packages = ['zope.app.file', 'bs4']
+ignore-packages = ['zope.app.file']
 'Pillow' = ['PIL', 'PIL.Image']
+'BeautifulSoup4' = ['bs4']
 
 ##
 # Add extra configuration options in .meta.toml:
