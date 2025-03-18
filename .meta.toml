@@ -6,6 +6,7 @@ template = "default"
 commit-id = "2.0.1.dev0"
 
 [pyproject]
+dependencies_ignores = ['zope.app.file']
 dependencies_mappings = [
     "'Pillow' = ['PIL', 'PIL.Image']",
 ]
