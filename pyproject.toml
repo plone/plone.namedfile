@@ -120,7 +120,7 @@ Zope = [
 ]
 python-dateutil = ['dateutil']
 pytest-plone = ['pytest', 'zope.pytestlayer', 'plone.testing', 'plone.app.testing']
-ignore-packages = ['zope.app.file']
+ignore-packages = ['zope.app.file', 'bs4']
 'Pillow' = ['PIL', 'PIL.Image']
 
 ##
