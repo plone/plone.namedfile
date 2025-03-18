@@ -7,5 +7,4 @@ commit-id = "2.0.1.dev0"
 
 [pyproject]
 dependencies_mappings = [
-    "'Zope' = ['OFS.Image', 'OFS.SimpleItem', 'ZODB']",
 ]
