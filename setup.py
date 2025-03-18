@@ -47,7 +47,7 @@ setup(
     zip_safe=False,
     python_requires=">=3.9",
     install_requires=[
-        "bs4",
+        "BeautifulSoup4",
         "persistent",
         "piexif",
         "Pillow",
