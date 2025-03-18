@@ -151,8 +151,8 @@ class NamedFile(Persistent, ModifiedPropertyMixin):
 
     Insert data from file object:
 
-    >>> import cStringIO
-    >>> sio = cStringIO.StringIO()
+    >>> from io import StringIO
+    >>> sio = StringIO()
     >>> sio.write('Foobar'*100000)
     >>> sio.seek(0)
     >>> file.data = sio
