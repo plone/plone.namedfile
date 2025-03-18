@@ -2,6 +2,7 @@ from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
 from io import BytesIO
+from plone.base.utils import safe_bytes
 from plone.memoize import ram
 from plone.namedfile.browser import ALLOWED_INLINE_MIMETYPES
 from plone.namedfile.browser import DISALLOWED_INLINE_MIMETYPES
@@ -22,7 +23,6 @@ from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.scale import scaleImage
 from plone.scale.storage import IImageScaleStorage
 from Products.CMFCore.utils import getToolByName
-from Products.CMFPlone.utils import safe_encode
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from zExceptions import BadRequest
@@ -330,7 +330,7 @@ class DefaultImageScalingFactory:
             # No need to scale, we can simply use the original data,
             # but report a different width and height.
             if isinstance(orig_data, (str)):
-                orig_data = safe_encode(orig_data)
+                orig_data = safe_bytes(orig_data)
             if isinstance(orig_data, (bytes)):
                 orig_data = BytesIO(orig_data)
             result = orig_data.read(), "svg+xml", (width, height)
