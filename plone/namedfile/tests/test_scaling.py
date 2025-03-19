@@ -898,7 +898,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetAdditionalAttributes(self):
-        """test that additional parameters are outputted as is, like alt, loading, ..."""
+        """test that additional parameters are output as is, like alt, loading, ..."""
         self.scaling.available_sizes = {
             "huge": (1600, 65536),
             "great": (1200, 65536),
