@@ -151,8 +151,8 @@ class NamedFile(Persistent, ModifiedPropertyMixin):
 
     Insert data from file object:
 
-    >>> import cStringIO
-    >>> sio = cStringIO.StringIO()
+    >>> from io import StringIO
+    >>> sio = StringIO()
     >>> sio.write('Foobar'*100000)
     >>> sio.seek(0)
     >>> file.data = sio
@@ -295,7 +295,7 @@ class NamedImage(NamedFile):
         exif_data = get_exif(data)
         if exif_data is not None:
             log.debug(
-                "Image contains Exif Informations. "
+                "Image contains Exif Information. "
                 "Test for Image Orientation and Rotate if necessary."
                 "Exif Data: %s",
                 exif_data,
@@ -393,7 +393,7 @@ class NamedBlobImage(NamedBlobFile):
         exif_data = get_exif(self.data)
         if exif_data is not None:
             log.debug(
-                "Image contains Exif Informations. "
+                "Image contains Exif Information. "
                 "Test for Image Orientation and Rotate if necessary."
                 "Exif Data: %s",
                 exif_data,
@@ -419,8 +419,11 @@ class NamedBlobImage(NamedBlobFile):
         super()._setData(data)
         firstbytes = self.getFirstBytes()
         res = getImageInfo(firstbytes)
-        if res == ("image/jpeg", -1, -1) or res == ("image/tiff", -1, -1) or \
-                res == ("image/svg+xml", -1, -1):
+        if (
+            res == ("image/jpeg", -1, -1)
+            or res == ("image/tiff", -1, -1)
+            or res == ("image/svg+xml", -1, -1)
+        ):
             # header was longer than firstbytes
             start = len(firstbytes)
             length = max(0, MAX_INFO_BYTES - start)

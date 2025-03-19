@@ -2,58 +2,58 @@
 
   <!-- text for py3 -->
   <utility
-      name="builtins.str"
-      provides=".interfaces.IStorage"
       factory=".storages.TextStorable"
+      provides=".interfaces.IStorage"
+      name="builtins.str"
       />
 
   <!-- bytes for py3 -->
   <utility
-      name="builtins.bytes"
-      provides=".interfaces.IStorage"
       factory=".storages.BytesStorable"
+      provides=".interfaces.IStorage"
+      name="builtins.bytes"
       />
 
   <utility
-      name="__builtin__.str"
-      provides=".interfaces.IStorage"
       factory=".storages.StringStorable"
+      provides=".interfaces.IStorage"
+      name="__builtin__.str"
       />
 
   <utility
-      name="__builtin__.unicode"
-      provides=".interfaces.IStorage"
       factory=".storages.UnicodeStorable"
+      provides=".interfaces.IStorage"
+      name="__builtin__.unicode"
       />
 
   <utility
-      name="plone.namedfile.file.FileChunk"
-      provides=".interfaces.IStorage"
       factory=".storages.FileChunkStorable"
+      provides=".interfaces.IStorage"
+      name="plone.namedfile.file.FileChunk"
       />
 
   <utility
-      name="__builtin__.file"
-      provides=".interfaces.IStorage"
       factory=".storages.FileDescriptorStorable"
+      provides=".interfaces.IStorage"
+      name="__builtin__.file"
       />
 
   <utility
-      name="_io.BufferedReader"
-      provides=".interfaces.IStorage"
       factory=".storages.BufferedReaderStorable"
+      provides=".interfaces.IStorage"
+      name="_io.BufferedReader"
       />
 
   <utility
-      name="zope.publisher.browser.FileUpload"
-      provides=".interfaces.IStorage"
       factory=".storages.FileUploadStorable"
+      provides=".interfaces.IStorage"
+      name="zope.publisher.browser.FileUpload"
       />
 
   <utility
-      name="OFS.Image.Pdata"
-      provides=".interfaces.IStorage"
       factory=".storages.PDataStorable"
+      provides=".interfaces.IStorage"
+      name="OFS.Image.Pdata"
       />
 
   <utility

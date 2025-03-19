@@ -5,21 +5,21 @@
   <!-- plone.supermodel configuration -->
 
   <utility
-      component=".handler.NamedFileHandler"
       name="plone.namedfile.field.NamedFile"
+      component=".handler.NamedFileHandler"
       />
   <utility
-      component=".handler.NamedImageHandler"
       name="plone.namedfile.field.NamedImage"
+      component=".handler.NamedImageHandler"
       />
 
   <utility
-      component=".handler.NamedBlobFileHandler"
       name="plone.namedfile.field.NamedBlobFile"
+      component=".handler.NamedBlobFileHandler"
       />
   <utility
-      component=".handler.NamedBlobImageHandler"
       name="plone.namedfile.field.NamedBlobImage"
+      component=".handler.NamedBlobImageHandler"
       />
 
 </configure>

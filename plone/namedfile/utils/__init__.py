@@ -20,9 +20,10 @@ import PIL.Image
 import re
 import struct
 
+
 # image-scaling
 QUALITY_DEFAULT = 88
-pattern = re.compile(r'^(.*)\s+(\d+)\s*:\s*(\d+)$')
+pattern = re.compile(r"^(.*)\s+(\d+)\s*:\s*(\d+)$")
 
 log = getLogger(__name__)
 
@@ -147,7 +148,10 @@ def set_headers(file, response, filename=None, canonical=None):
         )
 
     if canonical is not None:
-        response.setHeader("Link", f'<{quote(canonical, safe="/:&?=@")}>; rel="canonical"')
+        response.setHeader(
+            "Link", f'<{quote(canonical, safe="/:&?=@")}>; rel="canonical"'
+        )
+
 
 def stream_data(file, start=0, end=None):
     """Return the given file as a stream if possible."""
@@ -210,7 +214,7 @@ def getImageInfo(data):
             width, height = img.size
             content_type = PIL.Image.MIME[img.format]
         except Exception:
-            # TODO: determ wich error really happens
+            # TODO: determ which error really happens
             # Should happen if data is to short --> first_bytes
             # happens also if data is an svg or another special format.
             log.warning(
@@ -231,12 +235,12 @@ def get_exif(image):
 
     content_type, width, height = getImageInfo(image_data)
     if content_type in ["image/jpeg", "image/tiff"]:
-        # Only this two Image Types could have Exif informations
+        # Only this two Image Types could have Exif information
         # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
         try:
             exif_data = piexif.load(image_data)
         except Exception as e:
-            # TODO: determ wich error really happens
+            # TODO: determ which error really happens
             # Should happen if data is to short --> first_bytes
             log.warn(e)
             exif_data = exif_data = {
@@ -249,7 +253,7 @@ def get_exif(image):
 
 
 def rotate_image(image_data, method=None, REQUEST=None):
-    """Rotate Image if it has Exif Orientation Informations other than 1.
+    """Rotate Image if it has Exif Orientation Information other than 1.
 
     Do not use PIL.Image.rotate function as this did not transpose the image,
     rotate keeps the image width and height and rotates the image around a
@@ -264,7 +268,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
         try:
             exif_data = piexif.load(img.info["exif"])
         except ValueError:
-            log.warn("Exif information currupt")
+            log.warn("Exif information corrupt")
             pass
         if exif_data and piexif.ImageIFD.Orientation in exif_data["0th"]:
             orientation = exif_data["0th"][piexif.ImageIFD.Orientation]
@@ -363,12 +367,12 @@ def getHighPixelDensityScales():
         ]
     return []
 
+
 def getAllowedSizes():
     registry = queryUtility(IRegistry)
     if not registry:
         return None
-    settings = registry.forInterface(
-        IImagingSchema, prefix="plone", check=False)
+    settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
     if not settings.allowed_sizes:
         return None
     sizes = {}
@@ -376,7 +380,7 @@ def getAllowedSizes():
         line = line.strip()
         if line:
             name, width, height = pattern.match(line).groups()
-            name = name.strip().replace(' ', '_')
+            name = name.strip().replace(" ", "_")
             sizes[name] = int(width), int(height)
     return sizes
 
@@ -384,8 +388,6 @@ def getAllowedSizes():
 def getQuality():
     registry = queryUtility(IRegistry)
     if registry:
-        settings = registry.forInterface(
-            IImagingSchema, prefix="plone", check=False)
+        settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
         return settings.quality or QUALITY_DEFAULT
     return QUALITY_DEFAULT
-

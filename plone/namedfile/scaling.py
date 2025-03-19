@@ -2,11 +2,12 @@ from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
 from io import BytesIO
+from plone.base.utils import safe_bytes
 from plone.memoize import ram
-from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.browser import ALLOWED_INLINE_MIMETYPES
 from plone.namedfile.browser import DISALLOWED_INLINE_MIMETYPES
 from plone.namedfile.browser import USE_DENYLIST
+from plone.namedfile.file import FILECHUNK_CLASSES
 from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.picture import get_picture_variants
@@ -22,7 +23,6 @@ from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.scale import scaleImage
 from plone.scale.storage import IImageScaleStorage
 from Products.CMFCore.utils import getToolByName
-from Products.CMFPlone.utils import safe_encode
 from Products.Five import BrowserView
 from xml.sax.saxutils import quoteattr
 from zExceptions import BadRequest
@@ -35,8 +35,8 @@ from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import alsoProvides
 from zope.interface import implementer
-from zope.publisher.interfaces.browser import IBrowserPublisher
 from zope.publisher.interfaces import NotFound
+from zope.publisher.interfaces.browser import IBrowserPublisher
 from zope.traversing.interfaces import ITraversable
 from zope.traversing.interfaces import TraversalError
 
@@ -330,7 +330,7 @@ class DefaultImageScalingFactory:
             # No need to scale, we can simply use the original data,
             # but report a different width and height.
             if isinstance(orig_data, (str)):
-                orig_data = safe_encode(orig_data)
+                orig_data = safe_bytes(orig_data)
             if isinstance(orig_data, (bytes)):
                 orig_data = BytesIO(orig_data)
             result = orig_data.read(), "svg+xml", (width, height)
@@ -360,7 +360,6 @@ class DefaultImageScalingFactory:
         scale=None,
         **parameters,
     ):
-
         """Factory for image scales`.
 
         Note: the 'scale' keyword argument is ignored.

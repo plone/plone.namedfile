@@ -1,16 +1,17 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:zcml="http://namespaces.zope.org/zcml"
-    xmlns:browser="http://namespaces.zope.org/browser">
+    >
 
-    <adapter
-        factory=".field.FileContenttypeValidator"
-        name="file_contenttype"
-    />
+  <adapter
+      factory=".field.FileContenttypeValidator"
+      name="file_contenttype"
+      />
 
-    <adapter
-        factory=".field.ImageContenttypeValidator"
-        name="image_contenttype"
-    />
+  <adapter
+      factory=".field.ImageContenttypeValidator"
+      name="image_contenttype"
+      />
 
 </configure>
