@@ -210,7 +210,7 @@
       srcst allows the browser selecting the correct image depending on the space the image has on a page.
           </p>
           <p i18n:translate="">
-      To do so, the @@images view provides a srcset method, that will output the full srcset of this image, using all available image scales. It has a required parameter the value of the sizes attribute that the user of this method has to provide and will be outputted as is in the generated HTML.
+      To do so, the @@images view provides a srcset method, that will output the full srcset of this image, using all available image scales. It has as required parameter the value of the sizes attribute that the user of this method has to provide and will be output as is in the generated HTML.
           </p>
           <p>
             <img tal:replace="structure python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
