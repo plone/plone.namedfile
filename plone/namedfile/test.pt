@@ -229,7 +229,7 @@
                 <div class="accordion-body">
                   <tal:block repeat="item python:sorted(info.items())">
                     <br tal:condition="not:repeat/item/start" />
-                    <code>${python:item[0]}: ${python:item[1]}</code>
+                    <code>${python:item[0]}: ${python:tuple(item[1]) if isinstance(item[1], list) else item[1]}</code>
                   </tal:block>
                   <br />
                   <a href="${context_url}/@@images/${uid}"
