@@ -1,0 +1,3 @@
+Work around TypeError: unhashable type: 'list' on `images-test` view.
+[maurits]
+
