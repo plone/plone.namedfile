@@ -739,6 +739,67 @@ class ImageScaling(BrowserView):
             fieldname=fieldname,
         ).prettify()
 
+    def srcset(
+        self,
+        fieldname=None,
+        scale_in_src="huge",
+        sizes="",
+        title=_marker,
+        alt=_marker,
+        **kwargs,
+    ):
+        if fieldname is None:
+            try:
+                primary = IPrimaryFieldInfo(self.context, None)
+            except TypeError:
+                return
+            if primary is None:
+                return  # 404
+            fieldname = primary.fieldname
+
+        original_width, original_height = self.getImageSize(fieldname)
+
+        storage = getMultiAdapter(
+            (self.context, functools.partial(self.modified, fieldname)),
+            IImageScaleStorage,
+        )
+
+        srcset_urls = []
+        for width, height in self.available_sizes.values():
+            if width <= original_width:
+                scale = storage.scale(
+                    fieldname=fieldname, width=width, height=height, mode="scale"
+                )
+                extension = scale["data"].contentType.split("/")[-1].lower()
+                srcset_urls.append(
+                    f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
+                )
+        attributes = {}
+        if title is _marker:
+            attributes["title"] = self.context.Title()
+        elif title:
+            attributes["title"] = title
+        if alt is not _marker:
+            attributes["alt"] = alt
+
+        attributes.update(**kwargs)
+
+        attributes["sizes"] = sizes
+
+        srcset_string = ", ".join(srcset_urls)
+        attributes["srcset"] = srcset_string
+
+        if scale_in_src not in self.available_sizes:
+            for key, (width, height) in self.available_sizes.items():
+                if width <= original_width:
+                    scale_in_src = key
+                    break
+
+        scale = self.scale(fieldname=fieldname, scale=scale_in_src)
+        attributes["src"] = scale.url
+
+        return _image_tag_from_values(*attributes.items())
+
 
 class NavigationRootScaling(ImageScaling):
     @lazy_property
