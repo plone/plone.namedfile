@@ -209,7 +209,7 @@
           <p i18n:translate="">
       srcset allows the browser to select the correct image, depending on the space the image has on a page.
           </p>
-          <p i18n:translate="">
+          <p i18n:translate="msg_images_test_srcset">
       To do so, the @@images view provides a srcset method, that will output the full srcset of this image, using all available image scales. It has as required parameter the value of the sizes attribute that the user of this method has to provide and will be output as is in the generated HTML.
           </p>
           <p>
