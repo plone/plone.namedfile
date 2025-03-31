@@ -11,7 +11,7 @@ long_description = "\n\n".join(
     [
         open("README.rst").read(),
         open("CHANGES.rst").read(),
-        open(os.path.join("plone", "namedfile", "usage.rst")).read(),
+        open(os.path.join("src", "plone", "namedfile", "usage.rst")).read(),
     ]
 )
 
@@ -41,7 +41,8 @@ setup(
     author_email="plone-developers@lists.sourceforge.net",
     url="https://pypi.org/project/plone.namedfile",
     license="BSD",
-    packages=find_packages(),
+    packages=find_packages('src'),
+    package_dir={"": "src"},
     namespace_packages=["plone"],
     include_package_data=True,
     zip_safe=False,
