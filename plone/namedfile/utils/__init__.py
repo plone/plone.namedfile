@@ -19,9 +19,10 @@ import PIL.Image
 import re
 import struct
 
+
 # image-scaling
 QUALITY_DEFAULT = 88
-pattern = re.compile(r'^(.*)\s+(\d+)\s*:\s*(\d+)$')
+pattern = re.compile(r"^(.*)\s+(\d+)\s*:\s*(\d+)$")
 
 log = getLogger(__name__)
 
@@ -150,7 +151,10 @@ def set_headers(file, response, filename=None, canonical=None):
         )
 
     if canonical is not None:
-        response.setHeader("Link", f'<{quote(canonical, safe="/:&?=@")}>; rel="canonical"')
+        response.setHeader(
+            "Link", f'<{quote(canonical, safe="/:&?=@")}>; rel="canonical"'
+        )
+
 
 def stream_data(file, start=0, end=None):
     """Return the given file as a stream if possible."""
@@ -240,7 +244,9 @@ def get_exif(image, content_type=None, width=None, height=None):
         # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
         try:
             # if possible pass filename in instead to prevent reading all data into memory
-            exif_data = piexif.load(image.name if getattr(image, "name") else _ensure_data(image))
+            exif_data = piexif.load(
+                image.name if getattr(image, "name") else _ensure_data(image)
+            )
         except Exception as e:
             # TODO: determ wich error really happens
             # Should happen if data is to short --> first_bytes
@@ -369,12 +375,12 @@ def getHighPixelDensityScales():
         ]
     return []
 
+
 def getAllowedSizes():
     registry = queryUtility(IRegistry)
     if not registry:
         return None
-    settings = registry.forInterface(
-        IImagingSchema, prefix="plone", check=False)
+    settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
     if not settings.allowed_sizes:
         return None
     sizes = {}
@@ -382,7 +388,7 @@ def getAllowedSizes():
         line = line.strip()
         if line:
             name, width, height = pattern.match(line).groups()
-            name = name.strip().replace(' ', '_')
+            name = name.strip().replace(" ", "_")
             sizes[name] = int(width), int(height)
     return sizes
 
@@ -390,8 +396,6 @@ def getAllowedSizes():
 def getQuality():
     registry = queryUtility(IRegistry)
     if registry:
-        settings = registry.forInterface(
-            IImagingSchema, prefix="plone", check=False)
+        settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
         return settings.quality or QUALITY_DEFAULT
     return QUALITY_DEFAULT
-

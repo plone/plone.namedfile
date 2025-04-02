@@ -420,8 +420,11 @@ class NamedBlobImage(NamedBlobFile):
         super()._setData(data)
         firstbytes = self.getFirstBytes()
         res = getImageInfo(firstbytes)
-        if res == ("image/jpeg", -1, -1) or res == ("image/tiff", -1, -1) or \
-                res == ("image/svg+xml", -1, -1):
+        if (
+            res == ("image/jpeg", -1, -1)
+            or res == ("image/tiff", -1, -1)
+            or res == ("image/svg+xml", -1, -1)
+        ):
             # header was longer than firstbytes
             start = len(firstbytes)
             length = max(0, MAX_INFO_BYTES - start)
@@ -429,7 +432,7 @@ class NamedBlobImage(NamedBlobFile):
             res = getImageInfo(firstbytes)
         contentType, self._width, self._height = res
         if contentType:
-            self.contentType = contentType        
+            self.contentType = contentType
 
     data = property(NamedBlobFile._getData, _setData)
 

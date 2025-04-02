@@ -16,19 +16,19 @@
 ##############################################################################
 
 from OFS.Image import Pdata
-from plone.namedfile.file import FileChunk
-from plone.namedfile.file import NamedBlobImage
-from plone.namedfile.file import NamedBlobFile
 from plone.namedfile import field
+from plone.namedfile.file import FileChunk
+from plone.namedfile.file import NamedBlobFile
+from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
+from unittest.mock import patch
+from ZODB.blob import Blob
+from ZODB.blob import BlobFile
 
 import os
 import tempfile
 import unittest
-from unittest.mock import patch
-from ZODB.blob import Blob
-from ZODB.blob import BlobFile
 
 
 class TestStorable(unittest.TestCase):
@@ -76,14 +76,16 @@ class TestStorable(unittest.TestCase):
             blob_read += 1 if "r" in mode else 0
             blob_write += 1 if "w" in mode else 0
             return old_open(self, mode)
-        
+
         def count_reads(self, size=-1):
             nonlocal read_bytes
             res = old_read(self, size)
             read_bytes += len(res)
             return res
 
-        with patch.object(Blob, 'open', count_open), patch.object(BlobFile, 'read', count_reads):
+        with patch.object(Blob, "open", count_open), patch.object(
+            BlobFile, "read", count_reads
+        ):
             data = getFile("image.jpg")
             f = tempfile.NamedTemporaryFile(delete=False)
             try:
@@ -96,11 +98,17 @@ class TestStorable(unittest.TestCase):
                 if os.path.exists(path):
                     os.remove(path)
             self.assertEqual(3641, fi.getSize())
-            self.assertIn('Exif', fi.exif)
+            self.assertIn("Exif", fi.exif)
             self.assertEqual(500, fi._width)
             self.assertEqual(200, fi._height)
-            self.assertLess(read_bytes, fi.getSize(), "Images should not need to read all data to get exif, dimensions")
-            self.assertEqual(blob_read, 3, "blob opening for getsize, get_exif and getImageInfo only")
+            self.assertLess(
+                read_bytes,
+                fi.getSize(),
+                "Images should not need to read all data to get exif, dimensions",
+            )
+            self.assertEqual(
+                blob_read, 3, "blob opening for getsize, get_exif and getImageInfo only"
+            )
             self.assertEqual(
                 blob_write,
                 1,
@@ -115,5 +123,9 @@ class TestStorable(unittest.TestCase):
             blob_field = field.NamedBlobFile()  # Image is subclass of file
             blob_field.validate(fi)
 
-            self.assertEqual(blob_read, 0, "Validation is reading the whole blob in memory")
-            self.assertEqual(read_bytes, 0, "Validation is reading the whole blob in memory")
+            self.assertEqual(
+                blob_read, 0, "Validation is reading the whole blob in memory"
+            )
+            self.assertEqual(
+                read_bytes, 0, "Validation is reading the whole blob in memory"
+            )

@@ -86,6 +86,7 @@ class INamed(Interface):
 
     filename = schema.TextLine(title="Filename", required=False, default=None)
 
+
 class INamedTyped(INamed, ITyped):
     """An item with a filename and contentType"""
 
@@ -113,8 +114,8 @@ class INamedFileField(INamedField):
         description=_(
             "namedfile_accept_description",
             default=(
-                'The media types which are allowed for this field. '
-                'Unset to allow any type. '
+                "The media types which are allowed for this field. "
+                "Unset to allow any type. "
                 'Can be any valid identifier for the "accept" attribute of '
                 'the HTML file input, like extensions (e.g. ".mp3") or IANA '
                 'media types (e.g. "image/webp").'
@@ -134,9 +135,9 @@ class INamedImageField(INamedField):
         description=_(
             "namedimage_accept_description",
             default=(
-                'The media types which are allowed for this image field. '
+                "The media types which are allowed for this image field. "
                 'The default is to allow any "image/*" content type. '
-                'Unset to allow any type. '
+                "Unset to allow any type. "
                 'Can be any valid identifier for the "accept" attribute of '
                 'the HTML file input, like extensions (e.g. ".jpg") or IANA '
                 'media types (e.g. "image/webp").'
