@@ -49,7 +49,9 @@ class ImageFieldScales:
 
         # Get the @@images view once and store it, so all methods can use it.
         try:
-            self.images_view = getMultiAdapter((self.context, self.request), name="images")
+            self.images_view = getMultiAdapter(
+                (self.context, self.request), name="images"
+            )
         except ComponentLookupError:
             # Seen in plone.app.caching.tests.test_profile_with_caching_proxy.
             # If we cannot find the images view, there is nothing for us to do.

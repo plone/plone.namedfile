@@ -115,34 +115,34 @@ class TestAttackVectorNamedImage(unittest.TestCase):
     def assert_scale_view_works(self, base_url):
         # Test that accessing a scale view shows the image inline.
         browser = self.get_anon_browser()
-        browser.open(base_url + "/@@images/{}".format(self.field_name))
+        browser.open(base_url + f"/@@images/{self.field_name}")
         self.assertIsNone(get_disposition_header(browser))
 
         # Note: the 'custom' scale is defined in an adapter above.
-        browser.open(base_url + "/@@images/{}/custom".format(self.field_name))
+        browser.open(base_url + f"/@@images/{self.field_name}/custom")
         self.assertIsNone(get_disposition_header(browser))
 
         unique_scale_id = list(IAnnotations(self.item)["plone.scale"].keys())[0]
-        browser.open(base_url + "/@@images/{}".format(unique_scale_id))
+        browser.open(base_url + f"/@@images/{unique_scale_id}")
         self.assertIsNone(get_disposition_header(browser))
 
     def assert_scale_view_is_download(self, base_url):
         # Test that accessing a scale view turns into a download.
         browser = self.get_anon_browser()
-        browser.open(base_url + "/@@images/{}".format(self.field_name))
+        browser.open(base_url + f"/@@images/{self.field_name}")
         header = get_disposition_header(browser)
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)
         self.assertIn("filename", header)
 
-        browser.open(base_url + "/@@images/{}/custom".format(self.field_name))
+        browser.open(base_url + f"/@@images/{self.field_name}/custom")
         header = get_disposition_header(browser)
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)
         self.assertIn("filename", header)
 
         unique_scale_id = list(IAnnotations(self.item)["plone.scale"].keys())[0]
-        browser.open(base_url + "/@@images/{}".format(unique_scale_id))
+        browser.open(base_url + f"/@@images/{unique_scale_id}")
         header = get_disposition_header(browser)
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)

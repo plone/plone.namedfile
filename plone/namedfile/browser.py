@@ -132,7 +132,9 @@ class Download(BrowserView):
         if filename is None:
             return f"{self.context.absolute_url()}/@@download/{self.fieldname}"
         else:
-            return f"{self.context.absolute_url()}/@@download/{self.fieldname}/{filename}"
+            return (
+                f"{self.context.absolute_url()}/@@download/{self.fieldname}/{filename}"
+            )
 
     def set_headers(self, file):
         # With filename None, set_headers will not add the download headers.
@@ -142,8 +144,10 @@ class Download(BrowserView):
                 self.filename = self.fieldname
                 if self.filename is None:
                     self.filename = "file.ext"
-        canonical =  self.get_canonical(file)
-        set_headers(file, self.request.response, filename=self.filename, canonical=canonical)
+        canonical = self.get_canonical(file)
+        set_headers(
+            file, self.request.response, filename=self.filename, canonical=canonical
+        )
 
     def _getFile(self):
         if not self.fieldname:
@@ -193,5 +197,5 @@ class DisplayFile(Download):
                 if mimetype not in self.allowed_inline_mimetypes:
                     # Let the Download view handle this.
                     return super().set_headers(file)
-        canonical =  self.get_canonical(file)
+        canonical = self.get_canonical(file)
         set_headers(file, self.request.response, canonical=canonical)

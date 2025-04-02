@@ -2,7 +2,6 @@ from DateTime import DateTime
 from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.file import NamedImage
 
-
 import os
 
 
