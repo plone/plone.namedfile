@@ -8,6 +8,23 @@ Changelog
 
 .. towncrier release notes start
 
+7.0.1 (2025-03-21)
+------------------
+
+Bug fixes:
+
+
+- Work around TypeError: unhashable type: 'list' on `images-test` view.
+  [maurits] (#173)
+
+
+Internal:
+
+
+- Update configuration files.
+  [plone devs]
+
+
 7.0.0 (2025-01-24)
 ------------------
 
