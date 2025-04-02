@@ -24,8 +24,8 @@ from plone.namedfile.interfaces import INamedBlobImage
 from plone.namedfile.interfaces import IStorage
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
-from plone.namedfile.tests.test_image import zptlogo
 from plone.namedfile.tests import MockNamedBlobImage
+from plone.namedfile.tests.test_image import zptlogo
 from zope.component import provideUtility
 from zope.interface.verify import verifyClass
 
@@ -80,7 +80,7 @@ class TestImage(unittest.TestCase):
     def testModifiedTimeStamp(self):
         image = self._makeImage()
         old_timestamp = image.modified
-        time.sleep(1/1000)  # make sure at least 1ms passes
+        time.sleep(1 / 1000)  # make sure at least 1ms passes
         now = DateTime()
         self.assertGreater(now, DateTime(old_timestamp))
         image._setData(zptlogo)
@@ -119,7 +119,7 @@ class TestImage(unittest.TestCase):
     def testDataMutatorWithLargeSVGHeader(self):
         from plone.namedfile.file import IMAGE_INFO_BYTES
 
-        to_big_header_data = b'd' * (IMAGE_INFO_BYTES * 2)
+        to_big_header_data = b"d" * (IMAGE_INFO_BYTES * 2)
 
         data = (
             b'<svg xmlns="http://www.w3.org/2000/svg" '

@@ -8,6 +8,38 @@ Changelog
 
 .. towncrier release notes start
 
+7.0.1 (2025-03-21)
+------------------
+
+Bug fixes:
+
+
+- Work around TypeError: unhashable type: 'list' on `images-test` view.
+  [maurits] (#173)
+
+
+Internal:
+
+
+- Update configuration files.
+  [plone devs]
+
+
+7.0.0 (2025-01-24)
+------------------
+
+Breaking changes:
+
+
+- Drop support for Plone 5.2.  [maurits] (#4090)
+
+
+Bug fixes:
+
+
+- Fix DeprecationWarnings. [maurits] (#4090)
+
+
 6.4.0 (2024-11-25)
 ------------------
 
@@ -373,7 +405,7 @@ New features:
 Bug fixes:
 
 
-- Fix image scaling to re-use the original image when scaling is not required to allow Plone REST API to use cacheable scale URL for the original image without performance penalty [datakurre] (#92)
+- Fix image scaling to reuse the original image when scaling is not required to allow Plone REST API to use cacheable scale URL for the original image without performance penalty [datakurre] (#92)
 
 
 5.3.0 (2020-04-21)
@@ -515,7 +547,7 @@ Bug fixes:
 
 Bug fixes:
 
-- Dont't break DefaultImageScalingFactory, if for any reason the fieldname isn't available on the context.
+- Don't break DefaultImageScalingFactory, if for any reason the fieldname isn't available on the context.
   [thet]
 
 - Different caching keys for different domains
@@ -568,7 +600,7 @@ New features:
 
 - Add automatic image rotation based on EXIF data for all images.
   Based on piexif library and ideas of maartenkling and ezvirtual.
-  Choosen piexif as it allow read and write of exif data for future enhancements.
+  Chosen piexif as it allow read and write of exif data for future enhancements.
   http://piexif.readthedocs.org/en/latest/
   For Orientation examples and description see http://www.daveperrett.com/articles/2012/07/28/exif-orientation-handling-is-a-ghetto/ test data https://github.com/recurser/exif-orientation-examples
   Additional Test Images with different MIME-Types (JPEG and TIFF) and possible problems: https://github.com/ianare/exif-samples.git
@@ -604,7 +636,7 @@ Incompatibilities:
 
 - Targets Plone 5.1 only, coredev 5.0 and 4.3 are on 3.0.x branch [jensens]:
 
-  - ``plone.supermodel``, ``plone.scale`` and ``plone.schemaeditor`` are now hard depedencies.
+  - ``plone.supermodel``, ``plone.scale`` and ``plone.schemaeditor`` are now hard dependencies.
     The extras  in setup.py are kept for bbb reasons, but are empty.
     Conditional code is now no longer conditional.
     This simplifies the code a lot.
@@ -624,7 +656,7 @@ Fixes:
   [smcmahon]
 
 - Prevent attempt to create a filestream_iterator from a temporary file associated with an
-  uncommited blob.
+  uncommitted blob.
   Fixes an error on Windows 10 "WindowsError 32" by attempting to delete or access a file in use
   by another process.
   [smcmahon]
@@ -649,10 +681,10 @@ Fixes:
 
 Fixes:
 
-- PEP 8, UTF-8 headers, implements/adapts to decorators, doctest formating.
+- PEP 8, UTF-8 headers, implements/adapts to decorators, doctest formatting.
   [thet, jensens]
 
-- Workarround for method getImageSize.
+- Workaround for method getImageSize.
   Prevent returning (-1, -1) as the size of the image.
   [andreesg]
 
@@ -976,7 +1008,7 @@ Fixes:
 ------------------
 
 * Make z3c.blobfile (and blobs in general) a soft dependency. You'll need to
-  separately depend on z3c.blobfile (and probably pin it to versio 0.1.2) to
+  separately depend on z3c.blobfile (and probably pin it to version 0.1.2) to
   get the NamedBlobFile and NamedBlobImage fields. This means that
   plone.namedfile can be used with ZODB versions that do not support BLOBs.
   This policy will probably be revisited for a 2.0 release.

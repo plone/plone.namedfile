@@ -1,6 +1,7 @@
 from OFS.SimpleItem import SimpleItem
 from plone.app.testing import SITE_OWNER_NAME
 from plone.app.testing import SITE_OWNER_PASSWORD
+from plone.base.utils import safe_text
 from plone.namedfile import field
 from plone.namedfile import file
 from plone.namedfile.interfaces import IAvailableSizes
@@ -8,7 +9,6 @@ from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
 from plone.testing.zope import Browser
-from Products.CMFPlone.utils import safe_unicode
 from zope.annotation import IAnnotations
 from zope.annotation import IAttributeAnnotatable
 from zope.component import getSiteManager
@@ -87,7 +87,7 @@ class TestAttackVectorNamedImage(unittest.TestCase):
 
     def _named_file(self, name):
         data = getFile(name)
-        return self.field_class(data, filename=safe_unicode(name))
+        return self.field_class(data, filename=safe_text(name))
 
     def assert_download_works(self, base_url):
         browser = self.get_anon_browser()
@@ -115,34 +115,34 @@ class TestAttackVectorNamedImage(unittest.TestCase):
     def assert_scale_view_works(self, base_url):
         # Test that accessing a scale view shows the image inline.
         browser = self.get_anon_browser()
-        browser.open(base_url + "/@@images/{}".format(self.field_name))
+        browser.open(base_url + f"/@@images/{self.field_name}")
         self.assertIsNone(get_disposition_header(browser))
 
         # Note: the 'custom' scale is defined in an adapter above.
-        browser.open(base_url + "/@@images/{}/custom".format(self.field_name))
+        browser.open(base_url + f"/@@images/{self.field_name}/custom")
         self.assertIsNone(get_disposition_header(browser))
 
         unique_scale_id = list(IAnnotations(self.item)["plone.scale"].keys())[0]
-        browser.open(base_url + "/@@images/{}".format(unique_scale_id))
+        browser.open(base_url + f"/@@images/{unique_scale_id}")
         self.assertIsNone(get_disposition_header(browser))
 
     def assert_scale_view_is_download(self, base_url):
         # Test that accessing a scale view turns into a download.
         browser = self.get_anon_browser()
-        browser.open(base_url + "/@@images/{}".format(self.field_name))
+        browser.open(base_url + f"/@@images/{self.field_name}")
         header = get_disposition_header(browser)
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)
         self.assertIn("filename", header)
 
-        browser.open(base_url + "/@@images/{}/custom".format(self.field_name))
+        browser.open(base_url + f"/@@images/{self.field_name}/custom")
         header = get_disposition_header(browser)
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)
         self.assertIn("filename", header)
 
         unique_scale_id = list(IAnnotations(self.item)["plone.scale"].keys())[0]
-        browser.open(base_url + "/@@images/{}".format(unique_scale_id))
+        browser.open(base_url + f"/@@images/{unique_scale_id}")
         header = get_disposition_header(browser)
         self.assertIsNotNone(header)
         self.assertIn("attachment", header)
@@ -203,7 +203,7 @@ class TestAttackVectorNamedFile(TestAttackVectorNamedImage):
 
     def test_html_file(self):
         data = self.field_class(
-            "<h1>Attacker</h1>", filename=safe_unicode("attacker.html")
+            "<h1>Attacker</h1>", filename=safe_text("attacker.html")
         )
         setattr(self.item, self.field_name, data)
         transaction.commit()

@@ -3,9 +3,7 @@
 from DateTime import DateTime
 from plone.namedfile.file import NamedImage
 from plone.namedfile.interfaces import INamedImage
-from plone.namedfile.tests import getFile
 from plone.namedfile.tests import MockNamedImage
-from plone.namedfile.utils import get_contenttype
 from zope.interface.verify import verifyClass
 
 import time
@@ -62,7 +60,7 @@ class TestImage(unittest.TestCase):
     def testModifiedTimeStamp(self):
         image = self._makeImage()
         old_timestamp = image.modified
-        time.sleep(1/1000)  # make sure at least 1ms passes
+        time.sleep(1 / 1000)  # make sure at least 1ms passes
         image._setData(zptlogo)
         self.assertNotEqual(image.modified, old_timestamp)
 

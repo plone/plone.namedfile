@@ -296,8 +296,7 @@ class FakeImageScaleStorage:
 
 
 class TitleImageScale(ImageScale):
-    """ImageScale class with its own title property.
-    """
+    """ImageScale class with its own title property."""
 
     title = "title from class"
 
@@ -1005,19 +1004,19 @@ class StorageTests(unittest.TestCase):
         scaling._scale_view_class = TitleImageScale
         self.assertEqual(
             scaling.tag("image"),
-            '<img src="http://fake.image/@@images/image.jpeg" alt="title from class" title="title from class" height="4" width="6" />'
+            '<img src="http://fake.image/@@images/image.jpeg" alt="title from class" title="title from class" height="4" width="6" />',
         )
         self.assertEqual(
             scaling.tag("image", alt="own alt"),
-            '<img src="http://fake.image/@@images/image.jpeg" alt="own alt" title="title from class" height="4" width="6" />'
+            '<img src="http://fake.image/@@images/image.jpeg" alt="own alt" title="title from class" height="4" width="6" />',
         )
         self.assertEqual(
             scaling.tag("image", title="own title"),
-            '<img src="http://fake.image/@@images/image.jpeg" alt="title from class" title="own title" height="4" width="6" />'
+            '<img src="http://fake.image/@@images/image.jpeg" alt="title from class" title="own title" height="4" width="6" />',
         )
         self.assertEqual(
             scaling.tag("image", alt="own alt", title="own title"),
-            '<img src="http://fake.image/@@images/image.jpeg" alt="own alt" title="own title" height="4" width="6" />'
+            '<img src="http://fake.image/@@images/image.jpeg" alt="own alt" title="own title" height="4" width="6" />',
         )
 
 
@@ -1030,21 +1029,21 @@ class Img2PictureTagTests(unittest.TestCase):
     def test_update_src_scale(self):
         update_src_scale = self._makeOne().update_src_scale
         self.assertEqual(
-            update_src_scale("foo/fieldname/old", "new"),
-            "foo/fieldname/new"
+            update_src_scale("foo/fieldname/old", "new"), "foo/fieldname/new"
         )
         self.assertEqual(
             update_src_scale("@@images/fieldname/old", "mini"),
-            "@@images/fieldname/mini"
+            "@@images/fieldname/mini",
         )
         self.assertEqual(
             update_src_scale("@@images/fieldname", "preview"),
-            "@@images/fieldname/preview"
+            "@@images/fieldname/preview",
         )
         self.assertEqual(
             update_src_scale(
                 "photo.jpg/@@images/image-1200-4a03b0a8227d28737f5d9e3e481bdbd6.jpeg",
-                "teaser"),
+                "teaser",
+            ),
             "photo.jpg/@@images/image/teaser",
         )
 

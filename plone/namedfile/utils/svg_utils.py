@@ -7,11 +7,12 @@ import xml.etree.ElementTree as et
 
 log = getLogger(__name__)
 
+
 def calculate_dimensions_from_viewbox(view_box):
-        parts = [float(x) for x in view_box.split()]
-        if len(parts) == 4:
-            return int(parts[2]), int(parts[3])
-        return 1, 1
+    parts = [float(x) for x in view_box.split()]
+    if len(parts) == 4:
+        return int(parts[2]), int(parts[3])
+    return 1, 1
 
 
 def process_svg(data):

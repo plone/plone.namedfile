@@ -1,199 +1,294 @@
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
-    xmlns:tal="http://xml.zope.org/namespaces/tal"
-    xmlns:metal="http://xml.zope.org/namespaces/metal"
-    xmlns:i18n="http://xml.zope.org/namespaces/i18n"
-    lang="en"
-    metal:use-macro="context/@@main_template/macros/master"
-    i18n:domain="plone">
-<body>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      lang="en"
+      metal:use-macro="context/@@main_template/macros/master"
+      xml:lang="en"
+      i18n:domain="plone"
+>
+  <body>
 
-<metal:content-core fill-slot="content-core">
-<metal:block define-macro="content-core"
-             tal:define="content_type python: context.image.contentType;
-                         size context/image/getSize;
-                         image_dimension context/image/getImageSize;
-                         images context/@@images;
-                         context_url context/absolute_url;
-                         use_MB python: size > 1024*1024;
-                         dimension python: str(image_dimension[0])+'x'+str(image_dimension[1]);
-                         filename python: context.image.filename;
-                         mimetype_icon python: 'mimetype-' + content_type;
-                         download_url python: '{}/@@download/image/{}'.format(context_url, filename)">
-  <p>
+    <metal:content-core fill-slot="content-core">
+      <metal:block define-macro="content-core"
+                   tal:define="
+                     content_type python: context.image.contentType;
+                     size context/image/getSize;
+                     image_dimension context/image/getImageSize;
+                     images context/@@images;
+                     context_url context/absolute_url;
+                     use_MB python: size > 1024*1024;
+                     dimension python: str(image_dimension[0])+'x'+str(image_dimension[1]);
+                     filename python: context.image.filename;
+                     mimetype_icon python: 'mimetype-' + content_type;
+                     download_url python: '{}/@@download/image/{}'.format(context_url, filename);
+                   "
+      >
+        <p i18n:translate="">
     Go to:
-    <a href="#examples">examples</a>,
-    <a href="#cover">cover</a>,
-    <a href="#contain">contain</a>,
-    <a href="#picture">picture tags</a>,
-    <a href="#stored">stored scales</a>,
-    <a href="#clear">clear</a>
-  </p>
-  <section class="section section-main">
-    <h3>Thumb with info</h3>
-    <p>Standard display of Image content type, but using thumb scale</p>
-    <figure class="figure">
-      <a href="${context_url}/image_view_fullscreen"
-         tal:define="img_tag python:images.tag('image', scale='thumb', css_class='figure-img img-fluid')"
-         >
-        <img tal:replace="structure img_tag" />
-      </a>
-    </figure>
+          <a href="#examples"
+             i18n:name=""
+             i18n:translate=""
+          >examples</a>,
+          <a href="#cover"
+             i18n:name=""
+             i18n:translate=""
+          >cover</a>,
+          <a href="#contain"
+             i18n:name=""
+             i18n:translate=""
+          >contain</a>,
+          <a href="#picture"
+             i18n:name=""
+             i18n:translate=""
+          >picture tags</a>,
+          <a href="#stored"
+             i18n:name=""
+             i18n:translate=""
+          >stored scales</a>,
+          <a href="#clear"
+             i18n:name=""
+             i18n:translate=""
+          >clear</a>
+        </p>
+        <section class="section section-main">
+          <h3 i18n:translate="">Thumb with info</h3>
+          <p i18n:translate="">Standard display of Image content type, but using thumb scale</p>
+          <figure class="figure">
+            <a href="${context_url}/image_view_fullscreen"
+               tal:define="
+                 img_tag python:images.tag('image', scale='thumb', css_class='figure-img img-fluid');
+               "
+            >
+              <img tal:replace="structure img_tag" />
+            </a>
+          </figure>
 
-    <div class="h5 mb-2">
-      <a href="${python:download_url}" tal:content="python: filename">Filename</a>
-    </div>
-    <div class="metadata d-flex justify-content-center text-muted small">
-      <div class="px-2">
-        <tal:icon tal:replace="structure python:icons.tag(mimetype_icon, tag_class='icon-inline', tag_alt=content_type)" />
-        <span i18n:translate="image_kind_label" class="d-none">Type</span>
-        <span tal:replace="python: content_type">image/jpeg</span>
-      </div>
-      <div class="px-2">
-        <tal:icon tal:replace="structure python:icons.tag('aspect-ratio', tag_class='icon-inline', tag_alt='Dimension')" />
-        <span i18n:translate="image_dimension_label" class="d-none">Dimension</span>
-        <span tal:replace="python: dimension">400x300</span>
-      </div>
-      <div class="px-2">
-        <tal:icon tal:replace="structure python:icons.tag('file-binary', tag_class='icon-inline', tag_alt='Size')" />
-        <span i18n:translate="image_size_label" class="d-none">File size</span>
-        <tal:MB condition="use_MB">${python:round(size/1024/1024, 1)} MB</tal:MB>
-        <tal:KB condition="not: use_MB">${python:round(size/1024, 1)} KB</tal:KB>
-      </div>
-    </div>
+          <div class="h5 mb-2">
+            <a href="${python:download_url}"
+               tal:content="python: filename"
+               i18n:translate=""
+            >Filename</a>
+          </div>
+          <div class="metadata d-flex justify-content-center text-muted small">
+            <div class="px-2">
+              <tal:icon tal:replace="structure python:icons.tag(mimetype_icon, tag_class='icon-inline', tag_alt=content_type)" />
+              <span class="d-none"
+                    i18n:translate="image_kind_label"
+              >Type</span>
+              <span tal:replace="python: content_type">image/jpeg</span>
+            </div>
+            <div class="px-2">
+              <tal:icon tal:replace="structure python:icons.tag('aspect-ratio', tag_class='icon-inline', tag_alt='Dimension')" />
+              <span class="d-none"
+                    i18n:translate="image_dimension_label"
+              >Dimension</span>
+              <span tal:replace="python: dimension">400x300</span>
+            </div>
+            <div class="px-2">
+              <tal:icon tal:replace="structure python:icons.tag('file-binary', tag_class='icon-inline', tag_alt='Size')" />
+              <span class="d-none"
+                    i18n:translate="image_size_label"
+              >File size</span>
+              <tal:mb condition="use_MB"
+                      i18n:translate=""
+              >${python:round(size/1024/1024, 1)} MB</tal:mb>
+              <tal:kb condition="not: use_MB"
+                      i18n:translate=""
+              >${python:round(size/1024, 1)} KB</tal:kb>
+            </div>
+          </div>
 
-  </section>
+        </section>
 
-  <section class="section section-actions">
-    <a class="btn btn-primary download" href="${python:download_url}" i18n:translate="">Download</a>
-    <a class="btn btn-primary fullscreen" href="${context_url}/image_view_fullscreen"><span i18n:translate="label_click_to_view_full_image">View full-size image</span></a>
-  </section>
-  <hr />
-  <section id="examples">
-    <h2>Examples with direction/mode</h2>
-    <p>
-      There are three modes to scale an image: <code>scale</code>, <code>cover</code> and <code>contain</code>.
-    </p>
-    <p>Scaling methods do never stretch/distort the image in one direction only.</p>
+        <section class="section section-actions">
+          <a class="btn btn-primary download"
+             href="${python:download_url}"
+             i18n:translate=""
+          >Download</a>
+          <a class="btn btn-primary fullscreen"
+             href="${context_url}/image_view_fullscreen"
+          ><span i18n:translate="label_click_to_view_full_image">View full-size image</span></a>
+        </section>
+        <hr />
+        <section id="examples">
+          <h2 i18n:translate="">Examples with direction/mode</h2>
+          <p i18n:translate="">
+      There are three modes to scale an image:
+            <code>scale</code>,
+            <code>cover</code>
+            and
+            <code>contain</code>.
+          </p>
+          <p i18n:translate="">Scaling methods do never stretch/distort the image in one direction only.</p>
 
-    <h3>Mini direction=scale</h3>
-    <p>
+          <h3 i18n:translate="">Mini direction=scale
+            <p i18n:translate="">
       Scales to the requested dimensions without cropping.
       The resulting image may have a different size than requested.
       This option requires both, width and height, to be specified.
-      Does not scale up. <small>[from doc-string]</small>
-    </p>
-    <p>
-      Here direction is not explicit set, it uses by default <code>direction="scale"</code>.
-    </p>
-    <p>Deprecated spellings: <code>keep</code>, <code>thumbnail</code>.</p>
-    <figure class="figure"
-      tal:define="img_tag python:images.tag('image', scale='mini')">
-      <img tal:replace="structure img_tag" />
-      <br /><code tal:content="img_tag" />
-    </figure>
+      Does not scale up.
+            </p>
+            <p i18n:translate="">
+      Here direction is not explicit set, it uses by default
+              <code>direction="scale"</code>.
+            </p>
+            <p i18n:translate="">Deprecated spellings:
+              <code>keep</code>,
+              <code>thumbnail</code>.</p>
+            <figure class="figure"
+                    tal:define="
+                      img_tag python:images.tag('image', scale='mini');
+                    "
+            >
+              <img tal:replace="structure img_tag" />
+              <br /><code tal:content="img_tag"></code>
+            </figure>
 
-    <h3 id="cover">Mini direction=cover</h3>
-    <p>
+            <h3 id="cover"
+                i18n:translate=""
+            >Mini direction=cover</h3>
+            <p i18n:translate="">
       Scales the relatively largest dimension up to the required size.
-      Despite the alternative spelling, I see no cropping happening. <small>[from doc-string]</small>
-    </p>
-    <p>Deprecated spellings: <code>scale-crop-to-fill</code>, <code>up</code>.</p>
-    <figure class="figure"
-      tal:define="img_tag python:images.tag('image', scale='mini', mode='cover')">
-      <img tal:replace="structure img_tag" />
-      <br /><code tal:content="img_tag" />
-    </figure>
+      Despite the alternative spelling, I see no cropping happening.
+            </p>
+            <p i18n:translate="">Deprecated spellings:
+              <code>scale-crop-to-fill</code>,
+              <code>up</code>.</p>
+            <figure class="figure"
+                    tal:define="
+                      img_tag python:images.tag('image', scale='mini', mode='cover');
+                    "
+            >
+              <img tal:replace="structure img_tag" />
+              <br /><code tal:content="img_tag"></code>
+            </figure>
 
-    <h3 id="contain">Mini direction=contain</h3>
-    <p>
-      Starts by scaling the relatively smallest dimension to the required size and crops the other dimension if needed. <small>[from doc-string]</small>
-    </p>
-    <p>Deprecated spellings: <code>scale-crop-to-fit</code>, <code>down</code>.</p>
-      <figure class="figure"
-      tal:define="img_tag python:images.tag('image', scale='mini', direction='contain')">
-      <img tal:replace="structure img_tag" />
-      <br /><code tal:content="img_tag" />
-    </figure>
-  </section>
+            <h3 id="contain"
+                i18n:translate=""
+            >Mini direction=contain</h3>
+            <p i18n:translate="">
+      Starts by scaling the relatively smallest dimension to the required size and crops the other dimension if needed.
+            </p>
+            <p i18n:translate="">Deprecated spellings:
+              <code>scale-crop-to-fit</code>,
+              <code>down</code>.</p>
+            <figure class="figure"
+                    tal:define="
+                      img_tag python:images.tag('image', scale='mini', direction='contain');
+                    "
+            >
+              <img tal:replace="structure img_tag" />
+              <br /><code tal:content="img_tag"></code>
+            </figure>
+          </h3></section>
 
-  <section id="picture">
-    <h2>Picture tags</h2>
-    <p>
+        <section id="picture">
+          <h2 i18n:translate="">Picture tags</h2>
+          <p i18n:translate="">
       Picture tags only work on Plone 6.
       If not available (like on Plone 5.2), an ordinary image tag is created.
-    </p>
+          </p>
 
-    <h3 id="picture_tag_large">Picture Tag Large</h3>
-    <p>
+          <h3 id="picture_tag_large"
+              i18n:translate=""
+          >Picture Tag Large</h3>
+          <p i18n:translate="">
       Generate a picture tag from configured picture_variant `large`.
-    </p>
-    <p>
-      <picture
-        tal:replace="structure python:images.picture('image', picture_variant='large')" />
-    </p>
+          </p>
+          <p>
+            <picture tal:replace="structure python:images.picture('image', picture_variant='large')"></picture>
+          </p>
 
-    <h3 id="picture_tag_medium">Picture Tag Medium</h3>
-    <p>
+          <h3 id="picture_tag_medium"
+              i18n:translate=""
+          >Picture Tag Medium</h3>
+          <p i18n:translate="">
       Generate a picture tag from configured picture_variant `medium`.
       This picture tag contains multiple source tags with media queries for art direction.
-    </p>
-    <p>
-      <picture
-        tal:replace="structure python:images.picture('image', picture_variant='medium')" />
-    </p>
+          </p>
+          <p>
+            <picture tal:replace="structure python:images.picture('image', picture_variant='medium')"></picture>
+          </p>
 
-    <h3 id="picture_tag_small">Picture Tag Small</h3>
-    <p>
+          <h3 id="picture_tag_small"
+              i18n:translate=""
+          >Picture Tag Small</h3>
+          <p i18n:translate="">
       Generate a picture tag from configured picture_variant `small`.
-    </p>
-    <p>
-      <picture
-        tal:replace="structure python:images.picture('image', picture_variant='small', title='')" />
-    </p>
+          </p>
+          <p>
+            <picture tal:replace="structure python:images.picture('image', picture_variant='small', title='')"></picture>
+          </p>
 
-    <h3 id="picture_tag_small">Picture Tag Small with title/alt</h3>
-    <p>
-      Generate a picture tag from configured picture_variant `small` wit title and alt attributess set.
-    </p>
-    <p>
-      <picture
-        tal:replace="structure python:images.picture('image', picture_variant='small', title='Custom picture title', alt='alternative picture text')" />
-    </p>
-  </section>
+          <h3 id="picture_tag_small"
+              i18n:translate=""
+          >Picture Tag Small with title/alt</h3>
+          <p i18n:translate="">
+      Generate a picture tag from configured picture_variant `small` with title and alt attributes set.
+          </p>
+          <p>
+            <picture tal:replace="structure python:images.picture('image', picture_variant='small', title='Custom picture title', alt='alternative picture text')"></picture>
+          </p>
+        </section>
 
-  <section class="section" id="stored">
-    <h3>Stored scales</h3>
-    <div class="accordion" id="accordion-stored">
-      <div class="accordion-item" tal:repeat="(uid, info) view/stored_scales">
-        <h4 class="accordion-header" id="heading-${uid}">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${uid}" aria-expanded="false" aria-controls="collapse-${uid}">
-            <code>${uid}</code>
-          </button>
-        </h4>
-        <div id="collapse-${uid}" class="accordion-collapse collapse" aria-labelledby="heading-${uid}" data-bs-parent="#accordion-stored">
-          <div class="accordion-body">
-            <tal:block repeat="item python:sorted(info.items())">
-              <br tal:condition="not:repeat/item/start" />
-              <code>${python:item[0]}: ${python:item[1]}</code>
-            </tal:block>
-            <br />
-            <a target="_blank"
-               href="${context_url}/@@images/${uid}">Open in new tab</a>
+        <section class="section"
+                 id="stored"
+        >
+          <h3 i18n:translate="">Stored scales</h3>
+          <div class="accordion"
+               id="accordion-stored"
+          >
+            <div class="accordion-item"
+                 tal:repeat="(uid, info) view/stored_scales"
+            >
+              <h4 class="accordion-header"
+                  id="heading-${uid}"
+              >
+                <button class="accordion-button collapsed"
+                        aria-controls="collapse-${uid}"
+                        aria-expanded="false"
+                        type="button"
+                        data-bs-target="#collapse-${uid}"
+                        data-bs-toggle="collapse"
+                >
+                  <code>${uid}</code>
+                </button>
+              </h4>
+              <div class="accordion-collapse collapse"
+                   id="collapse-${uid}"
+                   aria-labelledby="heading-${uid}"
+                   data-bs-parent="#accordion-stored"
+              >
+                <div class="accordion-body">
+                  <tal:block repeat="item python:sorted(info.items())">
+                    <br tal:condition="not:repeat/item/start" />
+                    <code>${python:item[0]}: ${python:tuple(item[1]) if isinstance(item[1], list) else item[1]}</code>
+                  </tal:block>
+                  <br />
+                  <a href="${context_url}/@@images/${uid}"
+                     target="_blank"
+                     i18n:translate=""
+                  >Open in new tab</a>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
+        </section>
 
-  <section class="section" id="clear">
-    <h3>Clear scales</h3>
-    <form method="post" action="${context/@@plone_context_state/object_url}/@@images-clear">
-      <button>Clear</button>
-    </form>
-  </section>
+        <section class="section"
+                 id="clear"
+        >
+          <h3 i18n:translate="">Clear scales</h3>
+          <form action="${context/@@plone_context_state/object_url}/@@images-clear"
+                method="post"
+          >
+            <button i18n:translate="">Clear</button>
+          </form>
+        </section>
 
-</metal:block>
-</metal:content-core>
+      </metal:block>
+    </metal:content-core>
 
-</body>
+  </body>
 </html>
