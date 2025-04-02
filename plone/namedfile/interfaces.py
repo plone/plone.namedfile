@@ -11,7 +11,7 @@ _ = MessageFactory("plone")
 HAVE_BLOBS = True
 
 
-class IFile(Interface):
+class ITyped(Interface):
 
     contentType = schema.NativeStringLine(
         title="Content Type",
@@ -20,6 +20,9 @@ class IFile(Interface):
         required=False,
         missing_value="",
     )
+
+
+class IFile(Interface):
 
     data = schema.Bytes(
         title="Data",
@@ -83,12 +86,15 @@ class INamed(Interface):
 
     filename = schema.TextLine(title="Filename", required=False, default=None)
 
+class INamedTyped(INamed, ITyped):
+    """An item with a filename and contentType"""
 
-class INamedFile(INamed, IFile):
+
+class INamedFile(INamedTyped, IFile):
     """A non-BLOB file with a filename"""
 
 
-class INamedImage(INamed, IImage):
+class INamedImage(INamedTyped, IImage):
     """A non-BLOB image with a filename"""
 
 

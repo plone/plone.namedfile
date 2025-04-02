@@ -390,7 +390,8 @@ class NamedBlobImage(NamedBlobFile):
         # Allow override of the image sniffer
         if contentType:
             self.contentType = contentType
-        exif_data = get_exif(self.data)
+        with self.open("r") as fp:
+            exif_data = get_exif(fp, self.contentType, self._width, self._height)
         if exif_data is not None:
             log.debug(
                 "Image contains Exif Information. "
@@ -431,7 +432,7 @@ class NamedBlobImage(NamedBlobFile):
             res = getImageInfo(firstbytes)
         contentType, self._width, self._height = res
         if contentType:
-            self.contentType = contentType
+            self.contentType = contentType        
 
     data = property(NamedBlobFile._getData, _setData)
 
