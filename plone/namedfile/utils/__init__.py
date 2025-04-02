@@ -217,7 +217,7 @@ def getImageInfo(data):
             width, height = img.size
             content_type = PIL.Image.MIME[img.format]
         except Exception:
-            # TODO: determ wich error really happens
+            # TODO: determ which error really happens
             # Should happen if data is to short --> first_bytes
             # happens also if data is an svg or another special format.
             log.warning(
@@ -240,7 +240,7 @@ def get_exif(image, content_type=None, width=None, height=None):
         image = _ensure_data(image)
         content_type, width, height = getImageInfo(image)
     if content_type in ["image/jpeg", "image/tiff"]:
-        # Only this two Image Types could have Exif informations
+        # Only this two Image Types could have Exif information
         # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
         try:
             # if possible pass filename in instead to prevent reading all data into memory
@@ -248,7 +248,7 @@ def get_exif(image, content_type=None, width=None, height=None):
                 image.name if getattr(image, "name") else _ensure_data(image)
             )
         except Exception as e:
-            # TODO: determ wich error really happens
+            # TODO: determ which error really happens
             # Should happen if data is to short --> first_bytes
             log.warn(e)
             exif_data = exif_data = {
@@ -261,7 +261,7 @@ def get_exif(image, content_type=None, width=None, height=None):
 
 
 def rotate_image(image_data, method=None, REQUEST=None):
-    """Rotate Image if it has Exif Orientation Informations other than 1.
+    """Rotate Image if it has Exif Orientation Information other than 1.
 
     Do not use PIL.Image.rotate function as this did not transpose the image,
     rotate keeps the image width and height and rotates the image around a
@@ -276,7 +276,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
         try:
             exif_data = piexif.load(img.info["exif"])
         except ValueError:
-            log.warn("Exif information currupt")
+            log.warn("Exif information corrupt")
             pass
         if exif_data and piexif.ImageIFD.Orientation in exif_data["0th"]:
             orientation = exif_data["0th"][piexif.ImageIFD.Orientation]

@@ -183,7 +183,7 @@
               i18n:translate=""
           >Picture Tag Small with title/alt</h3>
           <p i18n:translate="">
-      Generate a picture tag from configured picture_variant `small` wit title and alt attributess set.
+      Generate a picture tag from configured picture_variant `small` with title and alt attributes set.
           </p>
           <p>
             <picture tal:replace="structure python:images.picture('image', picture_variant='small', title='Custom picture title', alt='alternative picture text')"></picture>
