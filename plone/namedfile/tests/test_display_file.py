@@ -1,6 +1,7 @@
 from OFS.SimpleItem import SimpleItem
 from plone.app.testing import SITE_OWNER_NAME
 from plone.app.testing import SITE_OWNER_PASSWORD
+from plone.base.utils import safe_text
 from plone.namedfile import field
 from plone.namedfile import file
 from plone.namedfile.interfaces import IAvailableSizes
@@ -8,7 +9,6 @@ from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
 from plone.testing.zope import Browser
-from Products.CMFPlone.utils import safe_unicode
 from zope.annotation import IAnnotations
 from zope.annotation import IAttributeAnnotatable
 from zope.component import getSiteManager
@@ -87,7 +87,7 @@ class TestAttackVectorNamedImage(unittest.TestCase):
 
     def _named_file(self, name):
         data = getFile(name)
-        return self.field_class(data, filename=safe_unicode(name))
+        return self.field_class(data, filename=safe_text(name))
 
     def assert_download_works(self, base_url):
         browser = self.get_anon_browser()
@@ -203,7 +203,7 @@ class TestAttackVectorNamedFile(TestAttackVectorNamedImage):
 
     def test_html_file(self):
         data = self.field_class(
-            "<h1>Attacker</h1>", filename=safe_unicode("attacker.html")
+            "<h1>Attacker</h1>", filename=safe_text("attacker.html")
         )
         setattr(self.item, self.field_name, data)
         transaction.commit()

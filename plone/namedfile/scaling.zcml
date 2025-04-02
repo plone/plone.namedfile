@@ -32,7 +32,7 @@
       />
   <browser:page
       name="image_scale"
-      for="plone.app.layout.navigation.interfaces.INavigationRoot"
+      for="plone.base.interfaces.siteroot.INavigationRoot"
       class=".scaling.NavigationRootScaling"
       allowed_attributes="scale tag"
       permission="zope2.View"
