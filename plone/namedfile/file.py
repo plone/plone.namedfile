@@ -432,7 +432,7 @@ class NamedBlobImage(NamedBlobFile):
             res = getImageInfo(firstbytes)
         contentType, self._width, self._height = res
         if contentType:
-            self.contentType = contentType        
+            self.contentType = contentType
 
     data = property(NamedBlobFile._getData, _setData)
 

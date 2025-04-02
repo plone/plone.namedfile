@@ -86,6 +86,7 @@ class INamed(Interface):
 
     filename = schema.TextLine(title="Filename", required=False, default=None)
 
+
 class INamedTyped(INamed, ITyped):
     """An item with a filename and contentType"""
 

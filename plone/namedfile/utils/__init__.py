@@ -241,7 +241,9 @@ def get_exif(image, content_type=None, width=None, height=None):
         # see http://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf
         try:
             # if possible pass filename in instead to prevent reading all data into memory
-            exif_data = piexif.load(image.name if getattr(image, "name") else _ensure_data(image))
+            exif_data = piexif.load(
+                image.name if getattr(image, "name") else _ensure_data(image)
+            )
         except Exception as e:
             # TODO: determ which error really happens
             # Should happen if data is to short --> first_bytes
