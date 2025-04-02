@@ -18,7 +18,6 @@
 from OFS.Image import Pdata
 from plone.namedfile import field
 from plone.namedfile.file import FileChunk
-from plone.namedfile.file import NamedBlobFile
 from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.testing import PLONE_NAMEDFILE_FUNCTIONAL_TESTING
 from plone.namedfile.tests import getFile
