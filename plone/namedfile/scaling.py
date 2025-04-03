@@ -767,10 +767,10 @@ class ImageScaling(BrowserView):
         srcset_urls = []
         for width, height in self.available_sizes.values():
             if width <= original_width:
-                scale = storage.scale(
+                scale = storage.pre_scale(
                     fieldname=fieldname, width=width, height=height, mode="scale"
                 )
-                extension = scale["data"].contentType.split("/")[-1].lower()
+                extension = scale["mimetype"].split("/")[-1].lower()
                 srcset_urls.append(
                     f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
                 )
