@@ -915,12 +915,13 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         tag = self.scaling.srcset(
             "image",
             sizes="50vw",
-            title="My Custom Title",
             alt="This image shows nothing",
+            css_class="my-personal-class",
+            title="My Custom Title",
             loading="lazy",
         )
         base = self.item.absolute_url()
-        expected = f"""<img title="My Custom Title" alt="This image shows nothing" loading="lazy" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png".../>"""
+        expected = f"""<img title="My Custom Title" alt="This image shows nothing" class="my-personal-class" loading="lazy" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
 

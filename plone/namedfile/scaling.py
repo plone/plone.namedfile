@@ -744,8 +744,9 @@ class ImageScaling(BrowserView):
         fieldname=None,
         scale_in_src="huge",
         sizes="",
-        title=_marker,
         alt=_marker,
+        css_class=None,
+        title=_marker,
         **kwargs,
     ):
         if fieldname is None:
@@ -781,6 +782,9 @@ class ImageScaling(BrowserView):
             attributes["title"] = title
         if alt is not _marker:
             attributes["alt"] = alt
+
+        if css_class is not None:
+            attributes["class"] = css_class
 
         attributes.update(**kwargs)
 
