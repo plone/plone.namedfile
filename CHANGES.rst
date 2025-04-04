@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+7.0.2 (2025-04-04)
+------------------
+
+Bug fixes:
+
+
+- Adjusted schema validation to prevent file/image loading during upload/import (#167)
+
+
 7.0.1 (2025-03-21)
 ------------------
 
