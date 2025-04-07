@@ -2,8 +2,6 @@ from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
 from io import BytesIO
-from io import StringIO
-from plone.base.utils import safe_text
 from plone.memoize import ram
 from plone.namedfile.browser import ALLOWED_INLINE_MIMETYPES
 from plone.namedfile.browser import DISALLOWED_INLINE_MIMETYPES
