@@ -3,7 +3,6 @@ from Acquisition import aq_base
 from DateTime import DateTime
 from io import BytesIO
 from io import StringIO
-from io import TextIOWrapper
 from plone.base.utils import safe_text
 from plone.memoize import ram
 from plone.namedfile.browser import ALLOWED_INLINE_MIMETYPES
@@ -331,9 +330,9 @@ class DefaultImageScalingFactory:
         """Return a scaled image, its mimetype format, and width and height."""
         if getattr(orig_value, "contentType", "") == "image/svg+xml":
             if isinstance(orig_data, bytes):
-                orig_data = StringIO(safe_text(orig_data))
-            elif isinstance(orig_data, BytesIO):
-                orig_data = TextIOWrapper(orig_data, encoding="utf-8")
+                orig_data = BytesIO(orig_data)
+            if isinstance(orig_data, str):
+                orig_data = BytesIO(orig_data.encode("utf-8"))
             scaled_data, size = scale_svg_image(orig_data, width, height, mode)
             return scaled_data, "svg+xml", size
         try:
