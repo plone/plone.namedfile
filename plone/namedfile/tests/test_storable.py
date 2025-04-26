@@ -128,3 +128,38 @@ class TestStorable(unittest.TestCase):
             self.assertEqual(
                 read_bytes, 0, "Validation is reading the whole blob in memory"
             )
+
+    def test_large_webp_storable(self):
+        # ensure we don't read the whole file into memory
+
+        old_open = Blob.open
+        blob_read = 0
+        blob_write = 0
+        old_read = BlobFile.read
+        read_bytes = 0
+
+        def count_open(self, mode="r"):
+            nonlocal blob_read, blob_write
+            blob_read += 1 if "r" in mode else 0
+            blob_write += 1 if "w" in mode else 0
+            return old_open(self, mode)
+
+        def count_reads(self, size=-1):
+            nonlocal read_bytes
+            res = old_read(self, size)
+            read_bytes += len(res)
+            return res
+
+        with patch.object(Blob, "open", count_open), patch.object(
+            BlobFile, "read", count_reads
+        ):
+            fi = NamedBlobImage(getFile("900_lossy.webp"), filename="900.webp")
+            self.assertEqual((900, 900), fi.getImageSize())
+            self.assertLess(
+                read_bytes,
+                fi.getSize(),
+                "Images should not need to read all data to get exif, dimensions",
+            )
+            self.assertEqual(
+                blob_read, 3, "blob opening for getsize, get_exif and getImageInfo only"
+            )
