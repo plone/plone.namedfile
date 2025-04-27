@@ -214,18 +214,15 @@ def getImageInfo(data):
         elif chunk_type == b"VP8L":
             # WebP lossless (VP8L): dimensions are encoded in 4 bytes at offset 21–25
             b = data[21:25]
-            if len(b) >= 4:
-                b0, b1, b2, b3 = b
-                width = ((b1 & 0x3F) << 8 | b0) + 1
-                height = ((b3 & 0xF) << 10 | b2 << 2 | (b1 >> 6)) + 1
+            b0, b1, b2, b3 = b
+            width = ((b1 & 0x3F) << 8 | b0) + 1
+            height = ((b3 & 0xF) << 10 | b2 << 2 | (b1 >> 6)) + 1
         elif chunk_type == b"VP8X":
             # Extended WebP (VP8X)
             # Width: bytes 24-26 (little endian, minus 1)
             # Height: bytes 27-29 (little endian, minus 1)
             width_bytes = data[24:27]
             height_bytes = data[27:30]
-            if len(width_bytes) < 3 or len(height_bytes) < 3:
-                return None
             width = int.from_bytes(width_bytes, "little") + 1
             height = int.from_bytes(height_bytes, "little") + 1
         else:
