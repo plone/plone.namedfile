@@ -167,7 +167,7 @@ class TestStorable(unittest.TestCase):
                 blob_read, 3, "blob opening for getsize, get_exif and getImageInfo only"
             )
 
-    def test_rorate(self):
+    def test_rotate(self):
         # Create a 200x200 white image
         img = PIL.Image.new("RGB", (100, 400), "white")
         # Set the top-left pixels to black
