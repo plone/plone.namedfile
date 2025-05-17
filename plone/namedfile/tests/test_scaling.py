@@ -88,7 +88,8 @@ def patch_Img2PictureTag_picture_variants():
             "sourceset": [
                 {
                     "scale": "preview",
-                    "additionalScales": ["preview", "large", "larger"],
+                    "additionalScales": ["large", "larger"],
+                    "sizes": "(min-width: 576px) 350px, (min-width: 768px) 600px, 98vw",
                 }
             ],
         },
@@ -538,15 +539,14 @@ class ImageScalingTests(unittest.TestCase):
         mock_uuid_to_object.return_value = self.item
         tag = self.scaling.picture("image", picture_variant="medium")
         expected = """<picture>
- <source srcset="http://nohost/item/@@images/image-600-....png 600w,
+ <source...srcset="http://nohost/item/@@images/image-600-....png 600w,
 http://nohost/item/@@images/image-400-....png 400w,
 http://nohost/item/@@images/image-800-....png 800w,
 http://nohost/item/@@images/image-1000-....png 1000w,
-http://nohost/item/@@images/image-1200-....png 1200w"/>
+http://nohost/item/@@images/image-1200-....png 1200w".../>
  <img...src="http://nohost/item/@@images/image-600-....png".../>
 </picture>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
-
         # The exact placement of the img tag attributes can differ, especially
         # with different beautifulsoup versions.
         # So check here that all attributes are present.
@@ -554,6 +554,78 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         self.assertIn('loading="lazy"', tag)
         self.assertIn('title="foo"', tag)
         self.assertIn('width="200"', tag)
+        self.assertIn('sizes="(min-width: 576px) 600px, 98vw"', tag)
+
+    @patch.object(
+        plone.namedfile.scaling,
+        "get_picture_variants",
+        new=patch_Img2PictureTag_picture_variants,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    @patch.object(plone.namedfile.picture, "uuidToObject", spec=True)
+    def testGetPictureTagByNameNotLazy(self, mock_uuid_to_object):
+        ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
+        mock_uuid_to_object.return_value = self.item
+        tag = self.scaling.picture("image", picture_variant="medium", lazy=False)
+        print(tag)
+        expected = """<picture>
+ <source...srcset="http://nohost/item/@@images/image-600-....png 600w,
+http://nohost/item/@@images/image-400-....png 400w,
+http://nohost/item/@@images/image-800-....png 800w,
+http://nohost/item/@@images/image-1000-....png 1000w,
+http://nohost/item/@@images/image-1200-....png 1200w".../>
+ <img...src="http://nohost/item/@@images/image-600-....png".../>
+</picture>"""
+        self.assertTrue(_ellipsis_match(expected, tag.strip()))
+        # The exact placement of the img tag attributes can differ, especially
+        # with different beautifulsoup versions.
+        # So check here that all attributes are present.
+        self.assertIn('height="200"', tag)
+        self.assertNotIn('loading="lazy"', tag)
+        self.assertIn('title="foo"', tag)
+        self.assertIn('width="200"', tag)
+        self.assertIn('sizes="(min-width: 576px) 600px, 98vw"', tag)
+
+    @patch.object(
+        plone.namedfile.scaling,
+        "get_picture_variants",
+        new=patch_Img2PictureTag_picture_variants,
+        spec=True,
+    )
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    @patch.object(plone.namedfile.picture, "uuidToObject", spec=True)
+    def testGetPictureTagCustomSizes(self, mock_uuid_to_object):
+        ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
+        mock_uuid_to_object.return_value = self.item
+        tag = self.scaling.picture("image", picture_variant="small")
+        expected = """<picture>
+ <source...srcset="http://nohost/item/@@images/image-400-....png 400w,
+http://nohost/item/@@images/image-800-....png 800w,
+http://nohost/item/@@images/image-1000-....png 1000w".../>
+ <img...src="http://nohost/item/@@images/image-400-....png".../>
+</picture>"""
+        self.assertTrue(_ellipsis_match(expected, tag.strip()))
+        # The exact placement of the img tag attributes can differ, especially
+        # with different beautifulsoup versions.
+        # So check here that all attributes are present.
+        self.assertIn('height="200"', tag)
+        self.assertIn('loading="lazy"', tag)
+        self.assertIn('title="foo"', tag)
+        self.assertIn('width="200"', tag)
+        self.assertIn(
+            'sizes="(min-width: 576px) 350px, (min-width: 768px) 600px, 98vw"', tag
+        )
 
     @patch.object(
         plone.namedfile.scaling,
@@ -579,11 +651,11 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         )
         base = self.item.absolute_url()
         expected = f"""<picture>
- <source srcset="{base}/@@images/image-600-....png 600w,
+ <source...srcset="{base}/@@images/image-600-....png 600w,
 {base}/@@images/image-400-....png 400w,
 {base}/@@images/image-800-....png 800w,
 {base}/@@images/image-1000-....png 1000w,
-{base}/@@images/image-1200-....png 1200w"/>
+{base}/@@images/image-1200-....png 1200w".../>
  <img...src="{base}/@@images/image-600-....png".../>
 </picture>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
