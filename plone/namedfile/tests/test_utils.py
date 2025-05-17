@@ -1,6 +1,7 @@
 from plone.namedfile.file import NamedImage
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import get_contenttype
+from plone.namedfile.utils import getImageInfo
 
 import unittest
 
@@ -61,4 +62,30 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(
             get_contenttype(filename="nothing.plonenamedfile"),
             "application/octet-stream",
+        )
+
+    def test_get_image_info(self):
+
+        # WEBP WP8
+        self.assertEqual(
+            getImageInfo(getFile("image_lossy.webp")),
+            ("image/webp", 500, 200),
+        )
+
+        # WEBP WP8L
+        self.assertEqual(
+            getImageInfo(getFile("image_loseless.webp")),
+            ("image/webp", 200, 200),
+        )
+
+        # PNG
+        self.assertEqual(
+            getImageInfo(getFile("image.png")),
+            ("image/png", 200, 200),
+        )
+
+        # BMP3
+        self.assertEqual(
+            getImageInfo(getFile("image.bmp")),
+            ("image/x-ms-bmp", 200, 200),
         )
