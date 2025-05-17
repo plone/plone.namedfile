@@ -1,0 +1,1 @@
+Support for extracting metadata from WebP images without loading the entire image into memory, as already done for other formats. [mamico]
