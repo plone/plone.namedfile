@@ -777,7 +777,7 @@ class ImageScaling(BrowserView):
                 )
         attributes = {}
         if title is _marker:
-            attributes["title"] = self.context.Title()
+            attributes["title"] = self.title
         elif title:
             attributes["title"] = title
         if alt is not _marker:
