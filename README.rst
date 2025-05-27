@@ -12,13 +12,14 @@ and BLOBs to be configured in zope.conf.
 
 plone.supermodel handlers are registered.
 
-See the ``usage.rst`` doctest for more details.
+See the `image handling section of Plone documentation <https://6.docs.plone.org/classic-ui/images.html#all-image-scales-in-the-srcset>`_ to learn how to
+use the features provided by this package.
 
 
 Source Code
 ===========
 
- Note: This packages is licensed under a *BSD license*. 
+ Note: This packages is licensed under a *BSD license*.
  Please do not add dependencies on GPL code!
 
 Contributors please read the document `Process for Plone core's development <https://docs.plone.org/develop/coredev/docs/index.html>`_
