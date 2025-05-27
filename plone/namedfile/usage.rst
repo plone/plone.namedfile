@@ -472,8 +472,9 @@ So one can do the following:
          tal:replace="structure python:images.srcset(sizes='90vw')" />
 
 
-This will render the `img` with the urls of all scales configured in Plone, calculating the width
-of each of the scales and will add the `sizes="90vw"` attribute which instructs the browser to "render
+This will render the ``img`` with the URLs of all scales configured in Plone, calculating the width
+of each of the scales and will add the ``sizes="90vw"`` attribute. 
+The ``sizes`` attribute instructs the browser to render
 the image that best fits as it will take the 90% of the current viewport-width" whichever is the current
 viewport.
 
