@@ -494,6 +494,6 @@ tag such as `title`, `alt` or `loading`:
                                                      css_class='rounded-img')" />
 
 
-*NOTE*: while using this approach may be useful for projects, using it in reusable addons is not recomended
-because it may require overriding it to your needs in a project. For such cases, we recomend using configurable
+*NOTE*: while using this approach may be useful for projects, using it in reusable addons is not recommended
+because it may require overriding it to your needs in a project. For such cases, we recommend using configurable
 picture variants.
