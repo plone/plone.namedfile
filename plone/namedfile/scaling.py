@@ -780,7 +780,9 @@ class ImageScaling(BrowserView):
             attributes["title"] = self.title
         elif title:
             attributes["title"] = title
-        if alt is not _marker:
+        if alt is _marker:
+            attributes["alt"] = self.title
+        else:
             attributes["alt"] = alt
 
         if css_class is not None:
