@@ -463,8 +463,8 @@ Image scales and srcset
 -----------------------
 
 Nowadays modern browsers are able to render different images depending on their width
-if urls and widths are correctly provided in an attribute called `srcset` and the rendered
-space is provided in the attribute `sizes`.
+if URLs and widths are correctly provided in an attribute called ``srcset``, and the rendered
+space is provided in the attribute ``sizes``.
 
 So one can do the following:
 
