@@ -468,6 +468,8 @@ space is provided in the attribute ``sizes``.
 
 So one can do the following:
 
+.. code-block:: xml
+
     <img tal:define="images context/@@images;"
          tal:replace="structure python:images.srcset(sizes='90vw')" />
 
@@ -475,17 +477,16 @@ So one can do the following:
 This will render the ``img`` with the URLs of all scales configured in Plone, calculating the width
 of each of the scales and will add the ``sizes="90vw"`` attribute. 
 The ``sizes`` attribute instructs the browser to render
-the image that best fits as it will take the 90% of the current viewport-width" whichever is the current
-viewport.
+the image that best fits, as it will take 90% of the current viewport width.
 
-This will mean that for bigger screens the browser will download a bigger image while in small screens
-a smaller scale is enough.
+This means that, for bigger screens, the browser will download a bigger scaled image, while for smaller screens, a smaller scaled image is enough.
 
-This also means that the developer does not need to worry on creating a specific scale, they only need to
-provide the correct media query to signal the required width.
+This also means that the developer does not need to worry about creating a specific scale.
+They only need to provide the correct media query to signal the required width.
 
-The `scrset` method of the `@@images` view takes also all other parameters that can be rendered in the `img`
-tag such as `title`, `alt` or `loading`:
+The ``scrset`` method of the ``@@images`` view also takes all other parameters that can be rendered in the ``img`` tag, such as ``title``, ``alt``, or ``loading``:
+
+.. code-block:: xml
 
 
     <img tal:define="images context/@@images;"
@@ -495,6 +496,7 @@ tag such as `title`, `alt` or `loading`:
                                                      css_class='rounded-img')" />
 
 
-*NOTE*: while using this approach may be useful for projects, using it in reusable addons is not recommended
-because it may require overriding it to your needs in a project. For such cases, we recommend using configurable
-picture variants.
+.. note::
+
+    While using this approach may be useful for projects, using it in reusable add-ons is not recommended, because it may require overriding it to your needs in a project.
+    For such cases, use configurable picture variants instead.
