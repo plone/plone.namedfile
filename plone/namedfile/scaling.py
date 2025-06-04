@@ -42,6 +42,25 @@ import six
 logger = logging.getLogger(__name__)
 _marker = object()
 
+def _image_tag_from_values(*values):
+    """Turn list of tuples into an img tag.
+
+    Naturally, this should at least contain ("src", "some url").
+    """
+    parts = ["<img"]
+    for k, v in values:
+        if v is None:
+            continue
+        if isinstance(v, int):
+            v = str(v)
+        elif isinstance(v, bytes):
+            v = str(v, "utf8")
+        parts.append(f"{k}={quoteattr(v)}")
+    parts.append("/>")
+
+    return " ".join(parts)
+
+
 
 class ImageScale(BrowserView):
     """ view used for rendering image scales """
@@ -604,6 +623,127 @@ class ImageScaling(BrowserView):
         scale = self.scale(fieldname, scale, height, width, direction)
         return scale.tag(**kwargs) if scale else None
 
+    def picture(
+        self,
+        fieldname=None,
+        picture_variant=None,
+        alt=None,
+        css_class=None,
+        title=_marker,
+        **kwargs,
+    ):
+        img2picturetag = Img2PictureTag()
+        picture_variant_config = get_picture_variants().get(picture_variant)
+        if not picture_variant_config:
+            logger.warning(
+                "Could not find the given picture_variant %s, "
+                "creating ordinary img tag instead!",
+                picture_variant,
+            )
+            if picture_variant in self.available_sizes:
+                # We have a bit of luck: we have a scale with the same name
+                # as the picture variant.
+                scale = picture_variant
+            else:
+                scale = None
+            return self.tag(
+                fieldname=fieldname,
+                scale=scale,
+                alt=alt,
+                css_class=css_class,
+                title=title,
+                **kwargs,
+            )
+
+        sourceset = picture_variant_config.get("sourceset")
+        scale = self.scale(fieldname, sourceset[-1].get("scale"), pre=True)
+        attributes = {}
+        attributes["class"] = css_class and [css_class] or []
+        if not attributes["class"]:
+            del attributes["class"]
+        attributes["src"] = scale.url
+        attributes["width"] = scale.width
+        attributes["height"] = scale.height
+        if title is _marker:
+            attributes["title"] = self.context.Title()
+        elif title:
+            attributes["title"] = title
+        if alt:
+            attributes["alt"] = alt
+        return img2picturetag.create_picture_tag(
+            sourceset,
+            attributes,
+            resolve_urls=True,
+            uid=scale.context.UID(),
+            fieldname=fieldname,
+        ).prettify()
+
+    def srcset(
+        self,
+        fieldname=None,
+        scale_in_src="huge",
+        sizes="",
+        alt=_marker,
+        css_class=None,
+        title=_marker,
+        **kwargs,
+    ):
+        if fieldname is None:
+            try:
+                primary = IPrimaryFieldInfo(self.context, None)
+            except TypeError:
+                return
+            if primary is None:
+                return  # 404
+            fieldname = primary.fieldname
+
+        original_width, original_height = self.getImageSize(fieldname)
+
+        storage = getMultiAdapter(
+            (self.context, functools.partial(self.modified, fieldname)),
+            IImageScaleStorage,
+        )
+
+        srcset_urls = []
+        for width, height in self.available_sizes.values():
+            if width <= original_width:
+                scale = storage.pre_scale(
+                    fieldname=fieldname, width=width, height=height, mode="scale"
+                )
+                extension = scale["mimetype"].split("/")[-1].lower()
+                srcset_urls.append(
+                    f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
+                )
+        attributes = {}
+        if title is _marker:
+            attributes["title"] = self.context.Title()
+        elif title:
+            attributes["title"] = title
+        if alt is _marker:
+            attributes["alt"] = self.context.Title()
+        else:
+            attributes["alt"] = alt
+
+        if css_class is not None:
+            attributes["class"] = css_class
+
+        attributes.update(**kwargs)
+
+        attributes["sizes"] = sizes
+
+        srcset_string = ", ".join(srcset_urls)
+        attributes["srcset"] = srcset_string
+
+        if scale_in_src not in self.available_sizes:
+            for key, (width, height) in self.available_sizes.items():
+                if width <= original_width:
+                    scale_in_src = key
+                    break
+
+        scale = self.scale(fieldname=fieldname, scale=scale_in_src)
+        attributes["src"] = scale.url
+
+        return _image_tag_from_values(*attributes.items())
 
 class NavigationRootScaling(ImageScaling):
     def _scale_cachekey(method, self, brain, fieldname, **kwargs):
