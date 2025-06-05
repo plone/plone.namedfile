@@ -13,7 +13,7 @@ Used in the widget itself to strip off any path, regardless of platform::
     >>> safe_basename('/farmyard/cows/daisy')
     'daisy'
 
-    >>> safe_basename('F:\FARMYARD\COWS\DAISY.TXT')
+    >>> safe_basename(r'F:\FARMYARD\COWS\DAISY.TXT')
     'DAISY.TXT'
 
     >>> safe_basename('Macintosh Farmyard:Cows:Daisy Text File')

@@ -214,7 +214,11 @@ class ImagePublisherTests(unittest.TestCase):
             self.layer["app"].absolute_url() + "/svg/@@images/image/thumb"
         )
         self.assertEqual("image/svg+xml", self.browser.headers["content-type"])
-        self.assertEqual(self.browser.contents, data)
+        self.assertIn(b'width="128" height="32"', self.browser.contents)
+        self.assertEqual(self.browser.contents[:20], data[:20].replace(b'"', b"'"))
+        self.assertEqual(
+            self.browser.contents[-50:], data.replace(b"\r", b"").strip()[-50:]
+        )
 
     def testImagesViewWithNoSubpath(self):
         transaction.commit()
