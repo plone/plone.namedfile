@@ -24,4 +24,13 @@
   <include file="editor.zcml" />
   <include file="field.zcml" />
 
+  <!-- For the storage, we adapt a context
+       and an optional modified callable. -->
+  <adapter
+      factory="plone.scale.storage.AnnotationStorage"
+      provides="plone.scale.storage.IImageScaleStorage"
+      for="*
+           *"
+      />
+
 </configure>

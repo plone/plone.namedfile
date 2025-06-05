@@ -18,6 +18,7 @@ from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IImageScaleFactory
 from plone.scale.interfaces import IScaledImageQuality
 from plone.scale.scale import scaleImage
+from plone.scale.storage import IImageScaleStorage
 from plone.scale.storage import AnnotationStorage
 from Products.CMFPlone.utils import safe_encode
 from Products.Five import BrowserView
@@ -33,6 +34,7 @@ from zope.publisher.interfaces import IPublishTraverse
 from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import ITraversable
 from zope.traversing.interfaces import TraversalError
+from zope.component import getMultiAdapter
 
 import functools
 import logging
@@ -707,7 +709,7 @@ class ImageScaling(BrowserView):
         srcset_urls = []
         for width, height in self.available_sizes.values():
             if width <= original_width:
-                scale = storage.pre_scale(
+                scale = storage.scale(
                     fieldname=fieldname, width=width, height=height, mode="scale"
                 )
                 extension = scale["mimetype"].split("/")[-1].lower()
