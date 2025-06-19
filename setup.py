@@ -57,7 +57,7 @@ setup(
         "plone.memoize",
         "plone.protect",
         "plone.rfc822>=2.0.0",
-        "plone.scale[storage] >=3.0",
+        "plone.scale[storage]>=4.2.0",
         "plone.schemaeditor",
         "plone.supermodel",
         "Products.CMFCore",

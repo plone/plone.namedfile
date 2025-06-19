@@ -1,0 +1,3 @@
+Require plone.scale 4.2.0 as minimum.
+Since our last release, we use a function introduced in that version.
+[maurits]
