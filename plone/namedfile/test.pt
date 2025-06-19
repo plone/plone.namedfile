@@ -42,6 +42,10 @@
              i18n:name=""
              i18n:translate=""
           >picture tags</a>,
+          <a href="#srcset"
+             i18n="name"
+             i18n:translate=""
+          >img tag with srcset</a>,
           <a href="#stored"
              i18n:name=""
              i18n:translate=""
@@ -112,76 +116,42 @@
         </section>
         <hr />
         <section id="examples">
-          <h2 i18n:translate="">Examples with direction/mode</h2>
-          <p i18n:translate="">
-      There are three modes to scale an image:
-            <code>scale</code>,
-            <code>cover</code>
-            and
-            <code>contain</code>.
-          </p>
-          <p i18n:translate="">Scaling methods do never stretch/distort the image in one direction only.</p>
+          <h2 i18n:translate="">Examples with mode</h2>
 
-          <h3 i18n:translate="">Mini direction=scale
-            <p i18n:translate="">
-      Scales to the requested dimensions without cropping.
-      The resulting image may have a different size than requested.
-      This option requires both, width and height, to be specified.
-      Does not scale up.
-            </p>
-            <p i18n:translate="">
-      Here direction is not explicit set, it uses by default
-              <code>direction="scale"</code>.
-            </p>
-            <p i18n:translate="">Deprecated spellings:
-              <code>keep</code>,
-              <code>thumbnail</code>.</p>
-            <figure class="figure"
-                    tal:define="
-                      img_tag python:images.tag('image', scale='mini');
-                    "
-            >
-              <img tal:replace="structure img_tag" />
-              <br /><code tal:content="img_tag"></code>
-            </figure>
+          <h3 i18n:translate="">Mini</h3>
+          <figure class="figure"
+                  tal:define="
+                    img_tag python:images.tag('image', scale='mini');
+                  "
+          >
+            <img tal:replace="structure img_tag" />
+            <br /><code tal:content="img_tag"></code>
+          </figure>
 
-            <h3 id="cover"
-                i18n:translate=""
-            >Mini direction=cover</h3>
-            <p i18n:translate="">
-      Scales the relatively largest dimension up to the required size.
-      Despite the alternative spelling, I see no cropping happening.
-            </p>
-            <p i18n:translate="">Deprecated spellings:
-              <code>scale-crop-to-fill</code>,
-              <code>up</code>.</p>
-            <figure class="figure"
-                    tal:define="
-                      img_tag python:images.tag('image', scale='mini', mode='cover');
-                    "
-            >
-              <img tal:replace="structure img_tag" />
-              <br /><code tal:content="img_tag"></code>
-            </figure>
+          <h3 id="cover"
+              i18n:translate=""
+          >Mini mode=cover</h3>
+          <figure class="figure"
+                  tal:define="
+                    img_tag python:images.tag('image', scale='mini', mode='cover');
+                  "
+          >
+            <img tal:replace="structure img_tag" />
+            <br /><code tal:content="img_tag"></code>
+          </figure>
 
-            <h3 id="contain"
-                i18n:translate=""
-            >Mini direction=contain</h3>
-            <p i18n:translate="">
-      Starts by scaling the relatively smallest dimension to the required size and crops the other dimension if needed.
-            </p>
-            <p i18n:translate="">Deprecated spellings:
-              <code>scale-crop-to-fit</code>,
-              <code>down</code>.</p>
-            <figure class="figure"
-                    tal:define="
-                      img_tag python:images.tag('image', scale='mini', direction='contain');
-                    "
-            >
-              <img tal:replace="structure img_tag" />
-              <br /><code tal:content="img_tag"></code>
-            </figure>
-          </h3></section>
+          <h3 id="contain"
+              i18n:translate=""
+          >Mini mode=contain</h3>
+          <figure class="figure"
+                  tal:define="
+                    img_tag python:images.tag('image', scale='mini', mode='contain');
+                  "
+          >
+            <img tal:replace="structure img_tag" />
+            <br /><code tal:content="img_tag"></code>
+          </figure>
+        </section>
 
         <section id="picture">
           <h2 i18n:translate="">Picture tags</h2>
@@ -229,6 +199,26 @@
           </p>
           <p>
             <picture tal:replace="structure python:images.picture('image', picture_variant='small', title='Custom picture title', alt='alternative picture text')"></picture>
+          </p>
+        </section>
+
+        <section class="section"
+                 id="srcset"
+        >
+          <h2 i18n:translate="">img with srcset attributes</h2>
+          <p i18n:translate="">
+      srcset allows the browser to select the correct image, depending on the space the image has on a page.
+          </p>
+          <p i18n:translate="msg_images_test_srcset">
+      To do so, the @@images view provides a srcset method, that will output the full srcset of this image, using all available image scales. It has as required parameter the value of the sizes attribute that the user of this method has to provide and will be output as is in the generated HTML.
+          </p>
+          <p>
+            <img tal:replace="structure python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
+          </p>
+          <p>
+            <code>
+              <img tal:replace="python:images.srcset('image', sizes='(min-width: 1400px) 550px, 90vw')" />
+            </code>
           </p>
         </section>
 
