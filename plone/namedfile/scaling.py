@@ -2,7 +2,6 @@ from AccessControl.ZopeGuards import guarded_getattr
 from Acquisition import aq_base
 from DateTime import DateTime
 from io import BytesIO
-from plone.base.utils import safe_bytes
 from plone.memoize import ram
 from plone.namedfile.browser import ALLOWED_INLINE_MIMETYPES
 from plone.namedfile.browser import DISALLOWED_INLINE_MIMETYPES
@@ -20,6 +19,7 @@ from plone.protect import PostOnly
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from plone.scale.interfaces import IImageScaleFactory
 from plone.scale.interfaces import IScaledImageQuality
+from plone.scale.scale import scale_svg_image
 from plone.scale.scale import scaleImage
 from plone.scale.storage import IImageScaleStorage
 from Products.CMFCore.utils import getToolByName
@@ -58,7 +58,7 @@ def _image_tag_from_values(*values):
     for k, v in values:
         if v is None:
             continue
-        if isinstance(v, int):
+        if isinstance(v, (int, float)):
             v = str(v)
         elif isinstance(v, bytes):
             v = str(v, "utf8")
@@ -327,14 +327,12 @@ class DefaultImageScalingFactory:
     def handle_image(self, orig_value, orig_data, mode, height, width, **parameters):
         """Return a scaled image, its mimetype format, and width and height."""
         if getattr(orig_value, "contentType", "") == "image/svg+xml":
-            # No need to scale, we can simply use the original data,
-            # but report a different width and height.
-            if isinstance(orig_data, (str)):
-                orig_data = safe_bytes(orig_data)
-            if isinstance(orig_data, (bytes)):
+            if isinstance(orig_data, bytes):
                 orig_data = BytesIO(orig_data)
-            result = orig_data.read(), "svg+xml", (width, height)
-            return result
+            if isinstance(orig_data, str):
+                orig_data = BytesIO(orig_data.encode("utf-8"))
+            scaled_data, size = scale_svg_image(orig_data, width, height, mode)
+            return scaled_data, "svg+xml", size
         try:
             result = self.create_scale(
                 orig_data, mode=mode, height=height, width=width, **parameters
@@ -740,6 +738,73 @@ class ImageScaling(BrowserView):
             fieldname=fieldname,
             lazy=lazy,
         ).prettify()
+
+    def srcset(
+        self,
+        fieldname=None,
+        scale_in_src="huge",
+        sizes="",
+        alt=_marker,
+        css_class=None,
+        title=_marker,
+        **kwargs,
+    ):
+        if fieldname is None:
+            try:
+                primary = IPrimaryFieldInfo(self.context, None)
+            except TypeError:
+                return
+            if primary is None:
+                return  # 404
+            fieldname = primary.fieldname
+
+        original_width, original_height = self.getImageSize(fieldname)
+
+        storage = getMultiAdapter(
+            (self.context, functools.partial(self.modified, fieldname)),
+            IImageScaleStorage,
+        )
+
+        srcset_urls = []
+        for width, height in self.available_sizes.values():
+            if width <= original_width:
+                scale = storage.pre_scale(
+                    fieldname=fieldname, width=width, height=height, mode="scale"
+                )
+                extension = scale["mimetype"].split("/")[-1].lower()
+                srcset_urls.append(
+                    f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
+                )
+        attributes = {}
+        if title is _marker:
+            attributes["title"] = self.context.Title()
+        elif title:
+            attributes["title"] = title
+        if alt is _marker:
+            attributes["alt"] = self.context.Title()
+        else:
+            attributes["alt"] = alt
+
+        if css_class is not None:
+            attributes["class"] = css_class
+
+        attributes.update(**kwargs)
+
+        attributes["sizes"] = sizes
+
+        srcset_string = ", ".join(srcset_urls)
+        attributes["srcset"] = srcset_string
+
+        if scale_in_src not in self.available_sizes:
+            for key, (width, height) in self.available_sizes.items():
+                if width <= original_width:
+                    scale_in_src = key
+                    break
+
+        scale = self.scale(fieldname=fieldname, scale=scale_in_src)
+        attributes["src"] = scale.url
+
+        return _image_tag_from_values(*attributes.items())
 
 
 class NavigationRootScaling(ImageScaling):

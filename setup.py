@@ -4,7 +4,7 @@ from setuptools import setup
 import os
 
 
-version = "7.0.3.dev0"
+version = "7.2.1.dev0"
 
 description = "File types and fields for images, files and blob files with filenames"
 long_description = "\n\n".join(
@@ -57,7 +57,7 @@ setup(
         "plone.memoize",
         "plone.protect",
         "plone.rfc822>=2.0.0",
-        "plone.scale[storage] >=3.0",
+        "plone.scale[storage]>=4.2.0",
         "plone.schemaeditor",
         "plone.supermodel",
         "Products.CMFCore",

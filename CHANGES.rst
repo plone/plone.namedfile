@@ -8,6 +8,33 @@ Changelog
 
 .. towncrier release notes start
 
+7.2.0 (2025-06-19)
+------------------
+
+New features:
+
+
+- "Scale" SVGs by setting the correct height and width for the given scale in its metadata.
+  Require plone.scale 4.2.0 as minimum.
+  [jensens] (#133)
+
+
+7.1.0 (2025-06-05)
+------------------
+
+New features:
+
+
+- Add a srcset method to the @@images view
+  [erral] (#170)
+
+
+Bug fixes:
+
+
+- Support for extracting metadata from WebP images without loading the entire image into memory, as already done for other formats. [mamico] (#181)
+
+
 7.0.2 (2025-04-04)
 ------------------
 
