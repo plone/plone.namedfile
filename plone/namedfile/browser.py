@@ -25,6 +25,7 @@ import os
 # Note: a tag like `<img src="example.svg" />` loading an image/svg+xml mimetype will show up fine.
 # But when you visit example.svg as url, you will get a download.
 ALLOWED_INLINE_MIMETYPES = [
+    "image/avif",
     "image/gif",
     # The mimetypes registry lists several for jpeg 2000:
     "image/jp2",

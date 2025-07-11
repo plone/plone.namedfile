@@ -196,6 +196,8 @@ def getImageInfo(data):
         # handle JPEGs
         content_type, width, height = process_jpeg(data)
 
+    #elif "avif".encode() in data[:13]:
+        # handle avif:
     elif (size >= 30) and data.startswith(b"BM"):
         # handle BMPs
         kind = struct.unpack("<H", data[14:16])[0]
@@ -208,9 +210,12 @@ def getImageInfo(data):
         content_type, width, height = process_svg(data)
 
     else:
+        from pprint import pprint
+        pprint(data[:13])
         # Use PIL / Pillow to determ Image Information
         try:
             img = PIL.Image.open(BytesIO(data))
+            print(img.format)
             width, height = img.size
             content_type = PIL.Image.MIME[img.format]
         except Exception:

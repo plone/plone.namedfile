@@ -95,7 +95,8 @@ class ImageScale(BrowserView):
             self.data = getattr(self.context, self.fieldname)
 
         url = self.context.absolute_url()
-        extension = self.data.contentType.split("/")[-1].lower()
+        # use mimetype not extension here, allows overriding mimetype:
+        extension = (hasattr(self, "mimetype") and self.mimetype.split("/")[-1].lower()) or self.data.contentType.split("/")[-1].lower()
         if self.data.contentType == "image/svg+xml":
             extension = "svg"
         if "uid" in info:
@@ -111,6 +112,7 @@ class ImageScale(BrowserView):
 
     def srcset_attribute(self):
         _srcset_attr = []
+        breakpoint()
         extension = self.data.contentType.split("/")[-1].lower()
         for scale in self.srcset:
             _srcset_attr.append(
@@ -336,6 +338,9 @@ class DefaultImageScalingFactory:
             result = orig_data.read(), "svg+xml", (width, height)
             return result
         try:
+            # we have to remove the create_avif_version, otherwise we get errors in later calls
+            if parameters.get("create_avif_version"):
+                del parameters["create_avif_version"]
             result = self.create_scale(
                 orig_data, mode=mode, height=height, width=width, **parameters
             )
@@ -442,6 +447,7 @@ class ImageScaling(BrowserView):
         """used for traversal via publisher, i.e. when using as a url"""
         stack = request.get("TraversalRequestNameStack")
         image = None
+        breakpoint()
         if stack and stack[-1] not in self._ignored_stacks:
             # field and scale name were given...
             scale = stack.pop()
@@ -480,6 +486,7 @@ class ImageScaling(BrowserView):
     def traverse(self, name, furtherPath):
         """used for path traversal, i.e. in zope page templates"""
         # validate access
+        breakpoint()
         value = self.guarded_orig_image(name)
         if not furtherPath:
             image = self._scale_view_class(
@@ -577,6 +584,7 @@ class ImageScaling(BrowserView):
         mode="scale",
         pre=False,
         include_srcset=None,
+        # create_avif_version=False,
         **parameters,
     ):
         if fieldname is None:
@@ -616,7 +624,9 @@ class ImageScaling(BrowserView):
         )
         if info is None:
             return  # 404
-
+        # we have to remove the create_avif_version, otherwise we get errors in later calls
+        if info.get("create_avif_version"):
+            del info["create_avif_version"]
         # Do we want to include srcset info for HiDPI?
         # If there is no explicit True/False given, we look at the value of 'pre'.
         # When 'pre' is False, the visitor is requesting a scale via a url,
@@ -692,8 +702,10 @@ class ImageScaling(BrowserView):
         css_class=None,
         title=_marker,
         lazy=True,
+        create_avif_versions=False,
         **kwargs,
     ):
+        breakpoint()
         img2picturetag = Img2PictureTag()
         picture_variant_config = get_picture_variants().get(picture_variant)
         if not picture_variant_config:
@@ -717,9 +729,16 @@ class ImageScaling(BrowserView):
                 **kwargs,
             )
 
+        attributes = {}
+        src_avif = None
+        mimetype = None
         sourceset = picture_variant_config.get("sourceset")
         scale = self.scale(fieldname, sourceset[-1].get("scale"), pre=True)
-        attributes = {}
+        mimetype = scale.mimetype
+        if create_avif_versions:
+            scale_avif = self.scale(fieldname, sourceset[-1].get("scale"), pre=True, create_avif_version=True)
+            src_avif = scale_avif.url   # .replace("jpeg", "avif")
+            mimetype = scale_avif.mimetype
         attributes["class"] = css_class and [css_class] or []
         if not attributes["class"]:
             del attributes["class"]
@@ -739,6 +758,8 @@ class ImageScaling(BrowserView):
             uid=scale.context.UID(),
             fieldname=fieldname,
             lazy=lazy,
+            src_avif=src_avif,
+            mimetype=mimetype,
         ).prettify()
 
 

@@ -51,7 +51,7 @@
              i18n:translate=""
           >clear</a>
         </p>
-        <section class="section section-main">
+        <!-- <section class="section section-main">
           <h3 i18n:translate="">Thumb with info</h3>
           <p i18n:translate="">Standard display of Image content type, but using thumb scale</p>
           <figure class="figure">
@@ -147,7 +147,7 @@
             <img tal:replace="structure img_tag" />
             <br /><code tal:content="img_tag"></code>
           </figure>
-        </section>
+        </section> -->
 
         <section id="picture">
           <h2 i18n:translate="">Picture tags</h2>
@@ -163,10 +163,10 @@
       Generate a picture tag from configured picture_variant `large`.
           </p>
           <p>
-            <picture tal:replace="structure python:images.picture('image', picture_variant='large')"></picture>
+            <picture tal:replace="python:images.picture('image', picture_variant='large', create_avif_versions=True)"></picture>
           </p>
 
-          <h3 id="picture_tag_medium"
+          <!-- <h3 id="picture_tag_medium"
               i18n:translate=""
           >Picture Tag Medium</h3>
           <p i18n:translate="">
@@ -196,7 +196,7 @@
           <p>
             <picture tal:replace="structure python:images.picture('image', picture_variant='small', title='Custom picture title', alt='alternative picture text')"></picture>
           </p>
-        </section>
+        </section> -->
 
         <section class="section"
                  id="stored"

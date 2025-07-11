@@ -46,6 +46,42 @@ class Img2PictureTag:
             return
         return scale_info[0]
 
+    def _create_source_tag(self, obj, fieldname, source, source_scales, resolve_urls, target_scale, soup, src=None, src_avif=None, **parameters):
+        print(f"src_avif: {src_avif}")
+        source_scales = source_scales or []
+        source_srcset = []
+        media = source.get("media")
+        sizes = source.get("sizes") or []
+        mimetype = parameters.get("mimetype")
+        target_width = None
+        for scale in source_scales:
+            scale_width = self.get_scale_width(scale)
+            if scale == target_scale:
+                target_width = scale_width
+            if not scale_width:
+                logger.warning("No width found for scale %s.", scale)
+                continue
+            if resolve_urls and obj:
+                scale_view = obj.unrestrictedTraverse("@@images", None)
+                if src_avif:
+                    scale_obj = scale_view.scale(fieldname, scale, pre=True, create_avif_version=True)
+                else:
+                    scale_obj = scale_view.scale(fieldname, scale, pre=True)
+                scale_url = scale_obj.url
+            else:
+                src = src or src_avif
+                scale_url = self.update_src_scale(src=src, scale=scale)
+            source_srcset.append(f"{scale_url} {scale_width}w")
+        print(source_srcset)
+        if not sizes:
+            sizes = f"(min-width: 576px) {target_width}px, 98vw"
+        source_tag = soup.new_tag(
+            "source", type=mimetype, srcset=",\n".join(source_srcset), sizes=sizes
+        )
+        if media:
+            source_tag["media"] = media
+        return source_tag
+
     def create_picture_tag(
         self,
         sourceset,
@@ -54,13 +90,13 @@ class Img2PictureTag:
         fieldname=None,
         resolve_urls=False,
         lazy=True,
+        **parameters,
     ):
         """Converts the img tag to a picture tag with picture_variant definition"""
         width = None
         height = None
-        target_width = None
-        sizes = ""
         src = attributes.get("src")
+        src_avif = parameters.get("src_avif")
         if not uid and not src:
             raise TypeError("Either uid or attributes['src'] need to be given.")
         soup = BeautifulSoup("", "html.parser")
@@ -75,8 +111,6 @@ class Img2PictureTag:
             picture_tag["class"] = "captioned"
         for i, source in enumerate(sourceset):
             target_scale = source["scale"]
-            media = source.get("media")
-            sizes = source.get("sizes")
 
             additional_scales = source.get("additionalScales", None)
             if additional_scales is None:
@@ -84,29 +118,12 @@ class Img2PictureTag:
                     self.get_scale_name(s) for s in allowed_scales if s != target_scale
                 ]
             source_scales = [target_scale] + additional_scales
-            source_srcset = []
-            for scale in source_scales:
-                scale_width = self.get_scale_width(scale)
-                if scale == target_scale:
-                    target_width = scale_width
-                if not scale_width:
-                    logger.warning("No width found for scale %s.", scale)
-                    continue
-                if resolve_urls and obj:
-                    scale_view = obj.unrestrictedTraverse("@@images", None)
-                    scale_obj = scale_view.scale(fieldname, scale, pre=True)
-                    scale_url = scale_obj.url
-                else:
-                    scale_url = self.update_src_scale(src=src, scale=scale)
-                source_srcset.append(f"{scale_url} {scale_width}w")
-            if not sizes:
-                sizes = f"(min-width: 576px) {target_width}px, 98vw"
-            source_tag = soup.new_tag(
-                "source", srcset=",\n".join(source_srcset), sizes=sizes
-            )
-            if media:
-                source_tag["media"] = media
+            if parameters.get("src_avif"):
+                source_tag_avif = self._create_source_tag(obj, fieldname, source, source_scales, resolve_urls, target_scale, soup, src_avif=src_avif, mimetype=parameters.get("mimetype"))
+                picture_tag.append(source_tag_avif)
+            source_tag = self._create_source_tag(obj, fieldname, source, source_scales, resolve_urls, target_scale, soup, src=src, mimetype=parameters.get("mimetype"))
             picture_tag.append(source_tag)
+
             if i == len(sourceset) - 1:
                 if resolve_urls and obj:
                     scale_view = obj.unrestrictedTraverse("@@images", None)
