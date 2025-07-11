@@ -100,7 +100,7 @@ class Img2PictureTag:
                     scale_url = self.update_src_scale(src=src, scale=scale)
                 source_srcset.append(f"{scale_url} {scale_width}w")
             if not sizes:
-                sizes = f"(min-width: 576px) {target_width}px, 98vw"
+                sizes = f"(min-width: 576px) {target_width}px, (min-width: 768px) 600px, 98vw"
             source_tag = soup.new_tag(
                 "source", srcset=",\n".join(source_srcset), sizes=sizes
             )
