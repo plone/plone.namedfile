@@ -273,7 +273,7 @@ def get_exif(image, content_type=None, width=None, height=None):
         except Exception as e:
             # TODO: determ which error really happens
             # Should happen if data is to short --> first_bytes
-            log.warn(e)
+            log.warning(e)
             exif_data = exif_data = {
                 "0th": {
                     piexif.ImageIFD.XResolution: (width, 1),
@@ -299,7 +299,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
         try:
             exif_data = piexif.load(img.info["exif"])
         except ValueError:
-            log.warn("Exif information corrupt")
+            log.warning("Exif information corrupt")
             pass
         if exif_data and piexif.ImageIFD.Orientation in exif_data["0th"]:
             orientation = exif_data["0th"][piexif.ImageIFD.Orientation]
@@ -366,7 +366,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
     try:
         exif_bytes = piexif.dump(exif_data)
     except Exception as e:
-        log.warn(e)
+        log.warning(e)
         del exif_data["Exif"][piexif.ExifIFD.SceneType]
         # This Element piexif.ExifIFD.SceneType cause error on dump
         exif_bytes = piexif.dump(exif_data)
