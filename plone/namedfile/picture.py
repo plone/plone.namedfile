@@ -47,11 +47,19 @@ class Img2PictureTag:
         return scale_info[0]
 
     def create_picture_tag(
-        self, sourceset, attributes, uid=None, fieldname=None, resolve_urls=False
+        self,
+        sourceset,
+        attributes,
+        uid=None,
+        fieldname=None,
+        resolve_urls=False,
+        lazy=True,
     ):
         """Converts the img tag to a picture tag with picture_variant definition"""
         width = None
         height = None
+        target_width = None
+        sizes = ""
         src = attributes.get("src")
         if not uid and not src:
             raise TypeError("Either uid or attributes['src'] need to be given.")
@@ -68,6 +76,7 @@ class Img2PictureTag:
         for i, source in enumerate(sourceset):
             target_scale = source["scale"]
             media = source.get("media")
+            sizes = source.get("sizes")
 
             additional_scales = source.get("additionalScales", None)
             if additional_scales is None:
@@ -78,6 +87,8 @@ class Img2PictureTag:
             source_srcset = []
             for scale in source_scales:
                 scale_width = self.get_scale_width(scale)
+                if scale == target_scale:
+                    target_width = scale_width
                 if not scale_width:
                     logger.warning("No width found for scale %s.", scale)
                     continue
@@ -86,13 +97,13 @@ class Img2PictureTag:
                     scale_obj = scale_view.scale(fieldname, scale, pre=True)
                     scale_url = scale_obj.url
                 else:
-                    # obj = self.resolve_uid_url(src)
-                    # scale_view = obj.unrestrictedTraverse("@@images", None)
-                    # scale_obj = scale_view.scale(fieldname, scale, pre=True)
-                    # scale_url = scale_obj.url
                     scale_url = self.update_src_scale(src=src, scale=scale)
                 source_srcset.append(f"{scale_url} {scale_width}w")
-            source_tag = soup.new_tag("source", srcset=",\n".join(source_srcset))
+            if not sizes:
+                sizes = f"(min-width: 576px) {target_width}px, (min-width: 768px) 600px, 98vw"
+            source_tag = soup.new_tag(
+                "source", srcset=",\n".join(source_srcset), sizes=sizes
+            )
             if media:
                 source_tag["media"] = media
             picture_tag.append(source_tag)
@@ -104,19 +115,14 @@ class Img2PictureTag:
                     width = scale_obj.width
                     height = scale_obj.height
                 else:
-                    # obj = self.resolve_uid_url(src)
-                    # scale_view = obj.unrestrictedTraverse("@@images", None)
-                    # scale_obj = scale_view.scale(fieldname, target_scale, pre=True)
-                    # scale_url = scale_obj.url
-                    # width = scale_obj.width
-                    # height = scale_obj.height
                     scale_url = self.update_src_scale(src=src, scale=target_scale)
                 img_tag = soup.new_tag("img", src=scale_url)
                 for k, attr in attributes.items():
                     if k in ["src", "srcset"]:
                         continue
                     img_tag.attrs[k] = attr
-                img_tag["loading"] = "lazy"
+                if lazy:
+                    img_tag["loading"] = "lazy"
                 if width:
                     img_tag["width"] = width
                 if height:
