@@ -3,7 +3,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 
-version = "7.2.1"
+version = "7.2.2.dev0"
 
 description = "File types and fields for images, files and blob files with filenames"
 long_description = (
