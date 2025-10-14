@@ -1,1 +1,1 @@
-Add default width and heigth attributes if none provided when using the srcset method @erral
+Add default width and height attributes if none provided when using the srcset method @erral
