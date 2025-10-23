@@ -801,6 +801,10 @@ class ImageScaling(BrowserView):
 
         scale = self.scale(fieldname=fieldname, scale=scale_in_src)
         attributes["src"] = scale.url
+        if "width" not in attributes:
+            attributes["width"] = scale.width
+        if "height" not in attributes:
+            attributes["height"] = scale.height
 
         return _image_tag_from_values(*attributes.items())
 
