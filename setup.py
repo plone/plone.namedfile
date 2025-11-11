@@ -52,7 +52,6 @@ setup(
         "plone.schemaeditor",
         "plone.supermodel",
         "Products.CMFCore",
-        "setuptools",
         "z3c.caching",
         "zope.cachedescriptors",
         "zope.copy",
