@@ -8,6 +8,22 @@ Changelog
 
 .. towncrier release notes start
 
+8.0.0a1 (2025-11-19)
+--------------------
+
+Breaking changes:
+
+
+- Replace ``pkg_resources`` namespace with PEP 420 native namespace.
+  Support only Plone 6.2 and Python 3.10+. (#3928)
+
+
+New features:
+
+
+- Add default width and height attributes if none provided when using the srcset method @erral (#188)
+
+
 7.2.1 (2025-09-10)
 ------------------
 
