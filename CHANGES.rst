@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+7.3.0 (2026-01-12)
+------------------
+
+New features:
+
+
+- Add default width and height attributes if none provided when using the srcset method @erral (#188)
+
+
 7.2.1 (2025-09-10)
 ------------------
 
