@@ -12,3 +12,6 @@ dependencies_mappings = [
     "'BeautifulSoup4' = ['bs4']",
 
 ]
+
+[tox]
+test_matrix = { "6.0" = ["*"], "6.1" = ["*"] }
