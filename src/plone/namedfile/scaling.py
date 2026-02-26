@@ -764,6 +764,21 @@ class ImageScaling(BrowserView):
         )
 
         srcset_urls = []
+
+        # get first the original image url
+        scale = storage.pre_scale(
+            fieldname=fieldname,
+            width=original_width,
+            height=original_height,
+            mode="scale"
+        )
+        if scale:
+            extension = scale["mimetype"].split("/")[-1].lower()
+            srcset_urls.append(
+                f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
+            )
+
+        # then get the urls of the scales that are smaller than the original
         for width, height in self.available_sizes.values():
             if width <= original_width:
                 scale = storage.pre_scale(
@@ -773,6 +788,7 @@ class ImageScaling(BrowserView):
                 srcset_urls.append(
                     f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
                 )
+
         attributes = {}
         if title is _marker:
             attributes["title"] = self.context.Title()
