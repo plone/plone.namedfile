@@ -765,18 +765,20 @@ class ImageScaling(BrowserView):
 
         srcset_urls = []
 
-        # get first the original image url
-        scale = storage.pre_scale(
-            fieldname=fieldname,
-            width=original_width,
-            height=original_height,
-            mode="scale"
-        )
-        if scale:
-            extension = scale["mimetype"].split("/")[-1].lower()
-            srcset_urls.append(
-                f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
+        # get first the original image url if its width is not in the available sizes
+        available_widths = [width for (width, height) in self.available_sizes.values()]
+        if original_width not in available_widths:
+            scale = storage.pre_scale(
+                fieldname=fieldname,
+                width=original_width,
+                height=original_height,
+                mode="scale",
             )
+            if scale:
+                extension = scale["mimetype"].split("/")[-1].lower()
+                srcset_urls.append(
+                    f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
+                )
 
         # then get the urls of the scales that are smaller than the original
         for width, height in self.available_sizes.values():
