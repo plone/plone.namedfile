@@ -813,6 +813,30 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         self.assertEqual(len(foo.srcset), 1)
         self.assertEqual(foo.srcset[0]["scale"], 2)
 
+
+class TestImgSrcSet(unittest.TestCase):
+
+    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+
+    def setUp(self):
+        sm = getSiteManager()
+        sm.registerAdapter(PrimaryFieldInfo)
+
+        # We use the 900 px wide image to test that the original url
+        # is rendered next to the all other scale urls
+        data = getFile("900.jpg")
+        item = DummyContent()
+        item.image = MockNamedImage(data, "image/jpeg", "image.jpg")
+        self.layer["app"]._setOb("item", item)
+        self.item = self.layer["app"].item
+        self._orig_sizes = ImageScaling._sizes
+        self.scaling = ImageScaling(self.item, None)
+
+    def tearDown(self):
+        ImageScaling._sizes = self._orig_sizes
+        sm = getSiteManager()
+        sm.unregisterAdapter(PrimaryFieldInfo)
+
     def testImgSrcSet(self):
         """test rendered srcset values"""
         self.scaling.available_sizes = {
@@ -830,7 +854,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         }
         tag = self.scaling.srcset("image", sizes="50vw")
         base = self.item.absolute_url()
-        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png" width="..." height="...".../>"""
+        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-1600-....jpeg" width="..." height="..." />"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetCustomSrc(self):
@@ -850,7 +874,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         }
         tag = self.scaling.srcset("image", sizes="50vw", scale_in_src="mini")
         base = self.item.absolute_url()
-        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-200-....png" width="200" height="...".../>"""
+        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-200-....jpeg" width="200" height="...".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetInexistentScale(self):
@@ -874,7 +898,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
             "image", sizes="50vw", scale_in_src="inexistent-scale-name"
         )
         base = self.item.absolute_url()
-        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-200-....png" width="..." height="...".../>"""
+        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-800-....jpeg" width="..." height="...".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetCustomTitle(self):
@@ -894,7 +918,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         }
         tag = self.scaling.srcset("image", sizes="50vw", title="My Custom Title")
         base = self.item.absolute_url()
-        expected = f"""<img title="My Custom Title" alt="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png" width="..." height="...".../>"""
+        expected = f"""<img title="My Custom Title" alt="foo" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-1600-....jpeg" width="..." height="...".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetAdditionalAttributes(self):
@@ -921,8 +945,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
             loading="lazy",
         )
         base = self.item.absolute_url()
-
-        expected = f"""<img title="My Custom Title" alt="This image shows nothing" class="my-personal-class" loading="lazy" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png" width="..." height="...".../>"""
+        expected = f"""<img title="My Custom Title" alt="This image shows nothing" class="my-personal-class" loading="lazy" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-1600-....jpeg" width="..." height="...".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
 
