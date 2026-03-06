@@ -94,7 +94,6 @@ class ImageScale(BrowserView):
         if self.data is None:
             self.data = getattr(self.context, self.fieldname)
 
-        url = self.context.absolute_url()
         extension = self.data.contentType.split("/")[-1].lower()
         if self.data.contentType == "image/svg+xml":
             extension = "svg"
@@ -103,8 +102,24 @@ class ImageScale(BrowserView):
         else:
             name = info["fieldname"]
         self.__name__ = f"{name}.{extension}"
-        self.url = f"{url}/@@images/{self.__name__}"
+        self.url = self._scale_url(name, extension)
         self.srcset = info.get("srcset", [])
+
+    def _scale_url(self, uid, extension, base_url=None):
+        """Build the URL for an image scale.
+
+        Override this method to generate custom scale URLs, e.g. for
+        external image services like Thumbor.
+
+        :param uid: The unique scale identifier.
+        :param extension: The file extension (e.g. "jpeg", "png").
+        :param base_url: The base URL of the content object.
+            Defaults to ``self.context.absolute_url()``.
+        :returns: The full URL to the image scale.
+        """
+        if base_url is None:
+            base_url = self.context.absolute_url()
+        return f"{base_url}/@@images/{uid}.{extension}"
 
     def absolute_url(self):
         return self.url
@@ -113,11 +128,8 @@ class ImageScale(BrowserView):
         _srcset_attr = []
         extension = self.data.contentType.split("/")[-1].lower()
         for scale in self.srcset:
-            _srcset_attr.append(
-                "{}/@@images/{}.{} {}x".format(
-                    self.context.absolute_url(), scale["uid"], extension, scale["scale"]
-                )
-            )
+            url = self._scale_url(scale["uid"], extension)
+            _srcset_attr.append(f"{url} {scale['scale']}x")
         srcset_attr = ", ".join(_srcset_attr)
         return srcset_attr
 
@@ -520,6 +532,22 @@ class ImageScaling(BrowserView):
     def available_sizes(self, value):
         self._sizes = value
 
+    def _scale_url(self, uid, extension, base_url=None):
+        """Build the URL for an image scale.
+
+        Override this method to generate custom scale URLs, e.g. for
+        external image services like Thumbor.
+
+        :param uid: The unique scale identifier.
+        :param extension: The file extension (e.g. "jpeg", "png").
+        :param base_url: The base URL of the content object.
+            Defaults to ``self.context.absolute_url()``.
+        :returns: The full URL to the image scale.
+        """
+        if base_url is None:
+            base_url = self.context.absolute_url()
+        return f"{base_url}/@@images/{uid}.{extension}"
+
     def getImageSize(self, fieldname=None):
         if fieldname is not None:
             try:
@@ -776,9 +804,8 @@ class ImageScaling(BrowserView):
             )
             if scale:
                 extension = scale["mimetype"].split("/")[-1].lower()
-                srcset_urls.append(
-                    f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
-                )
+                url = self._scale_url(scale["uid"], extension)
+                srcset_urls.append(f"{url} {scale['width']}w")
 
         # then get the urls of the scales that are smaller than the original
         for width, height in self.available_sizes.values():
@@ -787,9 +814,8 @@ class ImageScaling(BrowserView):
                     fieldname=fieldname, width=width, height=height, mode="scale"
                 )
                 extension = scale["mimetype"].split("/")[-1].lower()
-                srcset_urls.append(
-                    f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
-                )
+                url = self._scale_url(scale["uid"], extension)
+                srcset_urls.append(f"{url} {scale['width']}w")
 
         attributes = {}
         if title is _marker:

@@ -814,6 +814,79 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         self.assertEqual(foo.srcset[0]["scale"], 2)
 
 
+class TestScaleUrl(unittest.TestCase):
+    """Test the _scale_url override mechanism on ImageScale and ImageScaling."""
+
+    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+
+    def setUp(self):
+        data = getFile("image.png")
+        item = DummyContent()
+        item.image = MockNamedImage(data, "image/png", "image.png")
+        self.layer["app"]._setOb("item", item)
+        self.item = self.layer["app"].item
+
+    def test_image_scaling_scale_url_default(self):
+        scaling = ImageScaling(self.item, None)
+        url = scaling._scale_url("abc-123", "jpeg")
+        self.assertEqual(url, f"{self.item.absolute_url()}/@@images/abc-123.jpeg")
+
+    def test_image_scaling_scale_url_custom_base(self):
+        scaling = ImageScaling(self.item, None)
+        url = scaling._scale_url("abc-123", "jpeg", base_url="http://example.com")
+        self.assertEqual(url, "http://example.com/@@images/abc-123.jpeg")
+
+    def test_image_scaling_scale_url_override(self):
+        """Subclasses can override _scale_url to produce custom URLs."""
+
+        class CustomScaling(ImageScaling):
+            def _scale_url(self, uid, extension, base_url=None):
+                return f"https://thumbor.example.com/{uid}.{extension}"
+
+        scaling = CustomScaling(self.item, None)
+        url = scaling._scale_url("abc-123", "jpeg")
+        self.assertEqual(url, "https://thumbor.example.com/abc-123.jpeg")
+
+    def test_image_scale_uses_scale_url(self):
+        """ImageScale.url should use _scale_url."""
+        scaling = ImageScaling(self.item, None)
+        scale = scaling.scale("image", width=100, height=100, pre=True)
+        # The url should follow the _scale_url pattern
+        self.assertIn("/@@images/", scale.url)
+        self.assertTrue(scale.url.endswith(".png"))
+
+    def test_image_scale_override(self):
+        """A custom ImageScale subclass can override _scale_url."""
+
+        class CustomImageScale(ImageScale):
+            def _scale_url(self, uid, extension, base_url=None):
+                return f"https://cdn.example.com/{uid}.{extension}"
+
+        class CustomScaling(ImageScaling):
+            _scale_view_class = CustomImageScale
+
+        scaling = CustomScaling(self.item, None)
+        scale = scaling.scale("image", width=100, height=100, pre=True)
+        self.assertTrue(scale.url.startswith("https://cdn.example.com/"))
+
+    def test_srcset_uses_scale_url(self):
+        """ImageScaling.srcset should use _scale_url for srcset URLs."""
+
+        class CustomScaling(ImageScaling):
+            def _scale_url(self, uid, extension, base_url=None):
+                return f"https://thumbor.example.com/{uid}.{extension}"
+
+        scaling = CustomScaling(self.item, None)
+        scaling.available_sizes = {
+            "mini": (200, 65536),
+            "thumb": (128, 128),
+            "tile": (64, 64),
+        }
+        tag = scaling.srcset("image", sizes="100vw", scale_in_src="mini")
+        # The srcset attribute URLs should use the custom _scale_url
+        self.assertIn("https://thumbor.example.com/", tag)
+
+
 class TestImgSrcSet(unittest.TestCase):
 
     layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
