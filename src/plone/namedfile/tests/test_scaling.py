@@ -840,7 +840,7 @@ class TestScaleUrl(unittest.TestCase):
         """Subclasses can override _scale_url to produce custom URLs."""
 
         class CustomScaling(ImageScaling):
-            def _scale_url(self, uid, extension, base_url=None):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
                 return f"https://thumbor.example.com/{uid}.{extension}"
 
         scaling = CustomScaling(self.item, None)
@@ -859,7 +859,7 @@ class TestScaleUrl(unittest.TestCase):
         """A custom ImageScale subclass can override _scale_url."""
 
         class CustomImageScale(ImageScale):
-            def _scale_url(self, uid, extension, base_url=None):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
                 return f"https://cdn.example.com/{uid}.{extension}"
 
         class CustomScaling(ImageScaling):
@@ -869,11 +869,32 @@ class TestScaleUrl(unittest.TestCase):
         scale = scaling.scale("image", width=100, height=100, pre=True)
         self.assertTrue(scale.url.startswith("https://cdn.example.com/"))
 
+    def test_scale_info_passed_to_scale_url(self):
+        """_scale_url receives scale_info with metadata."""
+        captured = {}
+
+        class CustomImageScale(ImageScale):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
+                captured["scale_info"] = scale_info
+                return super()._scale_url(uid, extension, base_url, scale_info)
+
+        class CustomScaling(ImageScaling):
+            _scale_view_class = CustomImageScale
+
+        scaling = CustomScaling(self.item, None)
+        scale = scaling.scale("image", width=100, height=100, pre=True)
+        self.assertIsNotNone(scale)
+        info = captured["scale_info"]
+        self.assertIn("uid", info)
+        self.assertIn("width", info)
+        self.assertIn("height", info)
+        self.assertIn("fieldname", info)
+
     def test_srcset_uses_scale_url(self):
         """ImageScaling.srcset should use _scale_url for srcset URLs."""
 
         class CustomScaling(ImageScaling):
-            def _scale_url(self, uid, extension, base_url=None):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
                 return f"https://thumbor.example.com/{uid}.{extension}"
 
         scaling = CustomScaling(self.item, None)
@@ -885,6 +906,27 @@ class TestScaleUrl(unittest.TestCase):
         tag = scaling.srcset("image", sizes="100vw", scale_in_src="mini")
         # The srcset attribute URLs should use the custom _scale_url
         self.assertIn("https://thumbor.example.com/", tag)
+
+    def test_srcset_passes_scale_info(self):
+        """ImageScaling.srcset passes scale_info to _scale_url."""
+        captured_infos = []
+
+        class CustomScaling(ImageScaling):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
+                captured_infos.append(scale_info)
+                return super()._scale_url(uid, extension, base_url, scale_info)
+
+        scaling = CustomScaling(self.item, None)
+        scaling.available_sizes = {
+            "mini": (200, 65536),
+            "thumb": (128, 128),
+        }
+        scaling.srcset("image", sizes="100vw", scale_in_src="mini")
+        self.assertTrue(len(captured_infos) > 0)
+        for info in captured_infos:
+            self.assertIsNotNone(info)
+            self.assertIn("uid", info)
+            self.assertIn("width", info)
 
 
 class TestImgSrcSet(unittest.TestCase):

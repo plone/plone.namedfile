@@ -102,10 +102,10 @@ class ImageScale(BrowserView):
         else:
             name = info["fieldname"]
         self.__name__ = f"{name}.{extension}"
-        self.url = self._scale_url(name, extension)
+        self.url = self._scale_url(name, extension, scale_info=info)
         self.srcset = info.get("srcset", [])
 
-    def _scale_url(self, uid, extension, base_url=None):
+    def _scale_url(self, uid, extension, base_url=None, scale_info=None):
         """Build the URL for an image scale.
 
         Override this method to generate custom scale URLs, e.g. for
@@ -115,6 +115,10 @@ class ImageScale(BrowserView):
         :param extension: The file extension (e.g. "jpeg", "png").
         :param base_url: The base URL of the content object.
             Defaults to ``self.context.absolute_url()``.
+        :param scale_info: Optional dict with scale metadata (width,
+            height, mode, fieldname, mimetype, etc.).  The contents
+            depend on the call site — ``__init__`` passes the full
+            info dict, ``srcset`` passes the ``pre_scale()`` result.
         :returns: The full URL to the image scale.
         """
         if base_url is None:
@@ -128,7 +132,7 @@ class ImageScale(BrowserView):
         _srcset_attr = []
         extension = self.data.contentType.split("/")[-1].lower()
         for scale in self.srcset:
-            url = self._scale_url(scale["uid"], extension)
+            url = self._scale_url(scale["uid"], extension, scale_info=scale)
             _srcset_attr.append(f"{url} {scale['scale']}x")
         srcset_attr = ", ".join(_srcset_attr)
         return srcset_attr
@@ -532,7 +536,7 @@ class ImageScaling(BrowserView):
     def available_sizes(self, value):
         self._sizes = value
 
-    def _scale_url(self, uid, extension, base_url=None):
+    def _scale_url(self, uid, extension, base_url=None, scale_info=None):
         """Build the URL for an image scale.
 
         Override this method to generate custom scale URLs, e.g. for
@@ -542,6 +546,10 @@ class ImageScaling(BrowserView):
         :param extension: The file extension (e.g. "jpeg", "png").
         :param base_url: The base URL of the content object.
             Defaults to ``self.context.absolute_url()``.
+        :param scale_info: Optional dict with scale metadata (width,
+            height, mode, fieldname, mimetype, etc.).  The contents
+            depend on the call site — ``srcset`` passes the
+            ``pre_scale()`` result.
         :returns: The full URL to the image scale.
         """
         if base_url is None:
@@ -804,7 +812,7 @@ class ImageScaling(BrowserView):
             )
             if scale:
                 extension = scale["mimetype"].split("/")[-1].lower()
-                url = self._scale_url(scale["uid"], extension)
+                url = self._scale_url(scale["uid"], extension, scale_info=scale)
                 srcset_urls.append(f"{url} {scale['width']}w")
 
         # then get the urls of the scales that are smaller than the original
@@ -814,7 +822,7 @@ class ImageScaling(BrowserView):
                     fieldname=fieldname, width=width, height=height, mode="scale"
                 )
                 extension = scale["mimetype"].split("/")[-1].lower()
-                url = self._scale_url(scale["uid"], extension)
+                url = self._scale_url(scale["uid"], extension, scale_info=scale)
                 srcset_urls.append(f"{url} {scale['width']}w")
 
         attributes = {}
