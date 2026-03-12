@@ -9,7 +9,6 @@ from zope.publisher.browser import FileUpload
 
 import io
 
-
 MAXCHUNKSIZE = 1 << 16
 
 

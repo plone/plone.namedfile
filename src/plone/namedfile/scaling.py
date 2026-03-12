@@ -44,7 +44,6 @@ import functools
 import logging
 import warnings
 
-
 logger = logging.getLogger(__name__)
 _marker = object()
 
@@ -686,7 +685,7 @@ class ImageScaling(BrowserView):
         srcset = []
         if storage is None:
             return srcset
-        (orig_width, orig_height) = self.getImageSize(fieldname)
+        orig_width, orig_height = self.getImageSize(fieldname)
         for hdScale in self.getHighPixelDensityScales():
             # Don't create retina scales larger than the source image.
             # We only care about the width, because height might be 65536.

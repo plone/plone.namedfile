@@ -1,7 +1,6 @@
 from pathlib import Path
 from setuptools import setup
 
-
 version = "8.0.0a2.dev0"
 
 description = "File types and fields for images, files and blob files with filenames"
@@ -26,6 +25,7 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: BSD License",
     ],
