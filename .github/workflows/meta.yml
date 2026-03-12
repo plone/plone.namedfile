@@ -5,6 +5,7 @@ name: Meta
 
 on:
   push:
+  pull_request:
 
 ##
 # To set environment variables for all jobs, add in .meta.toml:
