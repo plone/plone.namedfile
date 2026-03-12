@@ -33,7 +33,6 @@ import time
 import unittest
 import warnings
 
-
 # Unique scale name used to be a uuid.uui4(),
 # which is a combination of hexadecimal digits with dashes, total 36.
 # Now it is 'imagescalename-width-hash', where hash is 32.

@@ -10,7 +10,6 @@ from zope.publisher.browser import TestRequest
 import plone.namedfile.adapters
 import unittest
 
-
 try:
     from plone.base.interfaces import IImageScalesFieldAdapter
 except ImportError:

@@ -12,7 +12,6 @@ from ZPublisher.HTTPRangeSupport import parseRange
 
 import os
 
-
 # List of mimetypes that we allow to display inline.
 # This is mostly to avoid XSS (Cross Site Scripting).
 # We especially do not want image/svg+xml, text/html, application/javascript.
