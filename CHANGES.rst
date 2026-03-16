@@ -8,6 +8,22 @@ Changelog
 
 .. towncrier release notes start
 
+7.4.0 (2026-03-16)
+------------------
+
+New features:
+
+
+- Add original image size url in the srcset generated in the srcset method @erral
+
+
+Internal:
+
+
+- Update configuration files.
+  [plone devs]
+
+
 7.3.0 (2026-01-12)
 ------------------
 
