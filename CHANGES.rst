@@ -8,6 +8,24 @@ Changelog
 
 .. towncrier release notes start
 
+8.0.0a2 (2026-03-16)
+--------------------
+
+New features:
+
+
+- Extract ``_scale_url()`` method on ``ImageScale`` and ``ImageScaling`` for overridable scale URL generation. Accepts an optional ``scale_info`` dict with scale metadata (width, height, mode, fieldname, mimetype, etc.) so custom image backends (e.g. Thumbor) can generate URLs with full context by overriding a single method.
+  @jensens (#199)
+- Add original image size url in the srcset generated in the srcset method @erral
+
+
+Internal:
+
+
+- Update configuration files.
+  [plone devs]
+
+
 8.0.0a1 (2025-11-19)
 --------------------
 
