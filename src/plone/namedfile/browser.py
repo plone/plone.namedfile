@@ -11,6 +11,7 @@ from ZPublisher.HTTPRangeSupport import expandRanges
 from ZPublisher.HTTPRangeSupport import parseRange
 
 import os
+from urllib.parse import quote
 
 # List of mimetypes that we allow to display inline.
 # This is mostly to avoid XSS (Cross Site Scripting).
@@ -198,3 +199,12 @@ class DisplayFile(Download):
                     return super().set_headers(file)
         canonical = self.get_canonical(file)
         set_headers(file, self.request.response, canonical=canonical)
+        filename = getattr(file, "filename", None)
+        if filename:
+            if not isinstance(filename, str):
+                filename = str(filename, "utf-8", errors="ignore")
+            quoted = quote(filename.encode("utf-8"))
+            self.request.response.setHeader(
+                "Content-Disposition",
+                f"inline; filename*=UTF-8''{quoted}",
+            )

@@ -328,6 +328,7 @@ We will test this with a dummy request, faking traversal::
     >>> request.response.getHeader('Content-Type')
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
+    "inline; filename*=UTF-8''test.txt"
 
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'blob')
@@ -339,6 +340,7 @@ We will test this with a dummy request, faking traversal::
     >>> request.response.getHeader('Content-Type')
     'text/plain'
     >>> request.response.getHeader('Content-Disposition')
+    "inline; filename*=UTF-8''test.txt"
 
     >>> request = TestRequest()
     >>> display_file = DisplayFile(container, request).publishTraverse(request, 'image')

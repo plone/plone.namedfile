@@ -97,11 +97,14 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         self.assertIn("attachment", header)
         self.assertIn("filename", header)
 
-    def assert_display_inline_works(self, base_url):
-        # Test that displaying this file inline works.
+    def assert_display_inline_works(self, base_url, filename=None):
         browser = self.get_anon_browser()
         browser.open(base_url + f"/@@display-file/{self.field_name}")
-        self.assertIsNone(get_disposition_header(browser))
+        header = get_disposition_header(browser)
+        self.assertIsNotNone(header)
+        self.assertIn("inline", header)
+        if filename:
+            self.assertIn(filename, header)
 
     def assert_display_inline_is_download(self, base_url):
         # Test that displaying this file inline turns into a download.
@@ -218,6 +221,18 @@ class TestAttackVectorNamedFile(TestAttackVectorNamedImage):
         base_url = self.item.absolute_url()
         self.assert_download_works(base_url)
         self.assert_display_inline_works(base_url)
+
+    def test_pdf_inline_filename(self):
+        # Check that @@display-file sets Content-Disposition: inline with the correct filename.
+        setattr(self.item, self.field_name, self._named_file("file.pdf"))
+        transaction.commit()
+        base_url = self.item.absolute_url()
+        browser = self.get_anon_browser()
+        browser.open(base_url + f"/@@display-file/{self.field_name}")
+        header = get_disposition_header(browser)
+        self.assertIsNotNone(header)
+        self.assertIn("inline", header)
+        self.assertIn("file.pdf", header)
 
 
 class TestAttackVectorNamedBlobFile(TestAttackVectorNamedFile):
