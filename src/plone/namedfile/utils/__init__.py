@@ -98,6 +98,8 @@ def safe_basename(filename):
     """Get the basename of the given filename, regardless of which platform
     (Windows or Unix) it originated from.
     """
+    if filename is None:
+        return None
     fslice = (
         max(
             filename.rfind("/"),
