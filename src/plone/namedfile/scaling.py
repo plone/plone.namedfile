@@ -596,10 +596,15 @@ class ImageScaling(BrowserView):
         if fieldname is not None:
             field = getattr(context, fieldname, None)
             modified = getattr(field, "modified", None)
-            date = DateTime(modified or context._p_mtime)
+            mtime = modified or context._p_mtime
         else:
-            date = DateTime(context._p_mtime)
-        return date.millis()
+            mtime = context._p_mtime
+        # _p_mtime is None for unsaved objects (common in tests).
+        # Fall back to 0 so DateTime returns a stable epoch value
+        # instead of "now", which would break scale caching.
+        if mtime is None:
+            mtime = 0
+        return DateTime(mtime).millis()
 
     def scale(
         self,

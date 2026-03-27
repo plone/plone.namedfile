@@ -671,6 +671,22 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         scale_b = self.scaling.scale("image", width=100, height=80)
         self.assertNotEqual(scale_a.data, scale_b.data)
 
+    def testScaleCachingWithNonePMtime(self):
+        # _p_mtime is None for unsaved objects (common in tests).
+        # Scales should still be cached rather than regenerated each time.
+        # See https://github.com/plone/plone.namedfile/issues/58
+        delattr(self.item.image, "_modified")
+        # _p_mtime is read-only on Persistent, so patch it on DummyContent
+        from unittest.mock import patch
+        from unittest.mock import PropertyMock
+
+        with patch.object(
+            DummyContent, "_p_mtime", new_callable=PropertyMock, return_value=None
+        ):
+            scale1 = self.scaling.scale("image", width=100, height=80)
+            scale2 = self.scaling.scale("image", width=100, height=80)
+            self.assertEqual(scale1.data, scale2.data)
+
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
         self.scaling.available_sizes = {"foo": (23, 23)}
