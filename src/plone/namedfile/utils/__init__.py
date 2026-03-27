@@ -240,14 +240,8 @@ def getImageInfo(data):
             img = PIL.Image.open(BytesIO(data))
             width, height = img.size
             content_type = PIL.Image.MIME[img.format]
-        except Exception:
-            # TODO: determ which error really happens
-            # Should happen if data is to short --> first_bytes
-            # happens also if data is an svg or another special format.
-            log.warning(
-                "PIL can not recognize the image. "
-                "Image is probably broken or of a non-supported format."
-            )
+        except Exception as e:
+            log.warning("Could not identify image with PIL: %s", e)
 
     log.debug(
         "Image Info (Type: %s, Width: %s, Height: %s)", content_type, width, height
