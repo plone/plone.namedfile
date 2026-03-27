@@ -8,6 +8,16 @@ Changelog
 
 .. towncrier release notes start
 
+8.0.0a3 (2026-03-27)
+--------------------
+
+Bug fixes:
+
+
+- Handle ``filename=None`` in ``safe_basename()`` instead of crashing with ``AttributeError``.
+  @jensens (#2633)
+
+
 8.0.0a2 (2026-03-16)
 --------------------
 

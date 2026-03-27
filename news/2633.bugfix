@@ -1,2 +1,0 @@
-Handle ``filename=None`` in ``safe_basename()`` instead of crashing with ``AttributeError``.
-@jensens
