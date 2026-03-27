@@ -68,7 +68,12 @@ def _image_tag_from_values(*values):
 
 
 class ImageScale(BrowserView):
-    """view used for rendering image scales"""
+    """A single image scale instance, used for rendering (tag/picture/srcset)
+    and serving the scaled image data.
+
+    Typically obtained via the ``@@images`` view (``ImageScaling``), not
+    instantiated directly.
+    """
 
     # Grant full access to this view even if the object being viewed is
     # protected
@@ -444,7 +449,12 @@ class DefaultImageScalingFactory:
 
 @implementer(ITraversable, IBrowserPublisher)
 class ImageScaling(BrowserView):
-    """view used for generating (and storing) image scales"""
+    """The ``@@images`` view: generates, stores, and retrieves image scales.
+
+    This is the main entry point for working with image scales on a content
+    object. Use its ``scale()``, ``tag()``, ``picture()``, and ``srcset()``
+    methods. Each returns or uses an ``ImageScale`` instance.
+    """
 
     # Ignore some stacks to help with accessing via webdav, otherwise you get a
     # 404 NotFound error.
