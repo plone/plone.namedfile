@@ -680,9 +680,13 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         from unittest.mock import patch
         from unittest.mock import PropertyMock
 
-        with patch.object(
-            DummyContent, "_p_mtime", new_callable=PropertyMock, return_value=None
-        ):
+        with (
+            patch.object(
+                DummyContent, "_p_mtime", new_callable=PropertyMock, return_value=None
+            ),
+            patch.object(
+                MockNamedImage, "_p_mtime", new_callable=PropertyMock, return_value=None
+            ),
             scale1 = self.scaling.scale("image", width=100, height=80)
             scale2 = self.scaling.scale("image", width=100, height=80)
             self.assertEqual(scale1.data, scale2.data)
