@@ -1,0 +1,2 @@
+Add ``Content-Disposition: inline`` with filename to ``@@display-file`` for allowed mimetypes, so browsers use the correct filename when saving files viewed inline.
+@jensens
