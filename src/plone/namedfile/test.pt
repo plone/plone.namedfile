@@ -59,7 +59,7 @@
           <h3 i18n:translate="">Thumb with info</h3>
           <p i18n:translate="">Standard display of Image content type, but using thumb scale</p>
           <figure class="figure">
-            <a href="${context_url}/image_view_fullscreen"
+            <a href="${context_url}/@@display-file/image"
                tal:define="
                  img_tag python:images.tag('image', scale='thumb', css_class='figure-img img-fluid');
                "
@@ -111,7 +111,7 @@
              i18n:translate=""
           >Download</a>
           <a class="btn btn-primary fullscreen"
-             href="${context_url}/image_view_fullscreen"
+             href="${context_url}/@@display-file/image"
           ><span i18n:translate="label_click_to_view_full_image">View full-size image</span></a>
         </section>
         <hr />
