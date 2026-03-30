@@ -1,0 +1,4 @@
+Fix image scale caching when ``_p_mtime`` is ``None`` (unsaved objects).
+``DateTime(None)`` returns "now", so every cache check saw a different timestamp and scales were regenerated on every access.
+Fall back to epoch (0) for a stable value.
+@jensens
