@@ -8,6 +8,23 @@ Changelog
 
 .. towncrier release notes start
 
+8.0.0a4 (2026-03-30)
+--------------------
+
+Bug fixes:
+
+
+- Fix broken fullscreen image links in ``@@images-test`` view for non-Image content types.
+  @jensens (#125)
+
+
+Internal:
+
+
+- Clarify docstrings of ``ImageScale`` vs ``ImageScaling`` to reduce confusion.
+  @jensens (#160)
+
+
 8.0.0a3 (2026-03-27)
 --------------------
 
