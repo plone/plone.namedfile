@@ -761,6 +761,8 @@ class ImageScaling(BrowserView):
 
         sourceset = picture_variant_config.get("sourceset")
         scale = self.scale(fieldname, sourceset[-1].get("scale"), pre=True)
+        if scale is None:
+            return None
         attributes = {}
         attributes["class"] = css_class and [css_class] or []
         if not attributes["class"]:
@@ -802,6 +804,8 @@ class ImageScaling(BrowserView):
             fieldname = primary.fieldname
 
         original_width, original_height = self.getImageSize(fieldname)
+        if not original_width or not original_height:
+            return None
 
         storage = getMultiAdapter(
             (self.context, functools.partial(self.modified, fieldname)),
@@ -861,6 +865,8 @@ class ImageScaling(BrowserView):
                     break
 
         scale = self.scale(fieldname=fieldname, scale=scale_in_src)
+        if scale is None:
+            return None
         attributes["src"] = scale.url
         if "width" not in attributes:
             attributes["width"] = scale.width
