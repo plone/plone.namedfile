@@ -689,6 +689,7 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
             ),
         ):
             scale1 = self.scaling.scale("image", width=100, height=80)
+            wait_to_ensure_modified()
             scale2 = self.scaling.scale("image", width=100, height=80)
             self.assertEqual(scale1.data, scale2.data)
 
