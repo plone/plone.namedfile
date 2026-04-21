@@ -1,7 +1,7 @@
 from pathlib import Path
 from setuptools import setup
 
-version = "8.0.0a5"
+version = "8.0.0a6.dev0"
 
 description = "File types and fields for images, files and blob files with filenames"
 long_description = (
