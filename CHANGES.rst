@@ -8,6 +8,18 @@ Changelog
 
 .. towncrier release notes start
 
+8.0.0a5 (2026-04-21)
+--------------------
+
+Bug fixes:
+
+
+- Fix image scale caching when ``_p_mtime`` is ``None`` (unsaved objects).
+  ``DateTime(None)`` returns "now", so every cache check saw a different timestamp and scales were regenerated on every access.
+  Fall back to epoch (0) for a stable value.
+  @jensens (#58)
+
+
 8.0.0a4 (2026-03-30)
 --------------------
 
