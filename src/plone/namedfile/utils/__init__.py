@@ -269,12 +269,10 @@ def get_exif(image, content_type=None, width=None, height=None):
         try:
             # if possible pass filename in instead to prevent reading all data into memory
             exif_data = piexif.load(
-                image.name if getattr(image, "name") else _ensure_data(image)
+                image.name if getattr(image, "name", None) else _ensure_data(image)
             )
         except Exception as e:
-            # TODO: determ which error really happens
-            # Should happen if data is to short --> first_bytes
-            log.warn(e)
+            log.warning("Could not load EXIF data: %s", e)
             exif_data = exif_data = {
                 "0th": {
                     piexif.ImageIFD.XResolution: (width, 1),
