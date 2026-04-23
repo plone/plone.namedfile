@@ -1,9 +1,11 @@
 from AccessControl.ZopeGuards import guarded_getattr
 from plone.namedfile.utils import extract_media_type
+from plone.namedfile.utils import safe_basename
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.rfc822.interfaces import IPrimaryFieldInfo
 from Products.Five.browser import BrowserView
+from urllib.parse import quote
 from zope.interface import implementer
 from zope.publisher.interfaces import IPublishTraverse
 from zope.publisher.interfaces import NotFound
@@ -198,3 +200,12 @@ class DisplayFile(Download):
                     return super().set_headers(file)
         canonical = self.get_canonical(file)
         set_headers(file, self.request.response, canonical=canonical)
+        # Add Content-Disposition: inline with filename so browsers use the
+        # correct name when saving files displayed inline (e.g. PDFs).
+        filename = safe_basename(getattr(file, "filename", None))
+        if filename:
+            filename = quote(filename.encode("utf-8"))
+            self.request.response.setHeader(
+                "Content-Disposition",
+                f"inline; filename*=UTF-8''{filename}",
+            )
