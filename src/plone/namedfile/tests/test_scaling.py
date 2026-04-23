@@ -627,6 +627,13 @@ http://nohost/item/@@images/image-1200-....png 1200w"/>
         foo = self.scaling.scale("image", scale="foo?")
         self.assertEqual(foo, None)
 
+    def testSrcsetEmptyField(self):
+        # srcset should return None for an empty image field
+        # See https://github.com/plone/plone.namedfile/issues/202
+        self.item.image = None
+        result = self.scaling.srcset("image", sizes="100vw")
+        self.assertIsNone(result)
+
     def testScaleInvalidation(self):
         dt = self.item.modified()
 

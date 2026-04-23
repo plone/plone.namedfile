@@ -1,0 +1,2 @@
+Return ``None`` from ``srcset()`` and ``picture()`` when the image field is empty, consistent with ``tag()``.
+@jensens
