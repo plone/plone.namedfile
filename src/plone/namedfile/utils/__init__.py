@@ -241,7 +241,11 @@ def getImageInfo(data):
             width, height = img.size
             content_type = PIL.Image.MIME[img.format]
         except Exception as e:
-            log.warning("Could not identify image with PIL: %s", e)
+            log.warning(
+                "PIL can not recognize the image. "
+                "Image is probably broken or of a non-supported format: %s",
+                e,
+            )
 
     log.debug(
         "Image Info (Type: %s, Width: %s, Height: %s)", content_type, width, height
