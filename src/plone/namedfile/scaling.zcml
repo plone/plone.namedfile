@@ -1,0 +1,67 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:cache="http://namespaces.zope.org/cache"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    >
+  <include package="zope.annotation" />
+  <include
+      package="Products.CMFCore"
+      file="permissions.zcml"
+      />
+  <browser:page
+      name="images"
+      for=".interfaces.IImageScaleTraversable"
+      class=".scaling.ImageScaling"
+      allowed_attributes="scale tag"
+      permission="zope2.View"
+      />
+  <browser:page
+      name="images-test"
+      for=".interfaces.IImageScaleTraversable"
+      class=".scaling.ImagesTest"
+      template="test.pt"
+      permission="cmf.ModifyPortalContent"
+      />
+  <browser:page
+      name="images-clear"
+      for=".interfaces.IImageScaleTraversable"
+      class=".scaling.ImagesTest"
+      attribute="clear"
+      permission="cmf.ModifyPortalContent"
+      />
+  <browser:page
+      name="image_scale"
+      for="plone.base.interfaces.INavigationRoot"
+      class=".scaling.NavigationRootScaling"
+      allowed_attributes="scale tag"
+      permission="zope2.View"
+      />
+  <adapter
+      factory=".scaling.DefaultImageScalingFactory"
+      for="*"
+      />
+  <!-- For the storage, we adapt a context
+       and an optional modified callable. -->
+  <adapter
+      factory="plone.scale.storage.AnnotationStorage"
+      provides="plone.scale.storage.IImageScaleStorage"
+      for="*
+           *"
+      />
+
+  <!-- In plone.app.caching, image scales are weakly cached.
+       But stable (uid) image scales should be strongly cached. -->
+  <configure zcml:condition="installed z3c.caching">
+    <include package="z3c.caching" />
+    <include
+        package="z3c.caching"
+        file="meta.zcml"
+        />
+    <cache:ruleset
+        for=".interfaces.IStableImageScale"
+        ruleset="plone.stableResource"
+        />
+  </configure>
+
+</configure>

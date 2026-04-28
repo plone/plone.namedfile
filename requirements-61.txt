@@ -1,7 +1,0 @@
--e .[test]
-zope.testrunner
-# Somehow the Zope[wsgi] dependency of CMFPlone is not pulled in, making all tests fail.
-# So include it explicitly for now.
-Zope[wsgi]
---pre
--c https://dist.plone.org/release/6.1-dev/constraints.txt

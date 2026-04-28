@@ -8,6 +8,156 @@ Changelog
 
 .. towncrier release notes start
 
+8.0.0a5 (2026-04-21)
+--------------------
+
+Bug fixes:
+
+
+- Fix image scale caching when ``_p_mtime`` is ``None`` (unsaved objects).
+  ``DateTime(None)`` returns "now", so every cache check saw a different timestamp and scales were regenerated on every access.
+  Fall back to epoch (0) for a stable value.
+  @jensens (#58)
+
+
+8.0.0a4 (2026-03-30)
+--------------------
+
+Bug fixes:
+
+
+- Fix broken fullscreen image links in ``@@images-test`` view for non-Image content types.
+  @jensens (#125)
+
+
+Internal:
+
+
+- Clarify docstrings of ``ImageScale`` vs ``ImageScaling`` to reduce confusion.
+  @jensens (#160)
+
+
+8.0.0a3 (2026-03-27)
+--------------------
+
+Bug fixes:
+
+
+- Handle ``filename=None`` in ``safe_basename()`` instead of crashing with ``AttributeError``.
+  @jensens (#2633)
+
+
+8.0.0a2 (2026-03-16)
+--------------------
+
+New features:
+
+
+- Extract ``_scale_url()`` method on ``ImageScale`` and ``ImageScaling`` for overridable scale URL generation. Accepts an optional ``scale_info`` dict with scale metadata (width, height, mode, fieldname, mimetype, etc.) so custom image backends (e.g. Thumbor) can generate URLs with full context by overriding a single method.
+  @jensens (#199)
+- Add original image size url in the srcset generated in the srcset method @erral
+
+
+Internal:
+
+
+- Update configuration files.
+  [plone devs]
+
+
+8.0.0a1 (2025-11-19)
+--------------------
+
+Breaking changes:
+
+
+- Replace ``pkg_resources`` namespace with PEP 420 native namespace.
+  Support only Plone 6.2 and Python 3.10+. (#3928)
+
+
+New features:
+
+
+- Add default width and height attributes if none provided when using the srcset method @erral (#188)
+
+
+7.2.1 (2025-09-10)
+------------------
+
+Internal:
+
+
+- Move distribution to src layout [gforcada] (#4217)
+
+
+7.2.0 (2025-06-19)
+------------------
+
+New features:
+
+
+- "Scale" SVGs by setting the correct height and width for the given scale in its metadata.
+  Require plone.scale 4.2.0 as minimum.
+  [jensens] (#133)
+
+
+7.1.0 (2025-06-05)
+------------------
+
+New features:
+
+
+- Add a srcset method to the @@images view
+  [erral] (#170)
+
+
+Bug fixes:
+
+
+- Support for extracting metadata from WebP images without loading the entire image into memory, as already done for other formats. [mamico] (#181)
+
+
+7.0.2 (2025-04-04)
+------------------
+
+Bug fixes:
+
+
+- Adjusted schema validation to prevent file/image loading during upload/import (#167)
+
+
+7.0.1 (2025-03-21)
+------------------
+
+Bug fixes:
+
+
+- Work around TypeError: unhashable type: 'list' on `images-test` view.
+  [maurits] (#173)
+
+
+Internal:
+
+
+- Update configuration files.
+  [plone devs]
+
+
+7.0.0 (2025-01-24)
+------------------
+
+Breaking changes:
+
+
+- Drop support for Plone 5.2.  [maurits] (#4090)
+
+
+Bug fixes:
+
+
+- Fix DeprecationWarnings. [maurits] (#4090)
+
+
 6.4.0 (2024-11-25)
 ------------------
 
@@ -373,7 +523,7 @@ New features:
 Bug fixes:
 
 
-- Fix image scaling to re-use the original image when scaling is not required to allow Plone REST API to use cacheable scale URL for the original image without performance penalty [datakurre] (#92)
+- Fix image scaling to reuse the original image when scaling is not required to allow Plone REST API to use cacheable scale URL for the original image without performance penalty [datakurre] (#92)
 
 
 5.3.0 (2020-04-21)
@@ -515,7 +665,7 @@ Bug fixes:
 
 Bug fixes:
 
-- Dont't break DefaultImageScalingFactory, if for any reason the fieldname isn't available on the context.
+- Don't break DefaultImageScalingFactory, if for any reason the fieldname isn't available on the context.
   [thet]
 
 - Different caching keys for different domains
@@ -568,7 +718,7 @@ New features:
 
 - Add automatic image rotation based on EXIF data for all images.
   Based on piexif library and ideas of maartenkling and ezvirtual.
-  Choosen piexif as it allow read and write of exif data for future enhancements.
+  Chosen piexif as it allow read and write of exif data for future enhancements.
   http://piexif.readthedocs.org/en/latest/
   For Orientation examples and description see http://www.daveperrett.com/articles/2012/07/28/exif-orientation-handling-is-a-ghetto/ test data https://github.com/recurser/exif-orientation-examples
   Additional Test Images with different MIME-Types (JPEG and TIFF) and possible problems: https://github.com/ianare/exif-samples.git
@@ -604,7 +754,7 @@ Incompatibilities:
 
 - Targets Plone 5.1 only, coredev 5.0 and 4.3 are on 3.0.x branch [jensens]:
 
-  - ``plone.supermodel``, ``plone.scale`` and ``plone.schemaeditor`` are now hard depedencies.
+  - ``plone.supermodel``, ``plone.scale`` and ``plone.schemaeditor`` are now hard dependencies.
     The extras  in setup.py are kept for bbb reasons, but are empty.
     Conditional code is now no longer conditional.
     This simplifies the code a lot.
@@ -624,7 +774,7 @@ Fixes:
   [smcmahon]
 
 - Prevent attempt to create a filestream_iterator from a temporary file associated with an
-  uncommited blob.
+  uncommitted blob.
   Fixes an error on Windows 10 "WindowsError 32" by attempting to delete or access a file in use
   by another process.
   [smcmahon]
@@ -649,10 +799,10 @@ Fixes:
 
 Fixes:
 
-- PEP 8, UTF-8 headers, implements/adapts to decorators, doctest formating.
+- PEP 8, UTF-8 headers, implements/adapts to decorators, doctest formatting.
   [thet, jensens]
 
-- Workarround for method getImageSize.
+- Workaround for method getImageSize.
   Prevent returning (-1, -1) as the size of the image.
   [andreesg]
 
@@ -976,7 +1126,7 @@ Fixes:
 ------------------
 
 * Make z3c.blobfile (and blobs in general) a soft dependency. You'll need to
-  separately depend on z3c.blobfile (and probably pin it to versio 0.1.2) to
+  separately depend on z3c.blobfile (and probably pin it to version 0.1.2) to
   get the NamedBlobFile and NamedBlobImage fields. This means that
   plone.namedfile can be used with ZODB versions that do not support BLOBs.
   This policy will probably be revisited for a 2.0 release.

@@ -1,0 +1,25 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+
+  <include package="plone.supermodel" />
+
+  <!-- plone.supermodel configuration -->
+
+  <utility
+      name="plone.namedfile.field.NamedFile"
+      component=".handler.NamedFileHandler"
+      />
+  <utility
+      name="plone.namedfile.field.NamedImage"
+      component=".handler.NamedImageHandler"
+      />
+
+  <utility
+      name="plone.namedfile.field.NamedBlobFile"
+      component=".handler.NamedBlobFileHandler"
+      />
+  <utility
+      name="plone.namedfile.field.NamedBlobImage"
+      component=".handler.NamedBlobImageHandler"
+      />
+
+</configure>

@@ -1,0 +1,48 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    >
+
+  <browser:page
+      name="download"
+      for="*"
+      class=".browser.Download"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      name="display-file"
+      for="*"
+      class=".browser.DisplayFile"
+      permission="zope2.View"
+      />
+
+  <include file="z3c-blobfile.zcml" />
+  <include file="handler.zcml" />
+  <include file="marshaler.zcml" />
+  <include file="scaling.zcml" />
+  <include file="editor.zcml" />
+  <include file="field.zcml" />
+
+  <!-- This adapter is only needed and used on Plone 6.  -->
+  <adapter
+      factory=".adapters.ImageFieldScales"
+      zcml:condition="installed plone.base"
+      />
+
+  <!-- configure sizes lookup for IAvailableSizes -->
+  <utility
+      provides=".interfaces.IAvailableSizes"
+      component=".utils.getAllowedSizes"
+      zcml:condition="have plone-60"
+      />
+
+  <!-- quality lookup for IScaledImageQuality from plone.scale, which itself has no ZCML-->
+  <utility
+      provides="plone.scale.interfaces.IScaledImageQuality"
+      component=".utils.getQuality"
+      zcml:condition="have plone-60"
+      />
+
+</configure>

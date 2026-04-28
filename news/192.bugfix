@@ -1,0 +1,2 @@
+Fix ``AttributeError`` when loading EXIF data from images without a ``name`` attribute (e.g. site logo from registry).
+@jensens

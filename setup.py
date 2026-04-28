@@ -1,20 +1,14 @@
-from setuptools import find_packages
+from pathlib import Path
 from setuptools import setup
 
-import os
-
-
-version = "7.0.0.dev0"
+version = "8.0.0a6.dev0"
 
 description = "File types and fields for images, files and blob files with filenames"
-long_description = "\n\n".join(
-    [
-        open("README.rst").read(),
-        open("CHANGES.rst").read(),
-        open(os.path.join("plone", "namedfile", "usage.rst")).read(),
-    ]
+long_description = (
+    f"{Path('README.rst').read_text()}\n"
+    f"{Path('CHANGES.rst').read_text()}\n"
+    f"{(Path('src') / 'plone' / 'namedfile' / 'usage.rst').read_text()}"
 )
-
 
 setup(
     name="plone.namedfile",
@@ -24,15 +18,14 @@ setup(
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Framework :: Plone",
-        "Framework :: Plone :: 6.0",
-        "Framework :: Plone :: 6.1",
+        "Framework :: Plone :: 6.2",
         "Framework :: Plone :: Core",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: BSD License",
     ],
@@ -41,32 +34,33 @@ setup(
     author_email="plone-developers@lists.sourceforge.net",
     url="https://pypi.org/project/plone.namedfile",
     license="BSD",
-    packages=find_packages(),
-    namespace_packages=["plone"],
     include_package_data=True,
     zip_safe=False,
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     install_requires=[
+        "BeautifulSoup4",
         "persistent",
         "piexif",
+        "Pillow",
         "plone.app.uuid>=2.2.0",
+        "plone.base",
+        "plone.dexterity",
+        "plone.memoize",
+        "plone.protect",
         "plone.rfc822>=2.0.0",
-        "plone.scale[storage] >=3.0",
+        "plone.scale[storage]>=4.2.0",
         "plone.schemaeditor",
         "plone.supermodel",
-        "setuptools",
-        "zope.browserpage",
+        "Products.CMFCore",
+        "z3c.caching",
         "zope.cachedescriptors",
-        "zope.component",
         "zope.copy",
-        "zope.security",
-        "zope.traversing",
+        "Zope",
     ],
     extras_require={
         "test": [
-            "plone.app.testing",
             "lxml",
-            "Pillow",
+            "plone.app.testing",
             "plone.testing",
         ],
     },

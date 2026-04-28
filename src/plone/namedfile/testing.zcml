@@ -1,0 +1,34 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="plone.namedfile.tests"
+    >
+
+  <include
+      package="zope.security"
+      file="meta.zcml"
+      />
+  <include
+      package="zope.component"
+      file="meta.zcml"
+      />
+  <include
+      package="zope.browserpage"
+      file="meta.zcml"
+      />
+  <include
+      package="zope.traversing"
+      file="configure.zcml"
+      />
+
+  <permission
+      id="zope2.View"
+      title="View"
+      />
+
+  <include package="plone.namedfile" />
+  <class class="plone.dexterity.content.DexterityContent">
+    <!-- This is normally done in plone.app.dexterity. -->
+    <implements interface="plone.namedfile.interfaces.IImageScaleTraversable" />
+  </class>
+
+</configure>

@@ -1,0 +1,67 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+
+  <!-- text for py3 -->
+  <utility
+      factory=".storages.TextStorable"
+      provides=".interfaces.IStorage"
+      name="builtins.str"
+      />
+
+  <!-- bytes for py3 -->
+  <utility
+      factory=".storages.BytesStorable"
+      provides=".interfaces.IStorage"
+      name="builtins.bytes"
+      />
+
+  <utility
+      factory=".storages.StringStorable"
+      provides=".interfaces.IStorage"
+      name="__builtin__.str"
+      />
+
+  <utility
+      factory=".storages.UnicodeStorable"
+      provides=".interfaces.IStorage"
+      name="__builtin__.unicode"
+      />
+
+  <utility
+      factory=".storages.FileChunkStorable"
+      provides=".interfaces.IStorage"
+      name="plone.namedfile.file.FileChunk"
+      />
+
+  <utility
+      factory=".storages.FileDescriptorStorable"
+      provides=".interfaces.IStorage"
+      name="__builtin__.file"
+      />
+
+  <utility
+      factory=".storages.BufferedReaderStorable"
+      provides=".interfaces.IStorage"
+      name="_io.BufferedReader"
+      />
+
+  <utility
+      factory=".storages.FileUploadStorable"
+      provides=".interfaces.IStorage"
+      name="zope.publisher.browser.FileUpload"
+      />
+
+  <utility
+      factory=".storages.PDataStorable"
+      provides=".interfaces.IStorage"
+      name="OFS.Image.Pdata"
+      />
+
+  <utility
+      factory=".storages.Zope2FileUploadStorable"
+      provides=".interfaces.IStorage"
+      name="ZPublisher.HTTPRequest.FileUpload"
+      />
+
+  <adapter factory=".copy.BlobFileCopyHook" />
+
+</configure>
