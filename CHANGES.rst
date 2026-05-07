@@ -8,6 +8,22 @@ Changelog
 
 .. towncrier release notes start
 
+8.0.0 (2026-05-07)
+------------------
+
+Bug fixes:
+
+
+- Include actual exception in PIL image identification warning instead of generic message.
+  @jensens (#184)
+- Fix ``AttributeError`` when loading EXIF data from images without a ``name`` attribute (e.g. site logo from registry).
+  @jensens (#192)
+- Return ``None`` from ``srcset()`` and ``picture()`` when the image field is empty, consistent with ``tag()``.
+  @jensens (#202)
+- Add ``Content-Disposition: inline`` with filename to ``@@display-file`` for allowed mimetypes, so browsers use the correct filename when saving files viewed inline.
+  @jensens (#205)
+
+
 8.0.0a5 (2026-04-21)
 --------------------
 

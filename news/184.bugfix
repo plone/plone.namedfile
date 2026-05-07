@@ -1,2 +1,0 @@
-Include actual exception in PIL image identification warning instead of generic message.
-@jensens
