@@ -553,7 +553,7 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         self.assertIn('loading="lazy"', tag)
         self.assertIn('title="foo"', tag)
         self.assertIn('width="200"', tag)
-        self.assertIn('sizes="(min-width: 576px) 600px, 98vw"', tag)
+        self.assertIn('sizes="(min-width: 576px) 600px, (min-width: 768px) 600px, 98vw"', tag)
 
     @patch.object(
         plone.namedfile.scaling,
@@ -572,7 +572,6 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
         tag = self.scaling.picture("image", picture_variant="medium", lazy=False)
-        print(tag)
         expected = """<picture>
  <source...srcset="http://nohost/item/@@images/image-600-....png 600w,
 http://nohost/item/@@images/image-400-....png 400w,
@@ -589,7 +588,7 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         self.assertNotIn('loading="lazy"', tag)
         self.assertIn('title="foo"', tag)
         self.assertIn('width="200"', tag)
-        self.assertIn('sizes="(min-width: 576px) 600px, 98vw"', tag)
+        self.assertIn('sizes="(min-width: 576px) 600px, (min-width: 768px) 600px, 98vw"', tag)
 
     @patch.object(
         plone.namedfile.scaling,
