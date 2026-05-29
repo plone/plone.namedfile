@@ -3,7 +3,6 @@ from ZPublisher.HTTPRequest import FileUpload
 
 import os
 
-
 GIF_FILE = os.path.join(os.path.dirname(__file__), "tool.gif")
 with open(GIF_FILE, "rb") as f:
     GIF = f.read()

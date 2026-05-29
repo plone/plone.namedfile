@@ -22,7 +22,6 @@ from ZPublisher import HTTPRangeSupport
 import piexif
 import transaction
 
-
 log = getLogger(__name__)
 
 

@@ -3,7 +3,6 @@ from plone.namedfile import interfaces
 from plone.schemaeditor.fields import FieldFactory
 from zope.i18nmessageid.message import MessageFactory
 
-
 _ = MessageFactory("plone")
 
 

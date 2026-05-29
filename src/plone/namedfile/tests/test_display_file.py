@@ -101,7 +101,10 @@ class TestAttackVectorNamedImage(unittest.TestCase):
         # Test that displaying this file inline works.
         browser = self.get_anon_browser()
         browser.open(base_url + f"/@@display-file/{self.field_name}")
-        self.assertIsNone(get_disposition_header(browser))
+        header = get_disposition_header(browser)
+        self.assertIsNotNone(header)
+        self.assertIn("inline", header)
+        self.assertIn("filename", header)
 
     def assert_display_inline_is_download(self, base_url):
         # Test that displaying this file inline turns into a download.

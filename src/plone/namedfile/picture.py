@@ -9,7 +9,6 @@ from zope.component import queryUtility
 import logging
 import re
 
-
 logger = logging.getLogger(__name__)
 appendix_re = re.compile("^(.*)([?#].*)$")
 resolveuid_re = re.compile("^[./]*resolve[Uu]id/([^/]*)/?(.*)$")

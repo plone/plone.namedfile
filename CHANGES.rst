@@ -8,6 +8,104 @@ Changelog
 
 .. towncrier release notes start
 
+8.0.0 (2026-05-07)
+------------------
+
+Bug fixes:
+
+
+- Include actual exception in PIL image identification warning instead of generic message.
+  @jensens (#184)
+- Fix ``AttributeError`` when loading EXIF data from images without a ``name`` attribute (e.g. site logo from registry).
+  @jensens (#192)
+- Return ``None`` from ``srcset()`` and ``picture()`` when the image field is empty, consistent with ``tag()``.
+  @jensens (#202)
+- Add ``Content-Disposition: inline`` with filename to ``@@display-file`` for allowed mimetypes, so browsers use the correct filename when saving files viewed inline.
+  @jensens (#205)
+
+
+8.0.0a5 (2026-04-21)
+--------------------
+
+Bug fixes:
+
+
+- Fix image scale caching when ``_p_mtime`` is ``None`` (unsaved objects).
+  ``DateTime(None)`` returns "now", so every cache check saw a different timestamp and scales were regenerated on every access.
+  Fall back to epoch (0) for a stable value.
+  @jensens (#58)
+
+
+8.0.0a4 (2026-03-30)
+--------------------
+
+Bug fixes:
+
+
+- Fix broken fullscreen image links in ``@@images-test`` view for non-Image content types.
+  @jensens (#125)
+
+
+Internal:
+
+
+- Clarify docstrings of ``ImageScale`` vs ``ImageScaling`` to reduce confusion.
+  @jensens (#160)
+
+
+8.0.0a3 (2026-03-27)
+--------------------
+
+Bug fixes:
+
+
+- Handle ``filename=None`` in ``safe_basename()`` instead of crashing with ``AttributeError``.
+  @jensens (#2633)
+
+
+8.0.0a2 (2026-03-16)
+--------------------
+
+New features:
+
+
+- Extract ``_scale_url()`` method on ``ImageScale`` and ``ImageScaling`` for overridable scale URL generation. Accepts an optional ``scale_info`` dict with scale metadata (width, height, mode, fieldname, mimetype, etc.) so custom image backends (e.g. Thumbor) can generate URLs with full context by overriding a single method.
+  @jensens (#199)
+- Add original image size url in the srcset generated in the srcset method @erral
+
+
+Internal:
+
+
+- Update configuration files.
+  [plone devs]
+
+
+8.0.0a1 (2025-11-19)
+--------------------
+
+Breaking changes:
+
+
+- Replace ``pkg_resources`` namespace with PEP 420 native namespace.
+  Support only Plone 6.2 and Python 3.10+. (#3928)
+
+
+New features:
+
+
+- Add default width and height attributes if none provided when using the srcset method @erral (#188)
+
+
+7.2.1 (2025-09-10)
+------------------
+
+Internal:
+
+
+- Move distribution to src layout [gforcada] (#4217)
+
+
 7.2.0 (2025-06-19)
 ------------------
 

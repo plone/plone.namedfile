@@ -33,7 +33,6 @@ import time
 import unittest
 import warnings
 
-
 # Unique scale name used to be a uuid.uui4(),
 # which is a combination of hexadecimal digits with dashes, total 36.
 # Now it is 'imagescalename-width-hash', where hash is 32.
@@ -700,6 +699,13 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
         foo = self.scaling.scale("image", scale="foo?")
         self.assertEqual(foo, None)
 
+    def testSrcsetEmptyField(self):
+        # srcset should return None for an empty image field
+        # See https://github.com/plone/plone.namedfile/issues/202
+        self.item.image = None
+        result = self.scaling.srcset("image", sizes="100vw")
+        self.assertIsNone(result)
+
     def testScaleInvalidation(self):
         dt = self.item.modified()
 
@@ -743,6 +749,28 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
         self.item.image._p_mtime = (dt + 1).millis()
         scale_b = self.scaling.scale("image", width=100, height=80)
         self.assertNotEqual(scale_a.data, scale_b.data)
+
+    def testScaleCachingWithNonePMtime(self):
+        # _p_mtime is None for unsaved objects (common in tests).
+        # Scales should still be cached rather than regenerated each time.
+        # See https://github.com/plone/plone.namedfile/issues/58
+        delattr(self.item.image, "_modified")
+        # _p_mtime is read-only on Persistent, so patch it on DummyContent
+        from unittest.mock import patch
+        from unittest.mock import PropertyMock
+
+        with (
+            patch.object(
+                DummyContent, "_p_mtime", new_callable=PropertyMock, return_value=None
+            ),
+            patch.object(
+                MockNamedImage, "_p_mtime", new_callable=PropertyMock, return_value=None
+            ),
+        ):
+            scale1 = self.scaling.scale("image", width=100, height=80)
+            wait_to_ensure_modified()
+            scale2 = self.scaling.scale("image", width=100, height=80)
+            self.assertEqual(scale1.data, scale2.data)
 
     def testCustomSizeChange(self):
         # set custom image sizes & view a scale
@@ -885,6 +913,145 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
         self.assertEqual(len(foo.srcset), 1)
         self.assertEqual(foo.srcset[0]["scale"], 2)
 
+
+class TestScaleUrl(unittest.TestCase):
+    """Test the _scale_url override mechanism on ImageScale and ImageScaling."""
+
+    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+
+    def setUp(self):
+        data = getFile("image.png")
+        item = DummyContent()
+        item.image = MockNamedImage(data, "image/png", "image.png")
+        self.layer["app"]._setOb("item", item)
+        self.item = self.layer["app"].item
+
+    def test_image_scaling_scale_url_default(self):
+        scaling = ImageScaling(self.item, None)
+        url = scaling._scale_url("abc-123", "jpeg")
+        self.assertEqual(url, f"{self.item.absolute_url()}/@@images/abc-123.jpeg")
+
+    def test_image_scaling_scale_url_custom_base(self):
+        scaling = ImageScaling(self.item, None)
+        url = scaling._scale_url("abc-123", "jpeg", base_url="http://example.com")
+        self.assertEqual(url, "http://example.com/@@images/abc-123.jpeg")
+
+    def test_image_scaling_scale_url_override(self):
+        """Subclasses can override _scale_url to produce custom URLs."""
+
+        class CustomScaling(ImageScaling):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
+                return f"https://thumbor.example.com/{uid}.{extension}"
+
+        scaling = CustomScaling(self.item, None)
+        url = scaling._scale_url("abc-123", "jpeg")
+        self.assertEqual(url, "https://thumbor.example.com/abc-123.jpeg")
+
+    def test_image_scale_uses_scale_url(self):
+        """ImageScale.url should use _scale_url."""
+        scaling = ImageScaling(self.item, None)
+        scale = scaling.scale("image", width=100, height=100, pre=True)
+        # The url should follow the _scale_url pattern
+        self.assertIn("/@@images/", scale.url)
+        self.assertTrue(scale.url.endswith(".png"))
+
+    def test_image_scale_override(self):
+        """A custom ImageScale subclass can override _scale_url."""
+
+        class CustomImageScale(ImageScale):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
+                return f"https://cdn.example.com/{uid}.{extension}"
+
+        class CustomScaling(ImageScaling):
+            _scale_view_class = CustomImageScale
+
+        scaling = CustomScaling(self.item, None)
+        scale = scaling.scale("image", width=100, height=100, pre=True)
+        self.assertTrue(scale.url.startswith("https://cdn.example.com/"))
+
+    def test_scale_info_passed_to_scale_url(self):
+        """_scale_url receives scale_info with metadata."""
+        captured = {}
+
+        class CustomImageScale(ImageScale):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
+                captured["scale_info"] = scale_info
+                return super()._scale_url(uid, extension, base_url, scale_info)
+
+        class CustomScaling(ImageScaling):
+            _scale_view_class = CustomImageScale
+
+        scaling = CustomScaling(self.item, None)
+        scale = scaling.scale("image", width=100, height=100, pre=True)
+        self.assertIsNotNone(scale)
+        info = captured["scale_info"]
+        self.assertIn("uid", info)
+        self.assertIn("width", info)
+        self.assertIn("height", info)
+        self.assertIn("fieldname", info)
+
+    def test_srcset_uses_scale_url(self):
+        """ImageScaling.srcset should use _scale_url for srcset URLs."""
+
+        class CustomScaling(ImageScaling):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
+                return f"https://thumbor.example.com/{uid}.{extension}"
+
+        scaling = CustomScaling(self.item, None)
+        scaling.available_sizes = {
+            "mini": (200, 65536),
+            "thumb": (128, 128),
+            "tile": (64, 64),
+        }
+        tag = scaling.srcset("image", sizes="100vw", scale_in_src="mini")
+        # The srcset attribute URLs should use the custom _scale_url
+        self.assertIn("https://thumbor.example.com/", tag)
+
+    def test_srcset_passes_scale_info(self):
+        """ImageScaling.srcset passes scale_info to _scale_url."""
+        captured_infos = []
+
+        class CustomScaling(ImageScaling):
+            def _scale_url(self, uid, extension, base_url=None, scale_info=None):
+                captured_infos.append(scale_info)
+                return super()._scale_url(uid, extension, base_url, scale_info)
+
+        scaling = CustomScaling(self.item, None)
+        scaling.available_sizes = {
+            "mini": (200, 65536),
+            "thumb": (128, 128),
+        }
+        scaling.srcset("image", sizes="100vw", scale_in_src="mini")
+        self.assertTrue(len(captured_infos) > 0)
+        for info in captured_infos:
+            self.assertIsNotNone(info)
+            self.assertIn("uid", info)
+            self.assertIn("width", info)
+
+
+class TestImgSrcSet(unittest.TestCase):
+
+    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+
+    def setUp(self):
+        sm = getSiteManager()
+        sm.registerAdapter(PrimaryFieldInfo)
+
+        # We use the 900 px wide image to test that the original url
+        # is rendered next to the all other scale urls
+        data = getFile("900.jpg")
+        item = DummyContent()
+        item.image = MockNamedImage(data, "image/jpeg", "image.jpg")
+        self.layer["app"]._setOb("item", item)
+        self.item = self.layer["app"].item
+        self._orig_sizes = ImageScaling._sizes
+        self.scaling = ImageScaling(self.item, None)
+
+    def tearDown(self):
+        ImageScaling._sizes = self._orig_sizes
+        sm = getSiteManager()
+        sm.unregisterAdapter(PrimaryFieldInfo)
+
     def testImgSrcSet(self):
         """test rendered srcset values"""
         self.scaling.available_sizes = {
@@ -902,7 +1069,7 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
         }
         tag = self.scaling.srcset("image", sizes="50vw")
         base = self.item.absolute_url()
-        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png".../>"""
+        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-1600-....jpeg" width="..." height="..." />"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetCustomSrc(self):
@@ -922,7 +1089,7 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
         }
         tag = self.scaling.srcset("image", sizes="50vw", scale_in_src="mini")
         base = self.item.absolute_url()
-        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-200-....png".../>"""
+        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-200-....jpeg" width="200" height="...".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetInexistentScale(self):
@@ -946,7 +1113,7 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
             "image", sizes="50vw", scale_in_src="inexistent-scale-name"
         )
         base = self.item.absolute_url()
-        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-200-....png".../>"""
+        expected = f"""<img title="foo" alt="foo" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-800-....jpeg" width="..." height="...".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetCustomTitle(self):
@@ -966,7 +1133,7 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
         }
         tag = self.scaling.srcset("image", sizes="50vw", title="My Custom Title")
         base = self.item.absolute_url()
-        expected = f"""<img title="My Custom Title" alt="foo" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png".../>"""
+        expected = f"""<img title="My Custom Title" alt="foo" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-1600-....jpeg" width="..." height="...".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
     def testImgSrcSetAdditionalAttributes(self):
@@ -993,8 +1160,7 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
             loading="lazy",
         )
         base = self.item.absolute_url()
-
-        expected = f"""<img title="My Custom Title" alt="This image shows nothing" class="my-personal-class" loading="lazy" sizes="50vw" srcset="{base}/@@images/image-200-....png 200w, {base}/@@images/image-128-....png 128w, {base}/@@images/image-64-....png 64w, {base}/@@images/image-32-....png 32w, {base}/@@images/image-16-....png 16w" src="{base}/@@images/image-1600-....png".../>"""
+        expected = f"""<img title="My Custom Title" alt="This image shows nothing" class="my-personal-class" loading="lazy" sizes="50vw" srcset="{base}/@@images/image-900-....jpeg 900w, {base}/@@images/image-800-....jpeg 800w, {base}/@@images/image-600-....jpeg 600w, {base}/@@images/image-400-....jpeg 400w, {base}/@@images/image-200-....jpeg 200w, {base}/@@images/image-128-....jpeg 128w, {base}/@@images/image-64-....jpeg 64w, {base}/@@images/image-32-....jpeg 32w, {base}/@@images/image-16-....jpeg 16w" src="{base}/@@images/image-1600-....jpeg" width="..." height="...".../>"""
         self.assertTrue(_ellipsis_match(expected, tag.strip()))
 
 

@@ -3,7 +3,6 @@ from logging import getLogger
 
 import struct
 
-
 log = getLogger(__name__)
 
 

@@ -85,8 +85,9 @@ class TestStorable(unittest.TestCase):
             read_bytes += len(res)
             return res
 
-        with patch.object(Blob, "open", count_open), patch.object(
-            BlobFile, "read", count_reads
+        with (
+            patch.object(Blob, "open", count_open),
+            patch.object(BlobFile, "read", count_reads),
         ):
             data = getFile("image.jpg")
             f = tempfile.NamedTemporaryFile(delete=False)
@@ -153,8 +154,9 @@ class TestStorable(unittest.TestCase):
             read_bytes += len(res)
             return res
 
-        with patch.object(Blob, "open", count_open), patch.object(
-            BlobFile, "read", count_reads
+        with (
+            patch.object(Blob, "open", count_open),
+            patch.object(BlobFile, "read", count_reads),
         ):
             fi = NamedBlobImage(getFile("900.webp"), filename="900.webp")
             self.assertEqual((900, 900), fi.getImageSize())

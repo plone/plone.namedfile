@@ -44,7 +44,6 @@ import functools
 import logging
 import warnings
 
-
 logger = logging.getLogger(__name__)
 _marker = object()
 
@@ -69,7 +68,12 @@ def _image_tag_from_values(*values):
 
 
 class ImageScale(BrowserView):
-    """view used for rendering image scales"""
+    """A single image scale instance, used for rendering (tag/picture/srcset)
+    and serving the scaled image data.
+
+    Typically obtained via the ``@@images`` view (``ImageScaling``), not
+    instantiated directly.
+    """
 
     # Grant full access to this view even if the object being viewed is
     # protected
@@ -94,7 +98,6 @@ class ImageScale(BrowserView):
         if self.data is None:
             self.data = getattr(self.context, self.fieldname)
 
-        url = self.context.absolute_url()
         extension = self.data.contentType.split("/")[-1].lower()
         if self.data.contentType == "image/svg+xml":
             extension = "svg"
@@ -103,8 +106,28 @@ class ImageScale(BrowserView):
         else:
             name = info["fieldname"]
         self.__name__ = f"{name}.{extension}"
-        self.url = f"{url}/@@images/{self.__name__}"
+        self.url = self._scale_url(name, extension, scale_info=info)
         self.srcset = info.get("srcset", [])
+
+    def _scale_url(self, uid, extension, base_url=None, scale_info=None):
+        """Build the URL for an image scale.
+
+        Override this method to generate custom scale URLs, e.g. for
+        external image services like Thumbor.
+
+        :param uid: The unique scale identifier.
+        :param extension: The file extension (e.g. "jpeg", "png").
+        :param base_url: The base URL of the content object.
+            Defaults to ``self.context.absolute_url()``.
+        :param scale_info: Optional dict with scale metadata (width,
+            height, mode, fieldname, mimetype, etc.).  The contents
+            depend on the call site — ``__init__`` passes the full
+            info dict, ``srcset`` passes the ``pre_scale()`` result.
+        :returns: The full URL to the image scale.
+        """
+        if base_url is None:
+            base_url = self.context.absolute_url()
+        return f"{base_url}/@@images/{uid}.{extension}"
 
     def absolute_url(self):
         return self.url
@@ -113,11 +136,8 @@ class ImageScale(BrowserView):
         _srcset_attr = []
         extension = self.data.contentType.split("/")[-1].lower()
         for scale in self.srcset:
-            _srcset_attr.append(
-                "{}/@@images/{}.{} {}x".format(
-                    self.context.absolute_url(), scale["uid"], extension, scale["scale"]
-                )
-            )
+            url = self._scale_url(scale["uid"], extension, scale_info=scale)
+            _srcset_attr.append(f"{url} {scale['scale']}x")
         srcset_attr = ", ".join(_srcset_attr)
         return srcset_attr
 
@@ -429,7 +449,12 @@ class DefaultImageScalingFactory:
 
 @implementer(ITraversable, IBrowserPublisher)
 class ImageScaling(BrowserView):
-    """view used for generating (and storing) image scales"""
+    """The ``@@images`` view: generates, stores, and retrieves image scales.
+
+    This is the main entry point for working with image scales on a content
+    object. Use its ``scale()``, ``tag()``, ``picture()``, and ``srcset()``
+    methods. Each returns or uses an ``ImageScale`` instance.
+    """
 
     # Ignore some stacks to help with accessing via webdav, otherwise you get a
     # 404 NotFound error.
@@ -520,6 +545,26 @@ class ImageScaling(BrowserView):
     def available_sizes(self, value):
         self._sizes = value
 
+    def _scale_url(self, uid, extension, base_url=None, scale_info=None):
+        """Build the URL for an image scale.
+
+        Override this method to generate custom scale URLs, e.g. for
+        external image services like Thumbor.
+
+        :param uid: The unique scale identifier.
+        :param extension: The file extension (e.g. "jpeg", "png").
+        :param base_url: The base URL of the content object.
+            Defaults to ``self.context.absolute_url()``.
+        :param scale_info: Optional dict with scale metadata (width,
+            height, mode, fieldname, mimetype, etc.).  The contents
+            depend on the call site — ``srcset`` passes the
+            ``pre_scale()`` result.
+        :returns: The full URL to the image scale.
+        """
+        if base_url is None:
+            base_url = self.context.absolute_url()
+        return f"{base_url}/@@images/{uid}.{extension}"
+
     def getImageSize(self, fieldname=None):
         if fieldname is not None:
             try:
@@ -561,10 +606,15 @@ class ImageScaling(BrowserView):
         if fieldname is not None:
             field = getattr(context, fieldname, None)
             modified = getattr(field, "modified", None)
-            date = DateTime(modified or context._p_mtime)
+            mtime = modified or context._p_mtime
         else:
-            date = DateTime(context._p_mtime)
-        return date.millis()
+            mtime = context._p_mtime
+        # _p_mtime is None for unsaved objects (common in tests).
+        # Fall back to 0 so DateTime returns a stable epoch value
+        # instead of "now", which would break scale caching.
+        if mtime is None:
+            mtime = 0
+        return DateTime(mtime).millis()
 
     def scale(
         self,
@@ -650,7 +700,7 @@ class ImageScaling(BrowserView):
         srcset = []
         if storage is None:
             return srcset
-        (orig_width, orig_height) = self.getImageSize(fieldname)
+        orig_width, orig_height = self.getImageSize(fieldname)
         for hdScale in self.getHighPixelDensityScales():
             # Don't create retina scales larger than the source image.
             # We only care about the width, because height might be 65536.
@@ -717,6 +767,8 @@ class ImageScaling(BrowserView):
 
         sourceset = picture_variant_config.get("sourceset")
         scale = self.scale(fieldname, sourceset[-1].get("scale"), pre=True)
+        if scale is None:
+            return None
         attributes = {}
         attributes["class"] = css_class and [css_class] or []
         if not attributes["class"]:
@@ -759,6 +811,8 @@ class ImageScaling(BrowserView):
             fieldname = primary.fieldname
 
         original_width, original_height = self.getImageSize(fieldname)
+        if not original_width or not original_height:
+            return None
 
         storage = getMultiAdapter(
             (self.context, functools.partial(self.modified, fieldname)),
@@ -766,15 +820,31 @@ class ImageScaling(BrowserView):
         )
 
         srcset_urls = []
+
+        # get first the original image url if its width is not in the available sizes
+        available_widths = [width for (width, height) in self.available_sizes.values()]
+        if original_width not in available_widths:
+            scale = storage.pre_scale(
+                fieldname=fieldname,
+                width=original_width,
+                height=original_height,
+                mode="scale",
+            )
+            if scale:
+                extension = scale["mimetype"].split("/")[-1].lower()
+                url = self._scale_url(scale["uid"], extension, scale_info=scale)
+                srcset_urls.append(f"{url} {scale['width']}w")
+
+        # then get the urls of the scales that are smaller than the original
         for width, height in self.available_sizes.values():
             if width <= original_width:
                 scale = storage.pre_scale(
                     fieldname=fieldname, width=width, height=height, mode="scale"
                 )
                 extension = scale["mimetype"].split("/")[-1].lower()
-                srcset_urls.append(
-                    f'{self.context.absolute_url()}/@@images/{scale["uid"]}.{extension} {scale["width"]}w'
-                )
+                url = self._scale_url(scale["uid"], extension, scale_info=scale)
+                srcset_urls.append(f"{url} {scale['width']}w")
+
         attributes = {}
         if title is _marker:
             attributes["title"] = self.context.Title()
@@ -802,7 +872,13 @@ class ImageScaling(BrowserView):
                     break
 
         scale = self.scale(fieldname=fieldname, scale=scale_in_src)
+        if scale is None:
+            return None
         attributes["src"] = scale.url
+        if "width" not in attributes:
+            attributes["width"] = scale.width
+        if "height" not in attributes:
+            attributes["height"] = scale.height
 
         return _image_tag_from_values(*attributes.items())
 

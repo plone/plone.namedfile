@@ -3,7 +3,6 @@ from zope.i18nmessageid import MessageFactory
 from zope.interface import Interface
 from zope.schema.interfaces import IObject
 
-
 # We don't have translations here, but this allows
 _ = MessageFactory("plone")
 

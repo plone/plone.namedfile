@@ -20,7 +20,6 @@ import PIL.Image
 import re
 import struct
 
-
 # image-scaling
 QUALITY_DEFAULT = 88
 pattern = re.compile(r"^(.*)\s+(\d+)\s*:\s*(\d+)$")
@@ -99,6 +98,8 @@ def safe_basename(filename):
     """Get the basename of the given filename, regardless of which platform
     (Windows or Unix) it originated from.
     """
+    if filename is None:
+        return None
     fslice = (
         max(
             filename.rfind("/"),
@@ -239,13 +240,11 @@ def getImageInfo(data):
             img = PIL.Image.open(BytesIO(data))
             width, height = img.size
             content_type = PIL.Image.MIME[img.format]
-        except Exception:
-            # TODO: determ which error really happens
-            # Should happen if data is to short --> first_bytes
-            # happens also if data is an svg or another special format.
+        except Exception as e:
             log.warning(
                 "PIL can not recognize the image. "
-                "Image is probably broken or of a non-supported format."
+                "Image is probably broken or of a non-supported format: %s",
+                e,
             )
 
     log.debug(
@@ -268,12 +267,10 @@ def get_exif(image, content_type=None, width=None, height=None):
         try:
             # if possible pass filename in instead to prevent reading all data into memory
             exif_data = piexif.load(
-                image.name if getattr(image, "name") else _ensure_data(image)
+                image.name if getattr(image, "name", None) else _ensure_data(image)
             )
         except Exception as e:
-            # TODO: determ which error really happens
-            # Should happen if data is to short --> first_bytes
-            log.warning(e)
+            log.warning("Could not load EXIF data: %s", e)
             exif_data = exif_data = {
                 "0th": {
                     piexif.ImageIFD.XResolution: (width, 1),

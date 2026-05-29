@@ -8,7 +8,6 @@ from zope.interface import implementer
 from zope.interface import Interface
 from zope.interface.interfaces import ComponentLookupError
 
-
 try:
     from plone.base.interfaces import IImageScalesFieldAdapter
     from plone.base.interfaces import IImagingSchema

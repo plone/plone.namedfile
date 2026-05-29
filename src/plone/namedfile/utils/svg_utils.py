@@ -4,7 +4,6 @@ from logging import getLogger
 import re
 import xml.etree.ElementTree as et
 
-
 log = getLogger(__name__)
 
 

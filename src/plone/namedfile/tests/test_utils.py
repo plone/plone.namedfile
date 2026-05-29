@@ -2,6 +2,7 @@ from plone.namedfile.file import NamedImage
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import get_contenttype
 from plone.namedfile.utils import getImageInfo
+from plone.namedfile.utils import safe_basename
 
 import unittest
 
@@ -89,3 +90,18 @@ class TestUtils(unittest.TestCase):
             getImageInfo(getFile("image.bmp")),
             ("image/x-ms-bmp", 200, 200),
         )
+
+    def test_safe_basename_none(self):
+        """filename=None is valid per INamed schema (required=False, default=None).
+        Regression test for https://github.com/plone/Products.CMFPlone/issues/2633
+        """
+        self.assertIsNone(safe_basename(None))
+
+    def test_safe_basename_unix(self):
+        self.assertEqual(safe_basename("/path/to/file.txt"), "file.txt")
+
+    def test_safe_basename_windows(self):
+        self.assertEqual(safe_basename("C:\\path\\to\\file.txt"), "file.txt")
+
+    def test_safe_basename_plain(self):
+        self.assertEqual(safe_basename("file.txt"), "file.txt")
