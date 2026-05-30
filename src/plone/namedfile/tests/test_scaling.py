@@ -553,7 +553,9 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         self.assertIn('loading="lazy"', tag)
         self.assertIn('title="foo"', tag)
         self.assertIn('width="200"', tag)
-        self.assertIn('sizes="(min-width: 576px) 600px, (min-width: 768px) 600px, 98vw"', tag)
+        self.assertIn(
+            'sizes="(min-width: 576px) 600px, (min-width: 768px) 600px, 98vw"', tag
+        )
 
     @patch.object(
         plone.namedfile.scaling,
@@ -588,7 +590,9 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         self.assertNotIn('loading="lazy"', tag)
         self.assertIn('title="foo"', tag)
         self.assertIn('width="200"', tag)
-        self.assertIn('sizes="(min-width: 576px) 600px, (min-width: 768px) 600px, 98vw"', tag)
+        self.assertIn(
+            'sizes="(min-width: 576px) 600px, (min-width: 768px) 600px, 98vw"', tag
+        )
 
     @patch.object(
         plone.namedfile.scaling,
