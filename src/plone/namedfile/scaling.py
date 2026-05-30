@@ -739,6 +739,7 @@ class ImageScaling(BrowserView):
         alt=None,
         css_class=None,
         title=_marker,
+        lazy=True,
         **kwargs,
     ):
         img2picturetag = Img2PictureTag()
@@ -787,6 +788,7 @@ class ImageScaling(BrowserView):
             resolve_urls=True,
             uid=scale.context.UID(),
             fieldname=fieldname,
+            lazy=lazy,
         ).prettify()
 
     def srcset(

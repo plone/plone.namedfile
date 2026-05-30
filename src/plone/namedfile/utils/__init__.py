@@ -296,7 +296,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
         try:
             exif_data = piexif.load(img.info["exif"])
         except ValueError:
-            log.warn("Exif information corrupt")
+            log.warning("Exif information corrupt")
             pass
         if exif_data and piexif.ImageIFD.Orientation in exif_data["0th"]:
             orientation = exif_data["0th"][piexif.ImageIFD.Orientation]
@@ -363,7 +363,7 @@ def rotate_image(image_data, method=None, REQUEST=None):
     try:
         exif_bytes = piexif.dump(exif_data)
     except Exception as e:
-        log.warn(e)
+        log.warning(e)
         del exif_data["Exif"][piexif.ExifIFD.SceneType]
         # This Element piexif.ExifIFD.SceneType cause error on dump
         exif_bytes = piexif.dump(exif_data)
