@@ -8,6 +8,22 @@ Changelog
 
 .. towncrier release notes start
 
+8.1.0 (2026-06-15)
+------------------
+
+New features:
+
+
+- allow to set lazy to false, to suppress the loading="lazy" attribute
+  [MrTango] (#180)
+
+
+Bug fixes:
+
+
+- set sizes attribute on picture-tags [MrTango] (#179)
+
+
 8.0.0 (2026-05-07)
 ------------------
 
