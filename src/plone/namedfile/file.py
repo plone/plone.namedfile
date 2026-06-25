@@ -187,7 +187,6 @@ class NamedFile(Persistent, ModifiedPropertyMixin):
             self.contentType == other.contentType
             and self.filename == other.filename
             and getattr(self, "_hash", None) == getattr(other, "_hash", None)
-            and self._modified == getattr(other, "_modified", None)
         )
 
     def _getData(self):
@@ -357,7 +356,6 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
             self.contentType == other.contentType
             and self.filename == other.filename
             and getattr(self, "_hash", None) == getattr(other, "_hash", None)
-            and self._modified == getattr(other, "_modified", None)
         )
 
     def open(self, mode="r"):
