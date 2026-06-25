@@ -186,7 +186,8 @@ class NamedFile(Persistent, ModifiedPropertyMixin):
         return (
             self.contentType == other.contentType
             and self.filename == other.filename
-            and self._hash == getattr(other, "_hash", get_hash(other.data))
+            and getattr(self, "_hash", None) == getattr(other, "_hash", None)
+            and self._modified == getattr(other, "_modified", None)
         )
 
     def _getData(self):
@@ -355,7 +356,8 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
         return (
             self.contentType == other.contentType
             and self.filename == other.filename
-            and self._hash == getattr(other, "_hash", get_hash(other.data))
+            and getattr(self, "_hash", None) == getattr(other, "_hash", None)
+            and self._modified == getattr(other, "_modified", None)
         )
 
     def open(self, mode="r"):
@@ -373,10 +375,9 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
         dottedName = ".".join((data.__class__.__module__, data.__class__.__name__))
         log.debug("Storage selected for data: %s", dottedName)
         storable = getUtility(IStorage, name=dottedName)
-        storable.store(data, self._blob)
 
-        with self.open("r") as fp:
-            new_hash = get_hash(fp)
+        new_hash = get_hash(data)
+        storable.store(data, self._blob)
 
         if getattr(self, "_hash", None) != new_hash:
             self._hash = new_hash

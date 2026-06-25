@@ -32,11 +32,16 @@ def get_hash(data):
             if not chunk:
                 break
             h.update(chunk)
-        data.seek(0)
+        if hasattr(data, "seek"):
+            data.seek(0)
         return h.hexdigest()
     if isinstance(data, str):
         data = data.encode("utf-8")
-    return hashlib.sha256(data).hexdigest()
+    try:
+        return hashlib.sha256(data).hexdigest()
+    except TypeError:
+        # Handle Pdata, FileChunk, etc.
+        return hashlib.sha256(bytes(data)).hexdigest()
 
 
 # image-scaling

@@ -104,15 +104,13 @@ class TestStorable(unittest.TestCase):
             self.assertIn("Exif", fi.exif)
             self.assertEqual(500, fi._width)
             self.assertEqual(200, fi._height)
-            self.assertLessEqual(
+            self.assertLess(
                 read_bytes,
-                fi.getSize() + 1024,
-                "Images should not need to read all data twice to get exif, dimensions",
+                fi.getSize(),
+                "Images should not need to read all data to get exif, dimensions",
             )
             self.assertEqual(
-                blob_read,
-                4,
-                "blob opening for getsize, get_exif, getImageInfo and get_hash only",
+                blob_read, 3, "blob opening for getsize, get_exif and getImageInfo only"
             )
             self.assertEqual(
                 blob_write,
@@ -162,15 +160,13 @@ class TestStorable(unittest.TestCase):
         ):
             fi = NamedBlobImage(getFile("900.webp"), filename="900.webp")
             self.assertEqual((900, 900), fi.getImageSize())
-            self.assertLessEqual(
+            self.assertLess(
                 read_bytes,
-                fi.getSize() + 1024,
-                "Images should not need to read all data twice to get exif, dimensions",
+                fi.getSize(),
+                "Images should not need to read all data to get exif, dimensions",
             )
             self.assertEqual(
-                blob_read,
-                4,
-                "blob opening for getsize, get_exif, getImageInfo and get_hash only",
+                blob_read, 3, "blob opening for getsize, get_exif and getImageInfo only"
             )
 
     def test_rotate(self):
