@@ -1,7 +1,9 @@
-from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
-from plone.namedfile.file import NamedImage
 from plone.namedfile.file import NamedBlobImage
+from plone.namedfile.file import NamedImage
+from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
+
 import unittest
+
 
 zptlogo = (
     b"GIF89a\x10\x00\x10\x00\xd5\x00\x00\xff\xff\xff\xff\xff\xfe\xfc\xfd\xfd"
@@ -23,21 +25,29 @@ zptlogo = (
     b"\x00A\x00;"
 )
 
+
 class TestEquality(unittest.TestCase):
     layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+
     def test_named_image_equality(self):
         image1 = NamedImage(data=zptlogo, contentType="image/gif", filename="logo.gif")
         image2 = NamedImage(data=zptlogo, contentType="image/gif", filename="logo.gif")
         self.assertEqual(image1, image2)
 
     def test_named_blob_image_equality(self):
-        image1 = NamedBlobImage(data=zptlogo, contentType="image/gif", filename="logo.gif")
-        image2 = NamedBlobImage(data=zptlogo, contentType="image/gif", filename="logo.gif")
+        image1 = NamedBlobImage(
+            data=zptlogo, contentType="image/gif", filename="logo.gif"
+        )
+        image2 = NamedBlobImage(
+            data=zptlogo, contentType="image/gif", filename="logo.gif"
+        )
         self.assertEqual(image1, image2)
 
     def test_named_image_inequality_data(self):
         image1 = NamedImage(data=zptlogo, contentType="image/gif", filename="logo.gif")
-        image2 = NamedImage(data=b"other data", contentType="image/gif", filename="logo.gif")
+        image2 = NamedImage(
+            data=b"other data", contentType="image/gif", filename="logo.gif"
+        )
         self.assertNotEqual(image1, image2)
 
     def test_named_image_inequality_filename(self):

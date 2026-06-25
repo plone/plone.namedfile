@@ -33,6 +33,7 @@ import time
 import unittest
 import warnings
 
+
 # Unique scale name used to be a uuid.uui4(),
 # which is a combination of hexadecimal digits with dashes, total 36.
 # Now it is 'imagescalename-width-hash', where hash is 32.
@@ -739,8 +740,8 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
         scale1c = self.scaling.scale("image", width=100, height=80)
         scale2c = self.scaling.scale("image", width=80, height=60)
         self.assertNotEqual(scale1c.data, scale2c.data)
-        self.assertNotEqual(scale1a.data, scale1c.data, "scale not updated?")
-        self.assertNotEqual(scale2a.data, scale2c.data, "scale not updated?")
+        self.assertIsNot(scale1a.data, scale1c.data, "scale not updated?")
+        self.assertIsNot(scale2a.data, scale2c.data, "scale not updated?")
 
     def testFallBackToDatabaseModifiedTimeStamp(self):
         dt = self.item.modified()
@@ -751,7 +752,7 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
         # Since there is no _modified timestamp, _p_mtime is the fallback.
         self.item.image._p_mtime = (dt + 1).millis()
         scale_b = self.scaling.scale("image", width=100, height=80)
-        self.assertNotEqual(scale_a.data, scale_b.data)
+        self.assertIsNot(scale_a.data, scale_b.data)
 
     def testScaleCachingWithNonePMtime(self):
         # _p_mtime is None for unsaved objects (common in tests).
