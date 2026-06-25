@@ -11,6 +11,7 @@ from plone.namedfile.interfaces import INamedImage
 from plone.namedfile.interfaces import IStorage
 from plone.namedfile.utils import get_contenttype
 from plone.namedfile.utils import get_exif
+from plone.namedfile.utils import get_hash
 from plone.namedfile.utils import getImageInfo
 from plone.namedfile.utils import rotate_image
 from ZODB.blob import Blob
@@ -175,10 +176,18 @@ class NamedFile(Persistent, ModifiedPropertyMixin):
     def __init__(self, data=b"", contentType="", filename=None):
         if filename is not None and contentType in ("", "application/octet-stream"):
             contentType = get_contenttype(filename=filename)
-        self.data = data
+        self._setData(data)
         self.contentType = contentType
         self.filename = filename
-        self._modified = DateTime().millis()
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (
+            self.contentType == other.contentType
+            and self.filename == other.filename
+            and self._hash == getattr(other, "_hash", get_hash(other.data))
+        )
 
     def _getData(self):
         if isinstance(self._data, tuple(FILECHUNK_CLASSES)):
@@ -187,7 +196,10 @@ class NamedFile(Persistent, ModifiedPropertyMixin):
             return self._data
 
     def _setData(self, data):
-        self._modified = DateTime().millis()
+        new_hash = get_hash(data)
+        if getattr(self, "_hash", None) != new_hash:
+            self._hash = new_hash
+            self._modified = DateTime().millis()
 
         # Handle case when data is a string
         if isinstance(data, str):
@@ -336,7 +348,15 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
         f.close()
         self._setData(data)
         self.filename = filename
-        self._modified = DateTime().millis()
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (
+            self.contentType == other.contentType
+            and self.filename == other.filename
+            and self._hash == getattr(other, "_hash", get_hash(other.data))
+        )
 
     def open(self, mode="r"):
         if mode != "r" and "size" in self.__dict__:
@@ -354,7 +374,13 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
         log.debug("Storage selected for data: %s", dottedName)
         storable = getUtility(IStorage, name=dottedName)
         storable.store(data, self._blob)
-        self._modified = DateTime().millis()
+
+        with self.open("r") as fp:
+            new_hash = get_hash(fp)
+
+        if getattr(self, "_hash", None) != new_hash:
+            self._hash = new_hash
+            self._modified = DateTime().millis()
 
     def _getData(self):
         fp = self._blob.open("r")
