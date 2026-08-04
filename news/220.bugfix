@@ -1,0 +1,1 @@
+Fix ``TypeError`` in the ``@@download`` view when the context has no primary field. Now raises ``NotFound`` (404) instead. @avoinea

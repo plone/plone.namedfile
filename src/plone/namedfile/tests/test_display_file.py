@@ -225,3 +225,40 @@ class TestAttackVectorNamedFile(TestAttackVectorNamedImage):
 
 class TestAttackVectorNamedBlobFile(TestAttackVectorNamedFile):
     field_class = file.NamedBlobFile
+
+
+@implementer(IAttributeAnnotatable)
+class DummyContentNoPrimary(SimpleItem):
+    """Content without any primary field."""
+
+    id = __name__ = "noprimary"
+    title = "No Primary"
+
+    def Title(self):
+        return self.title
+
+
+class TestDownloadNoPrimaryField(unittest.TestCase):
+    """Test that @@download raises NotFound (404) when the context has
+    no primary field, instead of TypeError (500).
+
+    See https://github.com/plone/plone.namedfile/issues/220
+    """
+
+    layer = PLONE_NAMEDFILE_FUNCTIONAL_TESTING
+
+    def setUp(self):
+        self.portal = self.layer["app"]
+        item = DummyContentNoPrimary()
+        self.layer["app"]._setOb("noprimary", item)
+        self.item = self.layer["app"].noprimary
+        transaction.commit()
+
+    def test_download_without_primary_field_returns_404(self):
+        from plone.namedfile.browser import Download
+        from zope.publisher.interfaces import NotFound
+
+        request = self.layer["app"].REQUEST
+        view = Download(self.item, request)
+        with self.assertRaises(NotFound):
+            view._getFile()
