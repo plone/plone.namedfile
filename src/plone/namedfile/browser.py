@@ -157,6 +157,8 @@ class Download(BrowserView):
                 # Ensure that we have at least a fieldname
                 raise NotFound(self, "", self.request)
             self.fieldname = info.fieldname
+            if self.fieldname is None:
+                raise NotFound(self, "", self.request)
 
             # respect field level security as defined in plone.autoform
             # check if attribute access would be allowed!
