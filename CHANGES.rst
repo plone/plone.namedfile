@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+8.1.1 (2026-08-21)
+------------------
+
+Bug fixes:
+
+
+- Fix ``TypeError`` in the ``@@download`` view when the context has no primary field. Now raises ``NotFound`` (404) instead. @avoinea (#220)
+
+
 8.1.0 (2026-06-15)
 ------------------
 
