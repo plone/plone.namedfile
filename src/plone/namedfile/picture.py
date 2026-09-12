@@ -126,6 +126,12 @@ class Img2PictureTag:
                     img_tag["width"] = width
                 if height:
                     img_tag["height"] = height
+                if "auto" in sizes and lazy:
+                    # sizes="auto" on <source> requires the following <img> to
+                    # also have sizes="auto" and loading="lazy". Lazy loading
+                    # lets the browser use the image's layout width to select a
+                    # source before fetching it.
+                    img_tag["sizes"] = "auto"
                 picture_tag.append(img_tag)
         return picture_tag
 
