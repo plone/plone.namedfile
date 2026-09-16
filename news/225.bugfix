@@ -1,0 +1,3 @@
+Answer HEAD requests on ``@@download`` and ``@@display-file`` with the headers only.
+Before, the whole file was streamed to a client that does not read it, which blocked a worker thread until the connection was closed.
+[mliebischer]

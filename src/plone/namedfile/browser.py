@@ -97,6 +97,11 @@ class Download(BrowserView):
     def __call__(self):
         file = self._getFile()
         self.set_headers(file)
+        if self.request.get("REQUEST_METHOD", "GET").upper() == "HEAD":
+            # Neither ZPublisher nor the WSGI server drop the body of a HEAD
+            # response: do not stream the file to a client that does not read it.
+            # Range is only defined for GET (RFC 9110, section 14.2).
+            return b""
         request_range = self.handle_request_range(file)
         return stream_data(file, **request_range)
 
