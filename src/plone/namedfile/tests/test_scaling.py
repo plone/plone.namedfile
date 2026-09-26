@@ -1400,6 +1400,42 @@ class Img2PictureTagTests(unittest.TestCase):
             "photo.jpg/@@images/image/teaser",
         )
 
+    def _picture_css_class(self, class_attribute):
+        # Helper: build a minimal picture tag and return its class attribute.
+        sourceset = [{"scale": "preview"}]
+        attributes = {
+            "src": "http://nohost/item/@@images/image.jpeg",
+            "class": class_attribute,
+        }
+        picture_tag = self._makeOne().create_picture_tag(
+            sourceset, attributes, resolve_urls=False
+        )
+        return picture_tag.get("class")
+
+    def test_create_picture_tag_captioned_class_as_joined_string_in_list(self):
+        # ImageScaling.picture() wraps a possibly multi-valued css_class
+        # string into a one item list, e.g. ["fluid captioned"]. The
+        # "captioned" class should still be recognised in that case.
+        self.assertEqual(
+            self._picture_css_class(["fluid captioned"]), "captioned"
+        )
+
+    def test_create_picture_tag_captioned_class_as_separate_list_items(self):
+        # BeautifulSoup itself represents multi-valued class attributes as
+        # a list of individual class names.
+        self.assertEqual(
+            self._picture_css_class(["fluid", "captioned"]), "captioned"
+        )
+
+    def test_create_picture_tag_captioned_class_as_plain_string(self):
+        self.assertEqual(
+            self._picture_css_class("fluid captioned"), "captioned"
+        )
+
+    def test_create_picture_tag_without_captioned_class(self):
+        self.assertIsNone(self._picture_css_class(["fluid"]))
+        self.assertIsNone(self._picture_css_class([]))
+
 
 def test_suite():
     from unittest import defaultTestLoader

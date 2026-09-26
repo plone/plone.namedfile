@@ -70,6 +70,16 @@ class Img2PictureTag:
             obj = self.resolve_uid_url(src)
         picture_tag = soup.new_tag("picture")
         css_classes = attributes.get("class", [])
+        if isinstance(css_classes, str):
+            css_classes = css_classes.split()
+        else:
+            # Each entry may itself be a single string holding several
+            # space separated class names, e.g. when the caller passes
+            # css_class="fluid captioned" and it ends up wrapped as
+            # ["fluid captioned"] instead of ["fluid", "captioned"].
+            css_classes = [
+                name for entry in css_classes for name in entry.split()
+            ]
         if "captioned" in css_classes:
             picture_tag["class"] = "captioned"
         for i, source in enumerate(sourceset):

@@ -1,0 +1,1 @@
+Fix ``Img2PictureTag.create_picture_tag`` so the ``captioned`` CSS class on a picture tag is detected even when the caller passes several class names as one joined string, instead of only recognising them as separate list entries. @afonsojanu (#224)
