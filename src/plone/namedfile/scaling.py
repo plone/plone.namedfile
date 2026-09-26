@@ -11,8 +11,14 @@ from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IStableImageScale
 from plone.namedfile.picture import get_picture_variants
 from plone.namedfile.picture import Img2PictureTag
+from plone.namedfile.utils import avif_available
+from plone.namedfile.utils import AVIF_FORMAT
+from plone.namedfile.utils import AVIF_MIMETYPE
+from plone.namedfile.utils import AVIF_QUALITY
+from plone.namedfile.utils import AVIF_SUFFIX
 from plone.namedfile.utils import extract_media_type
 from plone.namedfile.utils import getHighPixelDensityScales
+from plone.namedfile.utils import offers_avif
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.protect import PostOnly
@@ -31,6 +37,7 @@ from ZODB.blob import BlobFile
 from ZODB.POSException import ConflictError
 from zope.cachedescriptors.property import Lazy as lazy_property
 from zope.component import getMultiAdapter
+from zope.component import queryMultiAdapter
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import alsoProvides
@@ -67,6 +74,22 @@ def _image_tag_from_values(*values):
     return " ".join(parts)
 
 
+def _avif_picture(img, srcset):
+    """Wrap ``<img>`` markup in a ``<picture>`` offering ``srcset`` as AVIF."""
+    if not img or not srcset:
+        return img
+    return (
+        f'<picture><source type="{AVIF_MIMETYPE}" srcset={quoteattr(srcset)} />'
+        f"{img}</picture>"
+    )
+
+
+def _extension(mimetype):
+    if mimetype == "image/svg+xml":
+        return "svg"
+    return mimetype.split("/")[-1].lower()
+
+
 class ImageScale(BrowserView):
     """A single image scale instance, used for rendering (tag/picture/srcset)
     and serving the scaled image data.
@@ -98,9 +121,9 @@ class ImageScale(BrowserView):
         if self.data is None:
             self.data = getattr(self.context, self.fieldname)
 
-        extension = self.data.contentType.split("/")[-1].lower()
-        if self.data.contentType == "image/svg+xml":
-            extension = "svg"
+        # A pre-registered scale has no data yet: self.data is the original,
+        # but the scale may be of another format, e.g. an AVIF twin.
+        extension = _extension(self._mimetype())
         if "uid" in info:
             name = info["uid"]
         else:
@@ -129,13 +152,16 @@ class ImageScale(BrowserView):
             base_url = self.context.absolute_url()
         return f"{base_url}/@@images/{uid}.{extension}"
 
+    def _mimetype(self):
+        return self.__dict__.get("mimetype") or self.data.contentType
+
     def absolute_url(self):
         return self.url
 
     def srcset_attribute(self):
         _srcset_attr = []
-        extension = self.data.contentType.split("/")[-1].lower()
         for scale in self.srcset:
+            extension = _extension(scale.get("mimetype") or self.data.contentType)
             url = self._scale_url(scale["uid"], extension, scale_info=scale)
             _srcset_attr.append(f"{url} {scale['scale']}x")
         srcset_attr = ", ".join(_srcset_attr)
@@ -193,7 +219,42 @@ class ImageScale(BrowserView):
             values.append(("srcset", srcset_attr))
 
         values.extend(kwargs.items())
-        return _image_tag_from_values(*values)
+        return _avif_picture(_image_tag_from_values(*values), self.avif_srcset())
+
+    def avif_twin(self, info=None):
+        """The AVIF twin of this (or ``info``'s) stored scale, as a pre-scale."""
+        try:
+            parameters = dict((info or self.__dict__).get("key") or ())
+        except (TypeError, ValueError):
+            return None  # a custom storage's key is nothing to re-request
+        if not parameters:
+            return None  # not a stored scale, e.g. the field itself
+        images = queryMultiAdapter((self.context, self.request), name="images")
+        if images is None:
+            return None
+        parameters.pop("modified", None)
+        if parameters.get("scale"):
+            # scale() takes a name or dimensions, not both.
+            parameters.pop("width", None)
+            parameters.pop("height", None)
+        parameters.update(target_format=AVIF_FORMAT, quality=AVIF_QUALITY)
+        return images.scale(pre=True, include_srcset=False, **parameters)
+
+    def avif_srcset(self):
+        """``srcset`` of an AVIF ``<source>`` twinning ``tag()``'s ``<img>``."""
+        if not offers_avif(self._mimetype()):
+            return ""
+        twin = self.avif_twin()
+        if twin is None:
+            return ""
+        candidates = [twin.url]
+        for info in self.srcset:
+            hd_twin = self.avif_twin(info)
+            if hd_twin is not None:
+                candidates.append(f"{hd_twin.url} {info['scale']}x")
+        if len(candidates) > 1:
+            candidates[0] = f"{candidates[0]} 1x"
+        return ", ".join(candidates)
 
     def validate_access(self):
         fieldname = getattr(self.data, "fieldname", getattr(self, "fieldname", None))
@@ -390,6 +451,10 @@ class DefaultImageScalingFactory:
         if orig_value is None:
             return
         want_original = height is None and width is None
+        if want_original and parameters.get("target_format"):
+            # Another format of the unscaled original: re-encode at its size.
+            width, height = orig_value.getImageSize()
+            want_original = False
         if not want_original:
             if "direction" in parameters:
                 warnings.warn(
@@ -635,6 +700,16 @@ class ImageScaling(BrowserView):
             if primary is None:
                 return  # 404
             fieldname = primary.fieldname
+        if scale is not None and scale.endswith(AVIF_SUFFIX):
+            # The AVIF twin of a named scale, e.g. "preview.avif".
+            if not avif_available():
+                return None  # 404
+            value = self.get_orig_image(fieldname)
+            if getattr(value, "contentType", None) == "image/svg+xml":
+                return None  # vector art has no AVIF twin
+            scale = scale[: -len(AVIF_SUFFIX)]
+            parameters.setdefault("target_format", AVIF_FORMAT)
+            parameters.setdefault("quality", AVIF_QUALITY)
         if scale is not None:
             if width is not None or height is not None:
                 logger.warning(
@@ -983,7 +1058,17 @@ class NavigationRootScaling(ImageScaling):
         ]
         if css_class:
             values.append(("class", css_class))
-        return _image_tag_from_values(*values)
+        img = _image_tag_from_values(*values)
+        if data["download"].startswith("http") or not offers_avif(
+            brain.image_scales[fieldname][0].get("content-type")
+        ):
+            # A custom url is nothing @@images can twin.
+            return img
+        # A tag from the catalog never wakes the object, so the twin is the
+        # named scale url rather than a stable one.
+        return _avif_picture(
+            img, f"{brain.getURL()}/@@images/{fieldname}/{scale}{AVIF_SUFFIX}"
+        )
 
 
 def _scale_sort_key(item):

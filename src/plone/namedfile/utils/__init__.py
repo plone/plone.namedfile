@@ -9,19 +9,34 @@ from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.svg_utils import process_svg
 from plone.registry.interfaces import IRegistry
 from urllib.parse import quote
+from urllib.parse import urlsplit
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import implementer
 from ZPublisher.Iterators import IStreamIterator
 
+import functools
 import mimetypes
+import os
 import piexif
+import PIL.features
 import PIL.Image
 import re
 import struct
 
 # image-scaling
 QUALITY_DEFAULT = 88
+
+# AVIF twins of image scales: ``<scale>.avif`` scale names.
+AVIF_FORMAT = "AVIF"
+AVIF_MIMETYPE = "image/avif"
+AVIF_SUFFIX = ".avif"
+# AVIF's quality scale is not JPEG's: at the default JPEG quality (88) a
+# photo comes out larger than its JPEG scale, while 65 looks on par with
+# JPEG 85-90 at roughly half the bytes.
+AVIF_QUALITY = 65
+# Mimetypes that get no AVIF twin: vector art, and what already is AVIF.
+NO_AVIF_TWIN_MIMETYPES = ("image/svg+xml", AVIF_MIMETYPE)
 pattern = re.compile(r"^(.*)\s+(\d+)\s*:\s*(\d+)$")
 
 log = getLogger(__name__)
@@ -419,3 +434,37 @@ def getQuality():
         settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
         return settings.quality or QUALITY_DEFAULT
     return QUALITY_DEFAULT
+
+
+@functools.cache
+def avif_available():
+    """Whether Pillow can encode AVIF (Pillow 11.2+ built with libavif)."""
+    return "avif" in PIL.features.modules and PIL.features.check_module("avif")
+
+
+def avif_enabled():
+    """Whether pictures and image tags offer AVIF twins of their scales.
+
+    On when Pillow can encode AVIF. Set the environment variable
+    ``NAMEDFILE_AVIF`` to ``0`` to turn it off.
+    """
+    if os.environ.get("NAMEDFILE_AVIF", "1").lower() in ("0", "false", "no", "off"):
+        return False
+    return avif_available()
+
+
+def offers_avif(mimetype):
+    """Whether an image of ``mimetype`` gets an AVIF twin."""
+    return bool(mimetype) and mimetype not in NO_AVIF_TWIN_MIMETYPES and avif_enabled()
+
+
+def fieldname_from_scale_url(url, default="image"):
+    """The field name in a ``.../@@images/<field>/<scale>`` or
+    ``.../@@images/<field>-<width>-<hash>.<ext>`` URL."""
+    parts = urlsplit(url).path.split("/")
+    if "@@images" not in parts:
+        return default
+    after = parts[parts.index("@@images") + 1 :]
+    if not after or not after[0]:
+        return default
+    return after[0].split("-")[0].split(".")[0]

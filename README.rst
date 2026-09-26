@@ -16,6 +16,25 @@ See the `image handling section of Plone documentation <https://6.docs.plone.org
 use the features provided by this package.
 
 
+AVIF image scales
+=================
+
+When Pillow can encode AVIF (Pillow 11.2 or later), every image offers AVIF
+twins of its scales:
+
+* ``@@images/<field>/<scale>.avif`` serves the named scale as AVIF.
+  ``scale(fieldname, "<scale>.avif")`` does the same in code.
+  The scale is generated on first request and stored like any other.
+* Picture tags (``@@images/picture`` and picture variants in rich text) get an
+  ``image/avif`` ``<source>`` in front of each ``<source>``.
+* ``tag()`` returns a ``<picture>`` with an AVIF ``<source>`` around the
+  ``<img>``, also for tags built from catalog metadata.
+
+SVG images and images that already are AVIF get no twin.
+Set the environment variable ``NAMEDFILE_AVIF=0`` to stop offering AVIF in
+the markup.
+
+
 Source Code
 ===========
 
