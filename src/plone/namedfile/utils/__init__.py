@@ -35,8 +35,9 @@ AVIF_SUFFIX = ".avif"
 # photo comes out larger than its JPEG scale, while 65 looks on par with
 # JPEG 85-90 at roughly half the bytes.
 AVIF_QUALITY = 65
-# Mimetypes that get no AVIF twin: vector art, and what already is AVIF.
-NO_AVIF_TWIN_MIMETYPES = ("image/svg+xml", AVIF_MIMETYPE)
+# Mimetypes that get no AVIF twin: vector art.  An AVIF original does get
+# one; its plain scales are the JPEG fallback.
+NO_AVIF_TWIN_MIMETYPES = ("image/svg+xml",)
 pattern = re.compile(r"^(.*)\s+(\d+)\s*:\s*(\d+)$")
 
 log = getLogger(__name__)

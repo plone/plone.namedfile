@@ -30,7 +30,10 @@ twins of its scales:
 * ``tag()`` returns a ``<picture>`` with an AVIF ``<source>`` around the
   ``<img>``, also for tags built from catalog metadata.
 
-SVG images and images that already are AVIF get no twin.
+SVG images get no twin.
+An uploaded AVIF image is never used as its own scale: its plain scales and
+the ``<img>`` of ``tag()`` are JPEG (PNG with alpha), so browsers without AVIF
+support fall back to them.
 Set the environment variable ``NAMEDFILE_AVIF=0`` to stop offering AVIF in
 the markup.
 
