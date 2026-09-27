@@ -454,7 +454,7 @@ class DefaultImageScalingFactory:
         # An AVIF original is never served as a scale: its scales are the
         # JPEG fallback of its AVIF twins.
         reencode = parameters.get("target_format") or (
-            orig_value.contentType == AVIF_MIMETYPE
+            getattr(orig_value, "contentType", None) == AVIF_MIMETYPE
         )
         if want_original and reencode:
             # Another format of the unscaled original: re-encode at its size.

@@ -142,6 +142,11 @@ class AvifScaleTests(unittest.TestCase):
         self.assertIn(("target_format", "AVIF"), scale.key)
         self.assertIn(("quality", 65), scale.key)
 
+    def test_unscalable_bytes_value_has_no_scale(self):
+        # e.g. a Bytes field fed by plone.formwidget.namedfile's converter
+        self.item.image = b"filenameb64:aW1hZ2UuanBn;datab64:/9j/4AAQ"
+        self.assertIsNone(self.images.scale("image", "preview"))
+
     def test_svg_has_no_avif_twin(self):
         self.item.image = NamedImage(getFile("image.svg"), "image/svg+xml", "i.svg")
         self.assertIsNone(self.images.scale("image", "preview.avif"))
