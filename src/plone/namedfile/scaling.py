@@ -453,10 +453,10 @@ class DefaultImageScalingFactory:
         want_original = height is None and width is None
         # An AVIF original is never served as a scale: its scales are the
         # JPEG fallback of its AVIF twins.
-        reencode = parameters.get("target_format") or (
+        needs_encoding = parameters.get("target_format") or (
             getattr(orig_value, "contentType", None) == AVIF_MIMETYPE
         )
-        if want_original and reencode:
+        if want_original and needs_encoding:
             # Another format of the unscaled original: re-encode at its size.
             width, height = orig_value.getImageSize()
             want_original = False
@@ -470,7 +470,7 @@ class DefaultImageScalingFactory:
                 # hashes and it negates the next condition.
                 mode = parameters.pop("direction")
             if (
-                not reencode
+                not needs_encoding
                 and not parameters
                 and height
                 and width
