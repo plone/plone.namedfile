@@ -1192,7 +1192,6 @@ class ImageTraverseTests(unittest.TestCase):
         tag = static_traverser.traverse(scale, stack)
         base = self.item.absolute_url()
         expected = (
-            r'(?:<picture><source type="image/avif" srcset="[^"]+" />)?'
             r'<img src="{0}/@@images/([0-9a-z]*-[0-9]*-[0-9a-f]{{32}}).(jpeg|gif|png)" '
             r'alt="foo" title="foo" height="(\d+)" width="(\d+)" />'.format(
                 base,

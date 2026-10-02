@@ -19,23 +19,38 @@ use the features provided by this package.
 AVIF image scales
 =================
 
-When Pillow can encode AVIF (Pillow 11.2 or later), every image offers AVIF
-twins of its scales:
+AVIF images are about half the size of JPEG images of the same visual quality,
+but need a browser that supports the format.
+The imaging control panel (registry record ``plone.avif_mode``, from
+``plone.base``) chooses how image scales use it:
 
-* ``@@images/<field>/<scale>.avif`` serves the named scale as AVIF.
+``avif_with_fallback`` (the default)
+  Plain scales keep their format, except that an uploaded AVIF image gets
+  JPEG scales (PNG with alpha): the plain scales are the fallback.
+  Picture tags (``@@images/picture``, ``ImageScaling.picture()`` and picture
+  variants in rich text) get an ``image/avif`` ``<source>`` in front of each
+  ``<source>``: browsers that can show AVIF load it, the others load the JPEG
+  or PNG scale.
+  ``@@images/<field>/<scale>.avif`` serves the AVIF version of a named scale,
   ``scale(fieldname, "<scale>.avif")`` does the same in code.
-  The scale is generated on first request and stored like any other.
-* Picture tags (``@@images/picture`` and picture variants in rich text) get an
-  ``image/avif`` ``<source>`` in front of each ``<source>``.
-* ``tag()`` returns a ``<picture>`` with an AVIF ``<source>`` around the
-  ``<img>``, also for tags built from catalog metadata.
+  ``tag()`` is untouched: a plain ``<img>`` with the usual scale.
 
-SVG images get no twin.
-An uploaded AVIF image is never used as its own scale: its plain scales and
-the ``<img>`` of ``tag()`` are JPEG (PNG with alpha), so browsers without AVIF
-support fall back to them.
-Set the environment variable ``NAMEDFILE_AVIF=0`` to stop offering AVIF in
-the markup.
+``avif_only``
+  Every scale is encoded as AVIF, including the ``<img>`` of ``tag()``, its
+  high pixel density ``srcset`` and the ``image_scales`` catalog metadata.
+  Fewer scales to store, but browsers without AVIF support show broken images.
+
+``disabled``
+  No conversion: scales keep the format of the uploaded image.
+  An uploaded JPEG gets JPEG scales, an uploaded AVIF gets AVIF scales and
+  is served as uploaded. ``<scale>.avif`` scale names are not found.
+
+AVIF scales are generated on demand and stored like any other scale.
+They are encoded with the control panel's AVIF quality (default 65, which looks
+like JPEG 85-90 at about half the size) and encoding speed (default 8).
+SVG images are never encoded as AVIF.
+Without AVIF support in Pillow (11.2 or later, built with libavif) the mode is
+``disabled``.
 
 
 Source Code

@@ -2,7 +2,13 @@ from bs4 import BeautifulSoup
 from DateTime import DateTime
 from io import BytesIO
 from OFS.SimpleItem import SimpleItem
+from plone import schema
+from plone.base.interfaces import IImageScalesFieldAdapter
+from plone.base.interfaces import IImagingSchema
+from plone.dexterity.content import Item
+from plone.namedfile.field import NamedImage as NamedImageField
 from plone.namedfile.file import NamedImage
+from plone.namedfile.interfaces import IAvailableSizes
 from plone.namedfile.interfaces import IImageScaleTraversable
 from plone.namedfile.picture import Img2PictureTag
 from plone.namedfile.scaling import ImageScaling
@@ -10,19 +16,32 @@ from plone.namedfile.scaling import NavigationRootScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import avif_available
+from plone.namedfile.utils import get_avif_mode
+from plone.namedfile.utils import get_avif_quality
+from plone.namedfile.utils import get_avif_speed
+from plone.namedfile.utils import getAllowedSizes
+from plone.namedfile.utils import getQuality
+from plone.registry import Registry
+from plone.registry.interfaces import IRegistry
+from plone.scale.interfaces import IScaledImageQuality
+from plone.scale.scale import scaleImage
 from unittest import mock
 from zope.annotation import IAttributeAnnotatable
+from zope.component import getGlobalSiteManager
+from zope.component import getMultiAdapter
 from zope.interface import implementer
+from zope.interface import Interface
+from zope.publisher.interfaces import NotFound
 
-import os
 import PIL.Image
 import plone.namedfile.picture
+import plone.namedfile.scaling
+import plone.namedfile.utils
 import re
 import unittest
 
 STABLE = re.compile(r"/@@images/image-\d+-[0-9a-f]{32}\.\w+$")
 STABLE_AVIF = re.compile(r"/@@images/image-\d+-[0-9a-f]{32}\.avif$")
-SIZES = {"teaser": (600, 65536), "preview": (400, 65536), "thumb": (128, 128)}
 
 
 def is_avif(data):
@@ -33,6 +52,10 @@ def is_jpeg(data):
     return data[:3] == b"\xff\xd8\xff"
 
 
+def is_png(data):
+    return data[:4] == b"\x89PNG"
+
+
 def avif_bytes(mode="RGB"):
     color = (30, 120, 200, 128) if mode == "RGBA" else (30, 120, 200)
     out = BytesIO()
@@ -40,8 +63,28 @@ def avif_bytes(mode="RGB"):
     return out.getvalue()
 
 
+def png_image():
+    return NamedImage(getFile("image.png"), "image/png", "image.png")
+
+
+def svg_image():
+    return NamedImage(getFile("image.svg"), "image/svg+xml", "image.svg")
+
+
+def avif_image(mode="RGB"):
+    return NamedImage(avif_bytes(mode), filename="pic.avif")
+
+
+def soup(markup):
+    return BeautifulSoup(str(markup), "html.parser")
+
+
 def sources(markup):
-    return BeautifulSoup(str(markup), "html.parser").find_all("source")
+    return soup(markup).find_all("source")
+
+
+def srcset_urls(source):
+    return [candidate.split()[0] for candidate in source["srcset"].split(",")]
 
 
 @implementer(IAttributeAnnotatable, IImageScaleTraversable)
@@ -83,36 +126,97 @@ class FakeBrain:
 
 
 @unittest.skipUnless(avif_available(), "Pillow cannot encode AVIF")
-class AvifScaleTests(unittest.TestCase):
+class AvifModeTestCase(unittest.TestCase):
+    """Image scales under one AVIF mode, with the imaging settings in a
+    registry like a Plone site has."""
+
     layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+    mode = "avif_with_fallback"
 
     def setUp(self):
         self.request = self.layer["request"]
+        self.registry = Registry()
+        self.registry.registerInterface(IImagingSchema, prefix="plone")
+        self.registry["plone.avif_mode"] = self.mode
+        self.sm = getGlobalSiteManager()
+        self.sm.registerUtility(self.registry, IRegistry)
+        self.sm.registerUtility(getAllowedSizes, IAvailableSizes)
+        self.sm.registerUtility(getQuality, IScaledImageQuality)
         item = DummyContent()
-        item.image = NamedImage(getFile("image.png"), "image/png", "image.png")
+        item.image = self.upload()
         self.layer["app"]._setOb("item", item)
         self.item = self.layer["app"].item
-        self._orig_sizes = ImageScaling._sizes
-        ImageScaling._sizes = SIZES
         self.images = ImageScaling(self.item, self.request)
 
     def tearDown(self):
-        ImageScaling._sizes = self._orig_sizes
+        self.sm.unregisterUtility(self.registry, IRegistry)
+        self.sm.unregisterUtility(getAllowedSizes, IAvailableSizes)
+        self.sm.unregisterUtility(getQuality, IScaledImageQuality)
+
+    def upload(self):
+        return png_image()
 
     def traverse(self, *path):
         self.request["TraversalRequestNameStack"] = list(reversed(path[1:]))
         return self.images.publishTraverse(self.request, path[0])
 
-    def test_avif_suffix_scales_to_avif(self):
+    def serve(self, url):
+        return self.traverse(url.rsplit("/", 1)[-1]).index_html()
+
+    def img(self, markup):
+        self.assertTrue(str(markup).startswith("<img "), markup)
+        return soup(markup).img
+
+    def picture(self):
+        # The layer has no catalog to resolve the item's UID with.
+        with mock.patch.object(
+            plone.namedfile.picture, "uuidToObject", return_value=self.item
+        ):
+            return self.images.picture("image", picture_variant="small")
+
+    def scale_kwargs(self, *args, **kwargs):
+        with mock.patch.object(
+            plone.namedfile.scaling, "scaleImage", wraps=scaleImage
+        ) as scaled:
+            self.images.scale(*args, **kwargs)
+        return scaled.call_args.kwargs
+
+
+class AvifWithFallbackTests(AvifModeTestCase):
+    def test_plain_scale_keeps_the_original_format(self):
+        scale = self.images.scale("image", "teaser")
+        self.assertEqual(scale.mimetype, "image/png")
+        self.assertTrue(scale.url.endswith(".png"), scale.url)
+
+    def test_avif_scale_name_scales_to_avif(self):
         scale = self.images.scale("image", "teaser.avif")
         self.assertEqual(scale.mimetype, "image/avif")
         self.assertTrue(is_avif(scale.data.data))
         self.assertTrue(scale.url.endswith(".avif"), scale.url)
         self.assertEqual((scale.width, scale.height), (200, 200))
 
-    def test_plain_scale_keeps_the_original_format(self):
-        scale = self.images.scale("image", "teaser")
-        self.assertEqual(scale.mimetype, "image/png")
+    def test_avif_scale_is_keyed_on_its_format_not_its_quality(self):
+        # Like the JPEG quality, the AVIF quality and speed are site settings,
+        # not part of a scale's identity.
+        key = dict(self.images.scale("image", "teaser.avif").key)
+        self.assertEqual(key["target_format"], "AVIF")
+        self.assertNotIn("quality", key)
+        self.assertNotIn("speed", key)
+
+    def test_avif_scale_is_encoded_with_the_registry_quality_and_speed(self):
+        self.registry["plone.avif_quality"] = 40
+        self.registry["plone.avif_speed"] = 3
+        kwargs = self.scale_kwargs("image", "teaser.avif")
+        self.assertEqual(kwargs["target_format"], "AVIF")
+        self.assertEqual(kwargs["quality"], 40)
+        self.assertEqual(kwargs["speed"], 3)
+
+    def test_plain_scale_is_encoded_with_the_jpeg_quality(self):
+        self.registry["plone.avif_quality"] = 40
+        kwargs = self.scale_kwargs("image", "teaser")
+        self.assertEqual(kwargs["quality"], 88)
+        self.assertNotIn("target_format", kwargs)
+        self.assertNotIn("speed", kwargs)
 
     def test_avif_pre_scale_has_a_stable_avif_url(self):
         twin = self.images.scale("image", "preview.avif", pre=True)
@@ -123,130 +227,68 @@ class AvifScaleTests(unittest.TestCase):
 
     def test_stable_avif_url_serves_avif_inline(self):
         twin = self.images.scale("image", "preview.avif", pre=True)
-        scale = self.traverse(twin.url.rsplit("/", 1)[-1])
-        data = scale.index_html()
-        self.assertTrue(is_avif(data))
+        self.assertTrue(is_avif(self.serve(twin.url)))
         response = self.request.response
         self.assertEqual(response.getHeader("Content-Type"), "image/avif")
         self.assertIsNone(response.getHeader("Content-Disposition"))
 
     def test_named_avif_url_serves_avif(self):
-        scale = self.traverse("image", "preview.avif")
-        self.assertTrue(is_avif(scale.index_html()))
+        self.assertTrue(is_avif(self.traverse("image", "preview.avif").index_html()))
 
     def test_unknown_scale_with_avif_suffix_is_not_found(self):
         self.assertIsNone(self.images.scale("image", "nosuchscale.avif"))
 
-    def test_avif_scale_is_keyed_on_its_own_quality(self):
-        scale = self.images.scale("image", "teaser.avif")
-        self.assertIn(("target_format", "AVIF"), scale.key)
-        self.assertIn(("quality", 65), scale.key)
-
-    def test_unscalable_bytes_value_has_no_scale(self):
-        # e.g. a Bytes field fed by plone.formwidget.namedfile's converter
-        self.item.image = b"filenameb64:aW1hZ2UuanBn;datab64:/9j/4AAQ"
-        self.assertIsNone(self.images.scale("image", "preview"))
-
-    def test_svg_has_no_avif_twin(self):
-        self.item.image = NamedImage(getFile("image.svg"), "image/svg+xml", "i.svg")
+    def test_svg_has_no_avif_scale(self):
+        self.item.image = svg_image()
         self.assertIsNone(self.images.scale("image", "preview.avif"))
-        markup = self.images.tag("image", scale="preview")
-        self.assertTrue(markup.startswith("<img"), markup)
+        self.assertEqual(
+            self.images.scale("image", "preview").mimetype, "image/svg+xml"
+        )
 
-    def test_tag_is_a_picture_with_an_avif_source(self):
+    def test_tag_is_a_plain_img(self):
         markup = self.images.tag("image", scale="thumb", css_class="thumb")
-        picture = BeautifulSoup(markup, "html.parser").picture
-        self.assertIsNotNone(picture, markup)
-        self.assertEqual(picture.source["type"], "image/avif")
-        self.assertRegex(picture.source["srcset"], STABLE_AVIF)
-        self.assertTrue(picture.img["src"].endswith(".png"), picture.img["src"])
-        self.assertEqual(picture.img["class"], ["thumb"])
-        scale = self.traverse(picture.source["srcset"].rsplit("/", 1)[-1])
-        self.assertTrue(is_avif(scale.index_html()))
+        img = self.img(markup)
+        self.assertTrue(img["src"].endswith(".png"), img["src"])
+        self.assertEqual(img["class"], ["thumb"])
 
-    def test_tag_of_the_original_gets_a_full_size_twin(self):
-        markup = self.images.tag("image")
-        srcset = sources(markup)[0]["srcset"]
-        scale = self.traverse(srcset.rsplit("/", 1)[-1])
-        self.assertTrue(is_avif(scale.index_html()))
-        self.assertEqual((scale.width, scale.height), (200, 200))
-
-    def test_tag_with_high_pixel_density_twins(self):
+    def test_high_pixel_density_srcset_keeps_the_original_format(self):
         self.images.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
-        scale = self.images.scale("image", width=50, height=50, pre=True)
-        twin_srcset = scale.avif_srcset()
-        one_x, two_x = twin_srcset.split(", ")
-        self.assertTrue(one_x.endswith(".avif 1x"), one_x)
-        self.assertTrue(two_x.endswith(".avif 2x"), two_x)
+        img = self.img(self.images.tag("image", width=50, height=50))
+        self.assertTrue(img["srcset"].endswith(".png 2x"), img["srcset"])
 
-    def test_env_variable_turns_twins_off(self):
-        with mock.patch.dict(os.environ, {"NAMEDFILE_AVIF": "0"}):
-            markup = self.images.tag("image", scale="thumb")
-        self.assertTrue(markup.startswith("<img"), markup)
-        # Serving AVIF scales keeps working: cached pages may point at them.
-        self.assertIsNotNone(self.images.scale("image", "thumb.avif"))
-
-    def test_brain_tag_gets_a_named_avif_twin(self):
+    def test_brain_tag_is_a_plain_img(self):
         view = NavigationRootScaling(self.item, self.request)
         markup = view._tag_from_brain_image_scales(
             FakeBrain("http://nohost/item"), "image", scale="thumb"
         )
-        picture = BeautifulSoup(markup, "html.parser").picture
-        self.assertIsNotNone(picture, markup)
-        self.assertEqual(
-            picture.source["srcset"], "http://nohost/item/@@images/image/thumb.avif"
-        )
-        self.assertEqual(
-            picture.img["src"], "http://nohost/item/@@images/image-128-abc.png"
-        )
+        img = self.img(markup)
+        self.assertEqual(img["src"], "http://nohost/item/@@images/image-128-abc.png")
 
-    def test_brain_tag_of_svg_or_custom_url_has_no_twin(self):
-        view = NavigationRootScaling(self.item, self.request)
-        for brain in (
-            FakeBrain("http://nohost/item", content_type="image/svg+xml"),
-            FakeBrain("http://nohost/item", download="https://cdn.example/x.png"),
-        ):
-            markup = view._tag_from_brain_image_scales(brain, "image", scale="thumb")
-            self.assertTrue(markup.startswith("<img"), markup)
+    def test_picture_offers_avif_in_front_of_each_source(self):
+        markup = self.picture()
+        avif, original = sources(markup)
+        self.assertEqual(avif["type"], "image/avif")
+        self.assertIsNone(original.get("type"))
+        self.assertEqual(avif["sizes"], original["sizes"])
+        for url in srcset_urls(avif):
+            self.assertRegex(url, STABLE_AVIF)
+        for url in srcset_urls(original):
+            self.assertRegex(url, STABLE)
+            self.assertTrue(url.endswith(".png"), url)
+        self.assertTrue(soup(markup).img["src"].endswith(".png"))
+        self.assertTrue(is_avif(self.serve(srcset_urls(avif)[0])))
+
+    def test_svg_picture_has_no_avif_source(self):
+        self.item.image = svg_image()
+        self.assertEqual(len(sources(self.picture())), 1)
 
 
-@unittest.skipUnless(avif_available(), "Pillow cannot encode AVIF")
-class AvifUploadFallbackTests(unittest.TestCase):
+class AvifUploadWithFallbackTests(AvifModeTestCase):
     """An AVIF upload is offered as AVIF, with a JPEG fallback for browsers
     that cannot show AVIF."""
 
-    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
-
-    def setUp(self):
-        self.request = self.layer["request"]
-        item = DummyContent()
-        item.image = NamedImage(avif_bytes(), filename="pic.avif")
-        self.layer["app"]._setOb("item", item)
-        self.item = self.layer["app"].item
-        self._orig_sizes = ImageScaling._sizes
-        ImageScaling._sizes = SIZES
-        self.images = ImageScaling(self.item, self.request)
-
-    def tearDown(self):
-        ImageScaling._sizes = self._orig_sizes
-
-    def serve(self, url):
-        self.request["TraversalRequestNameStack"] = []
-        scale = self.images.publishTraverse(self.request, url.rsplit("/", 1)[-1])
-        return scale.index_html()
-
-    def picture(self, markup):
-        picture = BeautifulSoup(markup, "html.parser").picture
-        self.assertIsNotNone(picture, markup)
-        return picture
-
-    def assert_avif_with_jpeg_fallback(self, picture):
-        avif = picture.find("source", type="image/avif")
-        self.assertIsNotNone(avif, picture)
-        self.assertIs(picture.find("source"), avif)  # first choice
-        self.assertTrue(is_avif(self.serve(avif["srcset"].split()[0])))
-        self.assertRegex(picture.img["src"], STABLE)
-        self.assertTrue(is_jpeg(self.serve(picture.img["src"])))
+    def upload(self):
+        return avif_image()
 
     def test_upload_is_avif(self):
         self.assertEqual(self.item.image.contentType, "image/avif")
@@ -256,115 +298,238 @@ class AvifUploadFallbackTests(unittest.TestCase):
         self.assertEqual(scale.mimetype, "image/jpeg")
         self.assertTrue(is_jpeg(scale.data.data))
 
-    def test_plain_pre_scale_serves_jpeg(self):
-        # Until generated, the URL carries the original's extension, as for
-        # any format plone.scale re-encodes; the scale itself is the fallback.
+    def test_plain_scale_is_keyed_on_the_fallback_format(self):
+        key = dict(self.images.scale("image", "teaser").key)
+        self.assertEqual(key["target_format"], "JPEG")
+        self.assertNotIn("quality", key)
+
+    def test_plain_scale_is_encoded_with_the_jpeg_quality(self):
+        self.registry["plone.avif_quality"] = 40
+        kwargs = self.scale_kwargs("image", "teaser")
+        self.assertEqual(kwargs["target_format"], "JPEG")
+        self.assertEqual(kwargs["quality"], 88)
+        self.assertNotIn("speed", kwargs)
+
+    def test_plain_pre_scale_has_a_jpeg_url_and_serves_jpeg(self):
         scale = self.images.scale("image", "preview", pre=True)
         self.assertRegex(scale.url, STABLE)
+        self.assertTrue(scale.url.endswith(".jpeg"), scale.url)
         self.assertTrue(is_jpeg(self.serve(scale.url)))
 
-    def test_avif_scale_stays_avif(self):
+    def test_avif_scale_name_stays_avif(self):
         scale = self.images.scale("image", "teaser.avif")
         self.assertEqual(scale.mimetype, "image/avif")
         self.assertTrue(is_avif(scale.data.data))
 
-    def test_tag_offers_avif_with_a_jpeg_img(self):
-        markup = self.images.tag("image", scale="teaser")
-        self.assert_avif_with_jpeg_fallback(self.picture(markup))
+    def test_tag_is_a_plain_img_pointing_at_jpeg(self):
+        img = self.img(self.images.tag("image", scale="teaser"))
+        self.assertRegex(img["src"], STABLE)
+        self.assertTrue(is_jpeg(self.serve(img["src"])))
 
-    def test_tag_of_the_original_offers_avif_with_a_jpeg_img(self):
-        markup = self.images.tag("image")
-        picture = self.picture(markup)
-        self.assert_avif_with_jpeg_fallback(picture)
-        self.assertEqual(picture.img["width"], "640")
+    def test_tag_of_the_original_is_a_full_size_jpeg(self):
+        img = self.img(self.images.tag("image"))
+        self.assertEqual(img["width"], "640")
+        self.assertTrue(is_jpeg(self.serve(img["src"])))
 
     def test_high_pixel_density_srcset_is_jpeg(self):
         self.images.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
-        markup = self.images.tag("image", scale="thumb")
-        img = self.picture(markup).img
+        img = self.img(self.images.tag("image", scale="thumb"))
         url = img["srcset"].split()[0]
         self.assertRegex(url, STABLE)
         self.assertTrue(is_jpeg(self.serve(url)))
 
     def test_alpha_falls_back_to_png(self):
-        self.item.image = NamedImage(avif_bytes("RGBA"), filename="pic.avif")
-        picture = self.picture(self.images.tag("image", scale="teaser"))
-        self.assertEqual(picture.source["type"], "image/avif")
-        self.assertEqual(self.serve(picture.img["src"])[:4], b"\x89PNG")
+        self.item.image = avif_image("RGBA")
+        img = self.img(self.images.tag("image", scale="teaser"))
+        self.assertTrue(is_png(self.serve(img["src"])))
 
-    @mock.patch.object(plone.namedfile.picture, "get_allowed_scales", new=lambda: SIZES)
-    @mock.patch.object(plone.namedfile.picture, "uuidToObject")
-    def test_picture_variant_offers_avif_with_jpeg_sources(self, uuid_to_object):
-        uuid_to_object.return_value = self.item
-        tag = Img2PictureTag().create_picture_tag(
-            [{"scale": "teaser", "additionalScales": ["preview"]}],
-            {"src": "http://nohost/item/@@images/image/teaser"},
-            uid="dummy_uuid",
-            fieldname="image",
-            resolve_urls=True,
-        )
-        avif, fallback = sources(tag)
+    def test_picture_offers_avif_with_a_jpeg_fallback(self):
+        markup = self.picture()
+        avif, fallback = sources(markup)
         self.assertEqual(avif["type"], "image/avif")
-        for candidate in fallback["srcset"].split(",\n"):
-            self.assertRegex(candidate.split()[0], STABLE)
-        self.assert_avif_with_jpeg_fallback(tag)
+        for url in srcset_urls(avif):
+            self.assertRegex(url, STABLE_AVIF)
+        self.assertTrue(is_avif(self.serve(srcset_urls(avif)[0])))
+        for url in srcset_urls(fallback):
+            self.assertRegex(url, STABLE)
+        self.assertTrue(is_jpeg(self.serve(srcset_urls(fallback)[0])))
+        self.assertTrue(is_jpeg(self.serve(soup(markup).img["src"])))
 
-    def test_brain_tag_offers_avif(self):
-        view = NavigationRootScaling(self.item, self.request)
-        markup = view._tag_from_brain_image_scales(
-            FakeBrain(
-                "http://nohost/item",
-                content_type="image/avif",
-                download="@@images/image-128-abc.jpeg",
-            ),
-            "image",
-            scale="thumb",
-        )
-        picture = self.picture(markup)
+
+class AvifOnlyTests(AvifModeTestCase):
+    mode = "avif_only"
+
+    def test_plain_scale_is_avif(self):
+        scale = self.images.scale("image", "teaser")
+        self.assertEqual(scale.mimetype, "image/avif")
+        self.assertTrue(is_avif(scale.data.data))
+        self.assertTrue(scale.url.endswith(".avif"), scale.url)
+        self.assertEqual(dict(scale.key)["target_format"], "AVIF")
+
+    def test_avif_scale_name_is_the_same_scale(self):
         self.assertEqual(
-            picture.source["srcset"], "http://nohost/item/@@images/image/thumb.avif"
+            self.images.scale("image", "teaser").uid,
+            self.images.scale("image", "teaser.avif").uid,
         )
-        self.assertTrue(picture.img["src"].endswith(".jpeg"), picture.img["src"])
 
-    def test_env_variable_off_keeps_the_jpeg_img(self):
-        with mock.patch.dict(os.environ, {"NAMEDFILE_AVIF": "0"}):
-            markup = self.images.tag("image", scale="teaser")
-        img = BeautifulSoup(markup, "html.parser").img
-        self.assertTrue(markup.startswith("<img"), markup)
-        self.assertTrue(is_jpeg(self.serve(img["src"])))
+    def test_plain_scale_is_encoded_with_the_avif_quality_and_speed(self):
+        self.registry["plone.avif_quality"] = 40
+        self.registry["plone.avif_speed"] = 3
+        kwargs = self.scale_kwargs("image", "teaser")
+        self.assertEqual(kwargs["target_format"], "AVIF")
+        self.assertEqual(kwargs["quality"], 40)
+        self.assertEqual(kwargs["speed"], 3)
 
+    def test_tag_is_a_plain_img_pointing_at_avif(self):
+        img = self.img(self.images.tag("image", scale="thumb"))
+        self.assertRegex(img["src"], STABLE_AVIF)
+        self.assertTrue(is_avif(self.serve(img["src"])))
 
-@unittest.skipUnless(avif_available(), "Pillow cannot encode AVIF")
-@mock.patch.object(
-    plone.namedfile.picture,
-    "get_allowed_scales",
-    new=lambda: SIZES,
-)
-class AvifPictureTagTests(unittest.TestCase):
-    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+    def test_tag_of_the_original_is_a_full_size_avif(self):
+        img = self.img(self.images.tag("image"))
+        self.assertRegex(img["src"], STABLE_AVIF)
+        self.assertEqual(img["width"], "200")
+        self.assertTrue(is_avif(self.serve(img["src"])))
 
-    def setUp(self):
-        item = DummyContent()
-        item.image = NamedImage(getFile("image.png"), "image/png", "image.png")
-        self.layer["app"]._setOb("item", item)
-        self.item = self.layer["app"].item
-        self._orig_sizes = ImageScaling._sizes
-        ImageScaling._sizes = SIZES
+    def test_high_pixel_density_srcset_is_avif(self):
+        self.images.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
+        img = self.img(self.images.tag("image", width=50, height=50))
+        url = img["srcset"].split()[0]
+        self.assertRegex(url, STABLE_AVIF)
+        self.assertTrue(is_avif(self.serve(url)))
 
-    def tearDown(self):
-        ImageScaling._sizes = self._orig_sizes
+    def test_svg_stays_svg(self):
+        self.item.image = svg_image()
+        self.assertEqual(self.images.scale("image", "teaser").mimetype, "image/svg+xml")
+        self.assertIsNone(self.images.scale("image", "teaser.avif"))
+        self.assertTrue(self.img(self.images.tag("image"))["src"].endswith(".svg"))
 
-    def test_named_scale_sources_get_avif_twins_in_front(self):
-        tag = Img2PictureTag().create_picture_tag(
-            [
-                {
-                    "scale": "teaser",
-                    "additionalScales": ["preview"],
-                    "media": "(min-width: 768px)",
-                }
-            ],
-            {"src": "/plone/pic/@@images/image/teaser", "alt": ""},
+    def test_picture_has_avif_sources_and_no_twins(self):
+        markup = self.picture()
+        (source,) = sources(markup)
+        for url in srcset_urls(source):
+            self.assertRegex(url, STABLE_AVIF)
+        self.assertRegex(soup(markup).img["src"], STABLE_AVIF)
+
+    def test_image_scales_metadata_points_at_avif(self):
+        content = Item()
+        field = NamedImageField()
+        field.__name__ = "image"
+        field.set(content, png_image())
+        serializer = getMultiAdapter(
+            (field, content, self.request), IImageScalesFieldAdapter
         )
+        (info,) = serializer()
+        self.assertTrue(info["download"].endswith(".avif"), info["download"])
+        for scale in info["scales"].values():
+            self.assertTrue(scale["download"].endswith(".avif"), scale)
+
+
+class AvifUploadAvifOnlyTests(AvifModeTestCase):
+    mode = "avif_only"
+
+    def upload(self):
+        return avif_image()
+
+    def test_plain_scale_is_avif(self):
+        scale = self.images.scale("image", "teaser")
+        self.assertEqual(scale.mimetype, "image/avif")
+        self.assertTrue(is_avif(scale.data.data))
+
+    def test_original_is_served_as_uploaded(self):
+        scale = self.images.scale("image")
+        self.assertEqual(scale.mimetype, "image/avif")
+        self.assertEqual(scale.data.data, self.item.image.data)
+
+
+class AvifDisabledTests(AvifModeTestCase):
+    mode = "disabled"
+
+    def test_plain_scale_keeps_the_original_format(self):
+        self.assertEqual(self.images.scale("image", "teaser").mimetype, "image/png")
+
+    def test_avif_scale_name_is_not_found(self):
+        self.assertIsNone(self.images.scale("image", "teaser.avif"))
+        with self.assertRaises(NotFound):
+            self.traverse("image", "teaser.avif")
+
+    def test_tag_is_a_plain_img(self):
+        img = self.img(self.images.tag("image", scale="thumb"))
+        self.assertTrue(img["src"].endswith(".png"), img["src"])
+
+    def test_picture_has_no_avif_source(self):
+        markup = self.picture()
+        self.assertEqual(len(sources(markup)), 1)
+        self.assertNotIn(".avif", str(markup))
+
+
+class AvifUploadDisabledTests(AvifModeTestCase):
+    """Disabled means no conversion: an AVIF upload gets AVIF scales."""
+
+    mode = "disabled"
+
+    def upload(self):
+        return avif_image()
+
+    def test_plain_scale_is_avif(self):
+        scale = self.images.scale("image", "teaser")
+        self.assertEqual(scale.mimetype, "image/avif")
+        self.assertTrue(is_avif(scale.data.data))
+        self.assertTrue(scale.url.endswith(".avif"), scale.url)
+
+    def test_plain_scale_is_not_asked_for_another_format(self):
+        self.assertNotIn("target_format", self.scale_kwargs("image", "teaser"))
+        self.assertNotIn(
+            "target_format", dict(self.images.scale("image", "teaser").key)
+        )
+
+    def test_original_is_served_as_uploaded(self):
+        scale = self.images.scale("image")
+        self.assertEqual(scale.mimetype, "image/avif")
+        self.assertEqual(scale.data.data, self.item.image.data)
+
+    def test_avif_scale_name_is_not_found(self):
+        self.assertIsNone(self.images.scale("image", "teaser.avif"))
+
+    def test_tag_is_a_plain_img_pointing_at_avif(self):
+        img = self.img(self.images.tag("image", scale="teaser"))
+        self.assertRegex(img["src"], STABLE_AVIF)
+        self.assertTrue(is_avif(self.serve(img["src"])))
+
+    def test_high_pixel_density_srcset_is_avif(self):
+        self.images.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
+        img = self.img(self.images.tag("image", scale="thumb"))
+        url = img["srcset"].split()[0]
+        self.assertRegex(url, STABLE_AVIF)
+        self.assertTrue(is_avif(self.serve(url)))
+
+    def test_alpha_stays_avif(self):
+        self.item.image = avif_image("RGBA")
+        img = self.img(self.images.tag("image", scale="teaser"))
+        self.assertTrue(is_avif(self.serve(img["src"])))
+
+    def test_picture_sources_are_the_avif_scales_without_twins(self):
+        markup = self.picture()
+        (source,) = sources(markup)
+        self.assertIsNone(source.get("type"))
+        for url in srcset_urls(source):
+            self.assertRegex(url, STABLE_AVIF)
+        self.assertTrue(is_avif(self.serve(srcset_urls(source)[0])))
+        self.assertTrue(is_avif(self.serve(soup(markup).img["src"])))
+
+
+class AvifPictureTagUrlTests(AvifModeTestCase):
+    """Picture tags built from a scale URL alone, without resolving the
+    image object, as the picture variants filter does for rich text."""
+
+    def create(self, src="/plone/pic/@@images/image/teaser", media=None):
+        source = {"scale": "teaser", "additionalScales": ["preview"]}
+        if media:
+            source["media"] = media
+        return Img2PictureTag().create_picture_tag([source], {"src": src, "alt": ""})
+
+    def test_sources_get_avif_twins_in_front(self):
+        tag = self.create(media="(min-width: 768px)")
         avif, original = sources(tag)
         self.assertEqual(avif["type"], "image/avif")
         self.assertEqual(
@@ -378,43 +543,56 @@ class AvifPictureTagTests(unittest.TestCase):
         self.assertNotIn(".avif", original["srcset"])
         self.assertNotIn(".avif", tag.img["src"])
 
-    @mock.patch.object(plone.namedfile.picture, "uuidToObject")
-    def test_resolved_sources_get_stable_avif_twins(self, uuid_to_object):
-        uuid_to_object.return_value = self.item
-        tag = Img2PictureTag().create_picture_tag(
-            [{"scale": "teaser", "additionalScales": ["preview"]}],
-            {"src": "http://nohost/item/@@images/image/teaser"},
-            uid="dummy_uuid",
-            fieldname="image",
-            resolve_urls=True,
-        )
-        avif, original = sources(tag)
-        for candidate in avif["srcset"].split(",\n"):
-            url, width = candidate.split(" ")
-            self.assertRegex(url, STABLE_AVIF)
-        self.assertNotIn(".avif", original["srcset"])
-
-    @mock.patch.object(plone.namedfile.picture, "uuidToObject")
-    def test_svg_pictures_have_no_avif_twin(self, uuid_to_object):
-        self.item.image = NamedImage(getFile("image.svg"), "image/svg+xml", "i.svg")
-        uuid_to_object.return_value = self.item
-        tag = Img2PictureTag().create_picture_tag(
-            [{"scale": "teaser", "additionalScales": []}],
-            {"src": "resolveuid/dummy_uuid/@@images/image/teaser"},
-        )
-        self.assertEqual(len(sources(tag)), 1)
-
     def test_urls_outside_images_get_no_twin(self):
-        tag = Img2PictureTag().create_picture_tag(
-            [{"scale": "teaser", "additionalScales": []}],
-            {"src": "/plone/some-image.png"},
-        )
-        self.assertEqual(len(sources(tag)), 1)
+        self.assertEqual(len(sources(self.create(src="/plone/some-image.png"))), 1)
 
-    def test_env_variable_turns_twins_off(self):
-        with mock.patch.dict(os.environ, {"NAMEDFILE_AVIF": "off"}):
-            tag = Img2PictureTag().create_picture_tag(
-                [{"scale": "teaser", "additionalScales": []}],
-                {"src": "/plone/pic/@@images/image/teaser"},
-            )
+    def test_disabled_mode_adds_no_twin(self):
+        self.registry["plone.avif_mode"] = "disabled"
+        self.assertNotIn(".avif", str(self.create()))
+
+    def test_avif_only_mode_adds_no_twin(self):
+        # The plain scale URLs serve AVIF in this mode.
+        self.registry["plone.avif_mode"] = "avif_only"
+        tag = self.create()
         self.assertEqual(len(sources(tag)), 1)
+        self.assertNotIn(".avif", str(tag))
+
+
+class AvifSettingsTests(unittest.TestCase):
+    """The settings fall back to their defaults without a registry or with a
+    plone.base that does not have them yet."""
+
+    layer = PLONE_NAMEDFILE_INTEGRATION_TESTING
+
+    def test_defaults_without_a_registry(self):
+        with mock.patch.object(plone.namedfile.utils, "avif_available", lambda: True):
+            self.assertEqual(get_avif_mode(), "avif_with_fallback")
+        self.assertEqual(get_avif_quality(), 65)
+        self.assertEqual(get_avif_speed(), 8)
+
+    def test_disabled_when_pillow_cannot_encode_avif(self):
+        with mock.patch.object(plone.namedfile.utils, "avif_available", lambda: False):
+            self.assertEqual(get_avif_mode(), "disabled")
+
+    def test_defaults_when_the_schema_lacks_the_settings(self):
+        class IOldImagingSchema(Interface):
+            quality = schema.Int(default=88)
+
+        registry = Registry()
+        registry.registerInterface(IOldImagingSchema, prefix="plone")
+        sm = getGlobalSiteManager()
+        sm.registerUtility(registry, IRegistry)
+        try:
+            with (
+                mock.patch.object(
+                    plone.namedfile.utils, "IImagingSchema", IOldImagingSchema
+                ),
+                mock.patch.object(
+                    plone.namedfile.utils, "avif_available", lambda: True
+                ),
+            ):
+                self.assertEqual(get_avif_mode(), "avif_with_fallback")
+                self.assertEqual(get_avif_quality(), 65)
+                self.assertEqual(get_avif_speed(), 8)
+        finally:
+            sm.unregisterUtility(registry, IRegistry)

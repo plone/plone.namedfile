@@ -3,11 +3,12 @@ from bs4 import BeautifulSoup
 from plone.app.uuid.utils import uuidToObject
 from plone.base.interfaces import IImagingSchema
 from plone.namedfile.interfaces import IAvailableSizes
-from plone.namedfile.utils import avif_enabled
 from plone.namedfile.utils import AVIF_MIMETYPE
 from plone.namedfile.utils import AVIF_SUFFIX
+from plone.namedfile.utils import AVIF_WITH_FALLBACK
+from plone.namedfile.utils import can_be_avif
 from plone.namedfile.utils import fieldname_from_scale_url
-from plone.namedfile.utils import offers_avif
+from plone.namedfile.utils import get_avif_mode
 from plone.registry.interfaces import IRegistry
 from urllib.parse import urlsplit
 from zope.component import getUtility
@@ -160,12 +161,15 @@ class Img2PictureTag:
         return picture_tag
 
     def wants_avif_sources(self, obj, fieldname):
-        """Whether the sources get AVIF twins, in front of them."""
+        """Whether each source gets an AVIF twin in front of it: only in the
+        mode whose plain scales are the fallback."""
+        if get_avif_mode() != AVIF_WITH_FALLBACK:
+            return False
         if obj is None:
             # Nothing to look at, e.g. a plain path: trust the url.
-            return avif_enabled()
+            return True
         value = getattr(aq_base(obj), fieldname, None)
-        return offers_avif(getattr(value, "contentType", None))
+        return can_be_avif(getattr(value, "contentType", None))
 
     def avif_scale_url(self, scale_url):
         """The AVIF twin of a ``.../@@images/<field>/<scale>`` url."""

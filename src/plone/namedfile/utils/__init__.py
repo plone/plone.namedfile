@@ -17,7 +17,6 @@ from ZPublisher.Iterators import IStreamIterator
 
 import functools
 import mimetypes
-import os
 import piexif
 import PIL.features
 import PIL.Image
@@ -27,17 +26,25 @@ import struct
 # image-scaling
 QUALITY_DEFAULT = 88
 
-# AVIF twins of image scales: ``<scale>.avif`` scale names.
+# AVIF image scales, see get_avif_mode().
 AVIF_FORMAT = "AVIF"
 AVIF_MIMETYPE = "image/avif"
+# The plain scales of an AVIF upload in avif_with_fallback mode (plone.scale
+# makes them PNG when they use alpha).
+AVIF_FALLBACK_FORMAT = "JPEG"
 AVIF_SUFFIX = ".avif"
-# AVIF's quality scale is not JPEG's: at the default JPEG quality (88) a
-# photo comes out larger than its JPEG scale, while 65 looks on par with
-# JPEG 85-90 at roughly half the bytes.
-AVIF_QUALITY = 65
-# Mimetypes that get no AVIF twin: vector art.  An AVIF original does get
-# one; its plain scales are the JPEG fallback.
-NO_AVIF_TWIN_MIMETYPES = ("image/svg+xml",)
+AVIF_DISABLED = "disabled"
+AVIF_WITH_FALLBACK = "avif_with_fallback"
+AVIF_ONLY = "avif_only"
+AVIF_MODE_DEFAULT = AVIF_WITH_FALLBACK
+# AVIF's quality scale is not JPEG's: 65 looks like JPEG 85-90 at about
+# half the bytes.
+AVIF_QUALITY_DEFAULT = 65
+# Pillow's default speed (6) encodes two to three times slower than 8, for
+# slightly smaller files.
+AVIF_SPEED_DEFAULT = 8
+# Vector art is never encoded as AVIF.
+NO_AVIF_MIMETYPES = ("image/svg+xml",)
 pattern = re.compile(r"^(.*)\s+(\d+)\s*:\s*(\d+)$")
 
 log = getLogger(__name__)
@@ -443,20 +450,38 @@ def avif_available():
     return "avif" in PIL.features.modules and PIL.features.check_module("avif")
 
 
-def avif_enabled():
-    """Whether pictures and image tags offer AVIF twins of their scales.
+def _imaging_setting(name, default):
+    registry = queryUtility(IRegistry)
+    if registry is None:
+        return default
+    settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
+    # AttributeError: a plone.base without the setting.  None: a site that
+    # has not been upgraded to it yet.
+    value = getattr(settings, name, None)
+    return default if value is None else value
 
-    On when Pillow can encode AVIF. Set the environment variable
-    ``NAMEDFILE_AVIF`` to ``0`` to turn it off.
-    """
-    if os.environ.get("NAMEDFILE_AVIF", "1").lower() in ("0", "false", "no", "off"):
-        return False
-    return avif_available()
+
+def get_avif_mode():
+    """The imaging control panel's AVIF mode: ``disabled``,
+    ``avif_with_fallback`` or ``avif_only``."""
+    if not avif_available():
+        return AVIF_DISABLED
+    return _imaging_setting("avif_mode", AVIF_MODE_DEFAULT)
 
 
-def offers_avif(mimetype):
-    """Whether an image of ``mimetype`` gets an AVIF twin."""
-    return bool(mimetype) and mimetype not in NO_AVIF_TWIN_MIMETYPES and avif_enabled()
+def get_avif_quality():
+    return (
+        _imaging_setting("avif_quality", AVIF_QUALITY_DEFAULT) or AVIF_QUALITY_DEFAULT
+    )
+
+
+def get_avif_speed():
+    return _imaging_setting("avif_speed", AVIF_SPEED_DEFAULT)
+
+
+def can_be_avif(mimetype):
+    """Whether an image of ``mimetype`` can be encoded as AVIF."""
+    return bool(mimetype) and mimetype not in NO_AVIF_MIMETYPES
 
 
 def fieldname_from_scale_url(url, default="image"):
