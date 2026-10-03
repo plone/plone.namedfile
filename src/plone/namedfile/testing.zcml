@@ -25,6 +25,9 @@
       title="View"
       />
 
+  <!-- Field adapters, so tests can register IImagingSchema in a registry. -->
+  <include package="plone.registry" />
+
   <include package="plone.namedfile" />
   <class class="plone.dexterity.content.DexterityContent">
     <!-- This is normally done in plone.app.dexterity. -->

@@ -9,19 +9,42 @@ from plone.namedfile.utils.png_utils import process_png
 from plone.namedfile.utils.svg_utils import process_svg
 from plone.registry.interfaces import IRegistry
 from urllib.parse import quote
+from urllib.parse import urlsplit
 from zope.component import queryUtility
 from zope.deprecation import deprecate
 from zope.interface import implementer
 from ZPublisher.Iterators import IStreamIterator
 
+import functools
 import mimetypes
 import piexif
+import PIL.features
 import PIL.Image
 import re
 import struct
 
 # image-scaling
 QUALITY_DEFAULT = 88
+
+# AVIF image scales, see get_avif_mode().
+AVIF_FORMAT = "AVIF"
+AVIF_MIMETYPE = "image/avif"
+# The plain scales of an AVIF upload in avif_with_fallback mode (plone.scale
+# makes them PNG when they use alpha).
+AVIF_FALLBACK_FORMAT = "JPEG"
+AVIF_SUFFIX = ".avif"
+AVIF_DISABLED = "disabled"
+AVIF_WITH_FALLBACK = "avif_with_fallback"
+AVIF_ONLY = "avif_only"
+AVIF_MODE_DEFAULT = AVIF_WITH_FALLBACK
+# AVIF's quality scale is not JPEG's: 65 looks like JPEG 85-90 at about
+# half the bytes.
+AVIF_QUALITY_DEFAULT = 65
+# Pillow's default speed (6) encodes two to three times slower than 8, for
+# slightly smaller files.
+AVIF_SPEED_DEFAULT = 8
+# Vector art is never encoded as AVIF.
+NO_AVIF_MIMETYPES = ("image/svg+xml",)
 pattern = re.compile(r"^(.*)\s+(\d+)\s*:\s*(\d+)$")
 
 log = getLogger(__name__)
@@ -419,3 +442,55 @@ def getQuality():
         settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
         return settings.quality or QUALITY_DEFAULT
     return QUALITY_DEFAULT
+
+
+@functools.cache
+def avif_available():
+    """Whether Pillow can encode AVIF (Pillow 11.2+ built with libavif)."""
+    return "avif" in PIL.features.modules and PIL.features.check_module("avif")
+
+
+def _imaging_setting(name, default):
+    registry = queryUtility(IRegistry)
+    if registry is None:
+        return default
+    settings = registry.forInterface(IImagingSchema, prefix="plone", check=False)
+    # AttributeError: a plone.base without the setting.  None: a site that
+    # has not been upgraded to it yet.
+    value = getattr(settings, name, None)
+    return default if value is None else value
+
+
+def get_avif_mode():
+    """The imaging control panel's AVIF mode: ``disabled``,
+    ``avif_with_fallback`` or ``avif_only``."""
+    if not avif_available():
+        return AVIF_DISABLED
+    return _imaging_setting("avif_mode", AVIF_MODE_DEFAULT)
+
+
+def get_avif_quality():
+    return (
+        _imaging_setting("avif_quality", AVIF_QUALITY_DEFAULT) or AVIF_QUALITY_DEFAULT
+    )
+
+
+def get_avif_speed():
+    return _imaging_setting("avif_speed", AVIF_SPEED_DEFAULT)
+
+
+def can_be_avif(mimetype):
+    """Whether an image of ``mimetype`` can be encoded as AVIF."""
+    return bool(mimetype) and mimetype not in NO_AVIF_MIMETYPES
+
+
+def fieldname_from_scale_url(url, default="image"):
+    """The field name in a ``.../@@images/<field>/<scale>`` or
+    ``.../@@images/<field>-<width>-<hash>.<ext>`` URL."""
+    parts = urlsplit(url).path.split("/")
+    if "@@images" not in parts:
+        return default
+    after = parts[parts.index("@@images") + 1 :]
+    if not after or not after[0]:
+        return default
+    return after[0].split("-")[0].split(".")[0]

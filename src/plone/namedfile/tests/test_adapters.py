@@ -49,7 +49,9 @@ class ImageScalesAdaptersRegisteredTest(unittest.TestCase):
         new=patch_get_scale_infos,
         spec=True,
     )
-    def serialize(self, context, field):
+    # The default AVIF mode adds an "avif" twin to each scale, see test_avif.
+    @patch.object(plone.namedfile.adapters, "get_avif_mode", return_value="disabled")
+    def serialize(self, context, field, get_avif_mode):
         serializer = queryMultiAdapter(
             (field, context, self.request), IImageScalesFieldAdapter
         )

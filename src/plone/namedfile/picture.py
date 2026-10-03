@@ -1,10 +1,19 @@
+from Acquisition import aq_base
 from bs4 import BeautifulSoup
 from plone.app.uuid.utils import uuidToObject
 from plone.base.interfaces import IImagingSchema
 from plone.namedfile.interfaces import IAvailableSizes
+from plone.namedfile.utils import AVIF_MIMETYPE
+from plone.namedfile.utils import AVIF_SUFFIX
+from plone.namedfile.utils import AVIF_WITH_FALLBACK
+from plone.namedfile.utils import can_be_avif
+from plone.namedfile.utils import fieldname_from_scale_url
+from plone.namedfile.utils import get_avif_mode
 from plone.registry.interfaces import IRegistry
+from urllib.parse import urlsplit
 from zope.component import getUtility
 from zope.component import queryUtility
+from zope.component.hooks import getSite
 
 import logging
 import re
@@ -68,6 +77,10 @@ class Img2PictureTag:
             obj = uuidToObject(uid, unrestricted=True)
         else:
             obj = self.resolve_uid_url(src)
+        avif = self.wants_avif_sources(
+            obj if obj is not None else self.resolve_scale_url(src),
+            fieldname or fieldname_from_scale_url(src or ""),
+        )
         picture_tag = soup.new_tag("picture")
         css_classes = attributes.get("class", [])
         if "captioned" in css_classes:
@@ -84,6 +97,7 @@ class Img2PictureTag:
                 ]
             source_scales = [target_scale] + additional_scales
             source_srcset = []
+            avif_srcset = []
             for scale in source_scales:
                 scale_width = self.get_scale_width(scale)
                 if scale == target_scale:
@@ -95,11 +109,30 @@ class Img2PictureTag:
                     scale_view = obj.unrestrictedTraverse("@@images", None)
                     scale_obj = scale_view.scale(fieldname, scale, pre=True)
                     scale_url = scale_obj.url
+                    avif_url = None
+                    if avif:
+                        avif_obj = scale_view.scale(
+                            fieldname, f"{scale}{AVIF_SUFFIX}", pre=True
+                        )
+                        avif_url = avif_obj.url if avif_obj is not None else None
                 else:
                     scale_url = self.update_src_scale(src=src, scale=scale)
+                    avif_url = self.avif_scale_url(scale_url) if avif else None
                 source_srcset.append(f"{scale_url} {scale_width}w")
+                if avif_url:
+                    avif_srcset.append(f"{avif_url} {scale_width}w")
             if not sizes:
                 sizes = f"(min-width: 576px) {target_width}px, (min-width: 768px) 600px, 98vw"
+            if avif_srcset:
+                avif_tag = soup.new_tag(
+                    "source",
+                    type=AVIF_MIMETYPE,
+                    srcset=",\n".join(avif_srcset),
+                    sizes=sizes,
+                )
+                if media:
+                    avif_tag["media"] = media
+                picture_tag.append(avif_tag)
             source_tag = soup.new_tag(
                 "source", srcset=",\n".join(source_srcset), sizes=sizes
             )
@@ -128,6 +161,38 @@ class Img2PictureTag:
                     img_tag["height"] = height
                 picture_tag.append(img_tag)
         return picture_tag
+
+    def wants_avif_sources(self, obj, fieldname):
+        """Whether each source gets an AVIF twin in front of it: only in the
+        mode whose plain scales are the fallback, and only for an image the
+        scaling view can serve as AVIF."""
+        if get_avif_mode() != AVIF_WITH_FALLBACK:
+            return False
+        if obj is None:
+            # No image to check, e.g. a path that leads nowhere.
+            return False
+        value = getattr(aq_base(obj), fieldname, None)
+        return can_be_avif(getattr(value, "contentType", None))
+
+    def resolve_scale_url(self, src):
+        """The object a plain ``.../@@images/...`` url points at, or None."""
+        if not src:
+            return None
+        parts = urlsplit(src).path.split("/")
+        if "@@images" not in parts:
+            return None
+        path = "/".join(parts[: parts.index("@@images")])
+        site = getSite()
+        if not path or site is None:
+            return None
+        # An absolute path starts at the root, a relative one at the site.
+        return site.unrestrictedTraverse(path, None)
+
+    def avif_scale_url(self, scale_url):
+        """The AVIF twin of a ``.../@@images/<field>/<scale>`` url."""
+        if "@@images" not in urlsplit(scale_url).path.split("/"):
+            return None
+        return f"{scale_url}{AVIF_SUFFIX}"
 
     def resolve_uid_url(self, href):
         obj = None
