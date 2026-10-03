@@ -34,6 +34,9 @@ The imaging control panel (registry record ``plone.avif_mode``, from
   ``@@images/<field>/<scale>.avif`` serves the AVIF version of a named scale,
   ``scale(fieldname, "<scale>.avif")`` does the same in code.
   ``tag()`` is untouched: a plain ``<img>`` with the usual scale.
+  In the ``image_scales`` catalog metadata each scale carries the stable URL
+  of its AVIF version as ``avif.download``, next to the plain ``download``,
+  so listings, plone.restapi and Volto can offer it without waking the object.
 
 ``avif_only``
   Every scale is encoded as AVIF, including the ``<img>`` of ``tag()``, its

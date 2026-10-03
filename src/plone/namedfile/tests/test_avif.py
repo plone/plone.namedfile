@@ -16,6 +16,7 @@ from plone.namedfile.scaling import NavigationRootScaling
 from plone.namedfile.testing import PLONE_NAMEDFILE_INTEGRATION_TESTING
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import avif_available
+from plone.namedfile.utils import AVIF_SUFFIX
 from plone.namedfile.utils import get_avif_mode
 from plone.namedfile.utils import get_avif_quality
 from plone.namedfile.utils import get_avif_speed
@@ -42,6 +43,8 @@ import unittest
 
 STABLE = re.compile(r"/@@images/image-\d+-[0-9a-f]{32}\.\w+$")
 STABLE_AVIF = re.compile(r"/@@images/image-\d+-[0-9a-f]{32}\.avif$")
+# The catalog metadata stores the path below the object.
+STABLE_AVIF_PATH = re.compile(r"^@@images/image-\d+-[0-9a-f]{32}\.avif$")
 
 
 def is_avif(data):
@@ -115,6 +118,7 @@ class FakeBrain:
                             "download": download or "@@images/image-128-abc.png",
                             "width": 128,
                             "height": 128,
+                            "avif": {"download": "@@images/image-128-abc.avif"},
                         }
                     },
                 }
@@ -162,6 +166,19 @@ class AvifModeTestCase(unittest.TestCase):
 
     def serve(self, url):
         return self.traverse(url.rsplit("/", 1)[-1]).index_html()
+
+    def image_scales_metadata(self, image):
+        """The image_scales catalog metadata of a Dexterity item holding
+        ``image``, and the @@images view of that item."""
+        content = Item()
+        field = NamedImageField()
+        field.__name__ = "image"
+        field.set(content, image)
+        adapter = getMultiAdapter(
+            (field, content, self.request), IImageScalesFieldAdapter
+        )
+        (info,) = adapter()
+        return info, ImageScaling(content, self.request)
 
     def img(self, markup):
         self.assertTrue(str(markup).startswith("<img "), markup)
@@ -263,6 +280,26 @@ class AvifWithFallbackTests(AvifModeTestCase):
         )
         img = self.img(markup)
         self.assertEqual(img["src"], "http://nohost/item/@@images/image-128-abc.png")
+        self.assertNotIn(".avif", str(markup))
+
+    def test_image_scales_metadata_carries_avif_twins(self):
+        info, images = self.image_scales_metadata(png_image())
+        self.assertTrue(info["download"].endswith(".png"), info["download"])
+        self.assertNotIn("avif", info)
+        self.assertTrue(info["scales"])
+        for name, scale in info["scales"].items():
+            self.assertTrue(scale["download"].endswith(".png"), scale)
+            twin = scale["avif"]["download"]
+            self.assertRegex(twin, STABLE_AVIF_PATH)
+            # The stored scale that "<name>.avif" serves, not a second one.
+            named = images.scale("image", f"{name}{AVIF_SUFFIX}", pre=True)
+            self.assertEqual(twin, named.url.lstrip("/"))
+
+    def test_svg_image_scales_metadata_has_no_avif_twins(self):
+        info, _ = self.image_scales_metadata(svg_image())
+        self.assertTrue(info["scales"])
+        for scale in info["scales"].values():
+            self.assertNotIn("avif", scale)
 
     def test_picture_offers_avif_in_front_of_each_source(self):
         markup = self.picture()
@@ -355,6 +392,18 @@ class AvifUploadWithFallbackTests(AvifModeTestCase):
         self.assertTrue(is_jpeg(self.serve(srcset_urls(fallback)[0])))
         self.assertTrue(is_jpeg(self.serve(soup(markup).img["src"])))
 
+    def test_image_scales_metadata_has_jpeg_scales_with_avif_twins(self):
+        info, images = self.image_scales_metadata(avif_image())
+        self.assertEqual(info["content-type"], "image/avif")
+        self.assertTrue(info["download"].endswith(".jpeg"), info["download"])
+        self.assertTrue(info["scales"])
+        for name, scale in info["scales"].items():
+            self.assertTrue(scale["download"].endswith(".jpeg"), scale)
+            twin = scale["avif"]["download"]
+            self.assertRegex(twin, STABLE_AVIF_PATH)
+            named = images.scale("image", f"{name}{AVIF_SUFFIX}", pre=True)
+            self.assertEqual(twin, named.url.lstrip("/"))
+
 
 class AvifOnlyTests(AvifModeTestCase):
     mode = "avif_only"
@@ -411,18 +460,13 @@ class AvifOnlyTests(AvifModeTestCase):
             self.assertRegex(url, STABLE_AVIF)
         self.assertRegex(soup(markup).img["src"], STABLE_AVIF)
 
-    def test_image_scales_metadata_points_at_avif(self):
-        content = Item()
-        field = NamedImageField()
-        field.__name__ = "image"
-        field.set(content, png_image())
-        serializer = getMultiAdapter(
-            (field, content, self.request), IImageScalesFieldAdapter
-        )
-        (info,) = serializer()
+    def test_image_scales_metadata_points_at_avif_without_twins(self):
+        info, _ = self.image_scales_metadata(png_image())
         self.assertTrue(info["download"].endswith(".avif"), info["download"])
+        self.assertTrue(info["scales"])
         for scale in info["scales"].values():
             self.assertTrue(scale["download"].endswith(".avif"), scale)
+            self.assertNotIn("avif", scale)
 
 
 class AvifUploadAvifOnlyTests(AvifModeTestCase):
@@ -461,6 +505,13 @@ class AvifDisabledTests(AvifModeTestCase):
         markup = self.picture()
         self.assertEqual(len(sources(markup)), 1)
         self.assertNotIn(".avif", str(markup))
+
+    def test_image_scales_metadata_has_no_avif_twins(self):
+        info, _ = self.image_scales_metadata(png_image())
+        self.assertTrue(info["scales"])
+        for scale in info["scales"].values():
+            self.assertTrue(scale["download"].endswith(".png"), scale)
+            self.assertNotIn("avif", scale)
 
 
 class AvifUploadDisabledTests(AvifModeTestCase):

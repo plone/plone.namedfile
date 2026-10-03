@@ -1,5 +1,9 @@
 from plone.dexterity.interfaces import IDexterityContent
 from plone.namedfile.interfaces import INamedImageField
+from plone.namedfile.utils import AVIF_FORMAT
+from plone.namedfile.utils import AVIF_WITH_FALLBACK
+from plone.namedfile.utils import can_be_avif
+from plone.namedfile.utils import get_avif_mode
 from plone.registry.interfaces import IRegistry
 from zope.component import adapter
 from zope.component import getMultiAdapter
@@ -56,6 +60,12 @@ class ImageFieldScales:
             # If we cannot find the images view, there is nothing for us to do.
             return
         width, height = image.getImageSize()
+        # In the mode whose plain scales are the fallback, each scale carries
+        # the stable url of its AVIF twin, so that consumers of the catalog
+        # metadata can offer it without waking the object.
+        self.avif_twins = get_avif_mode() == AVIF_WITH_FALLBACK and can_be_avif(
+            image.contentType
+        )
         url = self.get_original_image_url(self.field.__name__, width, height)
         scales = self.get_scales(self.field, width, height)
 
@@ -83,8 +93,8 @@ class ImageFieldScales:
         """
         scales = {}
 
-        for name, actual_width, actual_height in _get_scale_infos():
-            if actual_width > width:
+        for name, scale_width, scale_height in _get_scale_infos():
+            if scale_width > width:
                 # The width of the scale is larger than the original width.
                 # Scaling would simply return the original (or perhaps a copy
                 # with the same size).  We do not need this scale.
@@ -94,37 +104,40 @@ class ImageFieldScales:
 
             # Get the scale info without actually generating the scale,
             # nor any old-style HiDPI scales.
-            scale = self.images_view.scale(
-                field.__name__,
-                width=actual_width,
-                height=actual_height,
-                pre=True,
-                include_srcset=False,
-            )
+            scale = self._pre_scale(field.__name__, scale_width, scale_height)
             if scale is None:
                 # If we cannot get a scale, it is probably a corrupt image.
                 continue
 
-            url = scale.url
-            actual_width = scale.width
-            actual_height = scale.height
-
             scales[name] = {
-                "download": self._scale_view_from_url(url),
-                "width": actual_width,
-                "height": actual_height,
+                "download": self._scale_view_from_url(scale.url),
+                "width": scale.width,
+                "height": scale.height,
             }
+            if self.avif_twins:
+                # The same stored scale that "<name>.avif" serves.
+                twin = self._pre_scale(
+                    field.__name__, scale_width, scale_height, target_format=AVIF_FORMAT
+                )
+                if twin is not None:
+                    scales[name]["avif"] = {
+                        "download": self._scale_view_from_url(twin.url),
+                    }
 
         return scales
 
-    def get_original_image_url(self, fieldname, width, height):
-        scale = self.images_view.scale(
+    def _pre_scale(self, fieldname, width, height, **parameters):
+        return self.images_view.scale(
             fieldname,
             width=width,
             height=height,
             pre=True,
             include_srcset=False,
+            **parameters,
         )
+
+    def get_original_image_url(self, fieldname, width, height):
+        scale = self._pre_scale(fieldname, width, height)
         # Corrupt images may not have a scale.
         return scale.url if scale else None
 
