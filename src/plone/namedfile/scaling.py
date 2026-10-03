@@ -419,8 +419,10 @@ class DefaultImageScalingFactory:
         if orig_value is None:
             return
         want_original = height is None and width is None
-        reencode = self.needs_reencoding(orig_value, parameters.get("target_format"))
-        if want_original and reencode:
+        needs_encoding = self.needs_reencoding(
+            orig_value, parameters.get("target_format")
+        )
+        if want_original and needs_encoding:
             # The unscaled original in another format: re-encode at its size.
             width, height = orig_value.getImageSize()
             want_original = False
@@ -434,7 +436,7 @@ class DefaultImageScalingFactory:
                 # hashes and it negates the next condition.
                 mode = parameters.pop("direction")
             if (
-                not reencode
+                not needs_encoding
                 and not parameters
                 and height
                 and width
