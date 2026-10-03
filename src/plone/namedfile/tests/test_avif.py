@@ -376,9 +376,13 @@ class AvifUploadWithFallbackTests(AvifModeTestCase):
         self.assertTrue(is_jpeg(self.serve(url)))
 
     def test_alpha_falls_back_to_png(self):
+        # The stable url is registered before the scale exists, so it guesses
+        # the fallback format; the response reports what it really serves.
         self.item.image = avif_image("RGBA")
         img = self.img(self.images.tag("image", scale="teaser"))
+        self.assertTrue(img["src"].endswith(".jpeg"), img["src"])
         self.assertTrue(is_png(self.serve(img["src"])))
+        self.assertEqual(self.request.response.getHeader("Content-Type"), "image/png")
 
     def test_picture_offers_avif_with_a_jpeg_fallback(self):
         markup = self.picture()
