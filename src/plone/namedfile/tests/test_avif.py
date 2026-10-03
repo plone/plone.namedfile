@@ -574,14 +574,28 @@ class AvifUploadDisabledTests(AvifModeTestCase):
 
 
 class AvifPictureTagUrlTests(AvifModeTestCase):
-    """Picture tags built from a scale URL alone, without resolving the
-    image object, as the picture variants filter does for rich text."""
+    """Picture tags built from a plain scale URL, as the picture variants
+    filter does for rich text: the twin is only offered when the path leads
+    to an image that has an AVIF version."""
 
-    def create(self, src="/plone/pic/@@images/image/teaser", media=None):
+    def setUp(self):
+        super().setUp()
+        # The layer has no site; the item is reachable from the app root.
+        patcher = mock.patch.object(
+            plone.namedfile.picture, "getSite", return_value=self.layer["app"]
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def create(self, src="/item/@@images/image/teaser", media=None):
         source = {"scale": "teaser", "additionalScales": ["preview"]}
         if media:
             source["media"] = media
         return Img2PictureTag().create_picture_tag([source], {"src": src, "alt": ""})
+
+    def assertNoTwin(self, tag):
+        self.assertEqual(len(sources(tag)), 1)
+        self.assertNotIn(".avif", str(tag))
 
     def test_sources_get_avif_twins_in_front(self):
         tag = self.create(media="(min-width: 768px)")
@@ -589,8 +603,8 @@ class AvifPictureTagUrlTests(AvifModeTestCase):
         self.assertEqual(avif["type"], "image/avif")
         self.assertEqual(
             avif["srcset"],
-            "/plone/pic/@@images/image/teaser.avif 600w,\n"
-            "/plone/pic/@@images/image/preview.avif 400w",
+            "/item/@@images/image/teaser.avif 600w,\n"
+            "/item/@@images/image/preview.avif 400w",
         )
         self.assertEqual(avif["sizes"], original["sizes"])
         self.assertEqual(avif["media"], original["media"])
@@ -598,8 +612,30 @@ class AvifPictureTagUrlTests(AvifModeTestCase):
         self.assertNotIn(".avif", original["srcset"])
         self.assertNotIn(".avif", tag.img["src"])
 
+    def test_full_url_is_resolved_through_its_path(self):
+        tag = self.create(src="http://nohost/item/@@images/image/teaser")
+        avif, _ = sources(tag)
+        self.assertEqual(
+            srcset_urls(avif)[0], "http://nohost/item/@@images/image/teaser.avif"
+        )
+
+    def test_svg_gets_no_twin(self):
+        # The scaling view has no AVIF version of vector art to serve.
+        self.item.image = svg_image()
+        self.assertNoTwin(self.create())
+
+    def test_path_that_leads_nowhere_gets_no_twin(self):
+        self.assertNoTwin(self.create(src="/plone/vector/@@images/image/preview"))
+
+    def test_path_of_an_object_without_the_field_gets_no_twin(self):
+        self.assertNoTwin(self.create(src="/item/@@images/missing/teaser"))
+
+    def test_without_a_site_no_twin(self):
+        with mock.patch.object(plone.namedfile.picture, "getSite", return_value=None):
+            self.assertNoTwin(self.create())
+
     def test_urls_outside_images_get_no_twin(self):
-        self.assertEqual(len(sources(self.create(src="/plone/some-image.png"))), 1)
+        self.assertNoTwin(self.create(src="/item/some-image.png"))
 
     def test_disabled_mode_adds_no_twin(self):
         self.registry["plone.avif_mode"] = "disabled"

@@ -13,6 +13,7 @@ from plone.registry.interfaces import IRegistry
 from urllib.parse import urlsplit
 from zope.component import getUtility
 from zope.component import queryUtility
+from zope.component.hooks import getSite
 
 import logging
 import re
@@ -77,7 +78,8 @@ class Img2PictureTag:
         else:
             obj = self.resolve_uid_url(src)
         avif = self.wants_avif_sources(
-            obj, fieldname or fieldname_from_scale_url(src or "")
+            obj if obj is not None else self.resolve_scale_url(src),
+            fieldname or fieldname_from_scale_url(src or ""),
         )
         picture_tag = soup.new_tag("picture")
         css_classes = attributes.get("class", [])
@@ -162,14 +164,29 @@ class Img2PictureTag:
 
     def wants_avif_sources(self, obj, fieldname):
         """Whether each source gets an AVIF twin in front of it: only in the
-        mode whose plain scales are the fallback."""
+        mode whose plain scales are the fallback, and only for an image the
+        scaling view can serve as AVIF."""
         if get_avif_mode() != AVIF_WITH_FALLBACK:
             return False
         if obj is None:
-            # Nothing to look at, e.g. a plain path: trust the url.
-            return True
+            # No image to check, e.g. a path that leads nowhere.
+            return False
         value = getattr(aq_base(obj), fieldname, None)
         return can_be_avif(getattr(value, "contentType", None))
+
+    def resolve_scale_url(self, src):
+        """The object a plain ``.../@@images/...`` url points at, or None."""
+        if not src:
+            return None
+        parts = urlsplit(src).path.split("/")
+        if "@@images" not in parts:
+            return None
+        path = "/".join(parts[: parts.index("@@images")])
+        site = getSite()
+        if not path or site is None:
+            return None
+        # An absolute path starts at the root, a relative one at the site.
+        return site.unrestrictedTraverse(path, None)
 
     def avif_scale_url(self, scale_url):
         """The AVIF twin of a ``.../@@images/<field>/<scale>`` url."""
