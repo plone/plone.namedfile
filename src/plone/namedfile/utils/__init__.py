@@ -91,6 +91,14 @@ class filestream_range_iterator(Iterable):
     # def __len__(self)
 
     def read(self, size=-1):
+        # WSGI servers read wsgi.file_wrapper objects instead of iterating them,
+        # so stop at the end of the range here as well.
+        if self.end is not None:
+            remaining = max(self.end - self._io.tell(), 0)
+            if size is None or size < 0:
+                size = remaining
+            else:
+                size = min(size, remaining)
         return self._io.read(size)
 
 
