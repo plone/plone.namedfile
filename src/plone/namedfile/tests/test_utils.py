@@ -5,6 +5,7 @@ from plone.namedfile.utils import get_contenttype
 from plone.namedfile.utils import getImageInfo
 from plone.namedfile.utils import safe_basename
 
+import contextlib
 import os
 import tempfile
 import unittest
@@ -115,33 +116,31 @@ class TestFilestreamRangeIterator(unittest.TestCase):
     def setUp(self):
         self.data = bytes(range(256)) * 4
         fd, self.path = tempfile.mkstemp()
+        self.addCleanup(os.remove, self.path)
         with os.fdopen(fd, "wb") as f:
             f.write(self.data)
 
-    def tearDown(self):
-        os.remove(self.path)
-
     def test_iterate_range(self):
         iterator = filestream_range_iterator(self.path, start=10, end=20, streamsize=4)
-        self.assertEqual(b"".join(iterator), self.data[10:20])
-        iterator.close()
+        with contextlib.closing(iterator):
+            self.assertEqual(b"".join(iterator), self.data[10:20])
 
     def test_read_stops_at_end_of_range(self):
         # WSGI servers read through wsgi.file_wrapper (e.g. waitress), not by iterating
         iterator = filestream_range_iterator(self.path, start=10, end=20)
-        self.assertEqual(iterator.read(), self.data[10:20])
-        self.assertEqual(iterator.read(), b"")
-        iterator.close()
+        with contextlib.closing(iterator):
+            self.assertEqual(iterator.read(), self.data[10:20])
+            self.assertEqual(iterator.read(), b"")
 
     def test_read_in_blocks_stops_at_end_of_range(self):
         iterator = filestream_range_iterator(self.path, start=10, end=20)
-        self.assertEqual(iterator.read(4), self.data[10:14])
-        self.assertEqual(iterator.read(4), self.data[14:18])
-        self.assertEqual(iterator.read(4), self.data[18:20])
-        self.assertEqual(iterator.read(4), b"")
-        iterator.close()
+        with contextlib.closing(iterator):
+            self.assertEqual(iterator.read(4), self.data[10:14])
+            self.assertEqual(iterator.read(4), self.data[14:18])
+            self.assertEqual(iterator.read(4), self.data[18:20])
+            self.assertEqual(iterator.read(4), b"")
 
     def test_read_without_end(self):
         iterator = filestream_range_iterator(self.path, start=1000)
-        self.assertEqual(iterator.read(), self.data[1000:])
-        iterator.close()
+        with contextlib.closing(iterator):
+            self.assertEqual(iterator.read(), self.data[1000:])
