@@ -537,7 +537,7 @@ class ImageScalingTests(unittest.TestCase):
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
         tag = self.scaling.picture("image", picture_variant="medium")
-        expected = """<picture>
+        expected = """<picture data-picturevariant="medium">
  <source...srcset="http://nohost/item/@@images/image-600-....png 600w,
 http://nohost/item/@@images/image-400-....png 400w,
 http://nohost/item/@@images/image-800-....png 800w,
@@ -556,6 +556,8 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         self.assertIn(
             'sizes="(min-width: 576px) 600px, (min-width: 768px) 600px, 98vw"', tag
         )
+        # Like the output filter's markup, the img names the variant too.
+        self.assertEqual(tag.count('data-picturevariant="medium"'), 2)
 
     @patch.object(
         plone.namedfile.scaling,
@@ -574,7 +576,7 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
         tag = self.scaling.picture("image", picture_variant="medium", lazy=False)
-        expected = """<picture>
+        expected = """<picture data-picturevariant="medium">
  <source...srcset="http://nohost/item/@@images/image-600-....png 600w,
 http://nohost/item/@@images/image-400-....png 400w,
 http://nohost/item/@@images/image-800-....png 800w,
@@ -611,7 +613,7 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         ImageScaling._sizes = patch_Img2PictureTag_allowed_scales()
         mock_uuid_to_object.return_value = self.item
         tag = self.scaling.picture("image", picture_variant="small")
-        expected = """<picture>
+        expected = """<picture data-picturevariant="small">
  <source...srcset="http://nohost/item/@@images/image-400-....png 400w,
 http://nohost/item/@@images/image-800-....png 800w,
 http://nohost/item/@@images/image-1000-....png 1000w".../>
@@ -652,7 +654,7 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
             title="Custom title",
         )
         base = self.item.absolute_url()
-        expected = f"""<picture>
+        expected = f"""<picture data-picturevariant="medium">
  <source...srcset="{base}/@@images/image-600-....png 600w,
 {base}/@@images/image-400-....png 400w,
 {base}/@@images/image-800-....png 800w,
@@ -1399,6 +1401,32 @@ class Img2PictureTagTests(unittest.TestCase):
             ),
             "photo.jpg/@@images/image/teaser",
         )
+
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    def test_create_picture_tag_names_the_variant_of_its_img(self):
+        tag = self._makeOne().create_picture_tag(
+            [{"scale": "preview"}],
+            {"src": "foo/@@images/image/thumb", "data-picturevariant": "small"},
+        )
+        self.assertEqual(tag["data-picturevariant"], "small")
+        self.assertEqual(tag.img["data-picturevariant"], "small")
+
+    @patch.object(
+        plone.namedfile.picture,
+        "get_allowed_scales",
+        new=patch_Img2PictureTag_allowed_scales,
+        spec=True,
+    )
+    def test_create_picture_tag_without_a_variant_name(self):
+        tag = self._makeOne().create_picture_tag(
+            [{"scale": "preview"}], {"src": "foo/@@images/image/thumb"}
+        )
+        self.assertNotIn("data-picturevariant", tag.attrs)
 
 
 def test_suite():

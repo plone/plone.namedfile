@@ -1,0 +1,1 @@
+Name the picture variant on the `picture` tag as `data-picturevariant`, from `@@images/picture` as from `Img2PictureTag.create_picture_tag` when the img attributes name it (the rich text filter). `@@images/picture` names it on the `img` too, as rich text images already do. @MrTango

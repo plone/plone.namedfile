@@ -72,6 +72,9 @@ class Img2PictureTag:
         css_classes = attributes.get("class", [])
         if "captioned" in css_classes:
             picture_tag["class"] = "captioned"
+        picture_variant = attributes.get("data-picturevariant")
+        if picture_variant:
+            picture_tag["data-picturevariant"] = picture_variant
         for i, source in enumerate(sourceset):
             target_scale = source["scale"]
             media = source.get("media")

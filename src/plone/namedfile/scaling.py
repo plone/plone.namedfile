@@ -782,6 +782,7 @@ class ImageScaling(BrowserView):
             attributes["title"] = title
         if alt:
             attributes["alt"] = alt
+        attributes["data-picturevariant"] = picture_variant
         return img2picturetag.create_picture_tag(
             sourceset,
             attributes,
