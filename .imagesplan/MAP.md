@@ -53,6 +53,7 @@ the version bump is left to the release manager.
 - [Add the brain view skeleton, registration, and resolvers](tickets/018-add-view-skeleton-registration-and-resolvers.md): `BrainImageScaling(ImageScaling)` in `brain_scaling.py`; `images` pages for `ICatalogBrain` and conditional `IContentListingObject`; metadata-origin, object-fallback, schema, field, and title resolvers; traversal refusal; 25 brain tests and 162-test full suite green.
 - [Implement BrainImageScale and the metadata URL helper](tickets/019-implement-brain-image-scale.md): `BrainImageScale(ImageScale)` with `data=None`, metadata constructor, URL join/pass-through rules, `tag`/`title`/`srcset_attribute`, access no-op, and data-serving refusal; 39 brain tests and 176-test full suite green.
 - [Implement scale, tag, accessors, and fallback delegation](tickets/020-implement-scale-tag-and-fallback.md): metadata-first `scale`/`tag`/`getImageSize`/`modified`, the full fallback matrix with debug logs, malformed-metadata guards, `Unauthorized`/missing-object behavior, and documented original-URL divergence; 66 brain tests and 203-test full suite green.
+- [Implement srcset() from metadata](tickets/021-implement-srcset.md): object-order `srcset` from metadata, original inclusion, `scale_in_src` selection, skip-missing divergence, malformed-nested fallback, full attribute parity, and zero wake-ups; 82 brain tests and 219-test full suite green.
 
 ## Not yet specified
 

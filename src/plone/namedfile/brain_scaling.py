@@ -445,6 +445,190 @@ class BrainImageScaling(ImageScaling):
         )
         return scale_object.tag(**kwargs) if scale_object else None
 
+    def _fallback_srcset(
+        self,
+        fieldname,
+        scale_in_src,
+        sizes,
+        alt,
+        css_class,
+        title,
+        reason,
+        **kwargs,
+    ):
+        logger.debug(
+            "@@images srcset falling back for %r: %s",
+            fieldname,
+            reason,
+        )
+        view = self._object_view(self._resolved_origin())
+        if view is None:
+            return None
+        return view.srcset(
+            fieldname=fieldname,
+            scale_in_src=scale_in_src,
+            sizes=sizes,
+            alt=alt,
+            css_class=css_class,
+            title=title,
+            **kwargs,
+        )
+
+    def srcset(
+        self,
+        fieldname=None,
+        scale_in_src="huge",
+        sizes="",
+        alt=_marker,
+        css_class=None,
+        title=_marker,
+        **kwargs,
+    ):
+        origin = self._metadata_origin()
+        if origin is None:
+            return self._fallback_srcset(
+                fieldname,
+                scale_in_src,
+                sizes,
+                alt,
+                css_class,
+                title,
+                reason="not a metadata origin",
+                **kwargs,
+            )
+        if not self._supports_image_scales_metadata:
+            return self._fallback_srcset(
+                fieldname,
+                scale_in_src,
+                sizes,
+                alt,
+                css_class,
+                title,
+                reason="catalog has no image_scales column",
+                **kwargs,
+            )
+
+        fieldname, entry = self._resolve_metadata(fieldname)
+        if entry is None:
+            return None
+        if not isinstance(entry, dict) or not self._is_valid_entry(entry):
+            return self._fallback_srcset(
+                fieldname,
+                scale_in_src,
+                sizes,
+                alt,
+                css_class,
+                title,
+                reason="malformed original metadata",
+                **kwargs,
+            )
+
+        original_width = entry["width"]
+        original_height = entry["height"]
+        if not original_width or not original_height:
+            return self._fallback_srcset(
+                fieldname,
+                scale_in_src,
+                sizes,
+                alt,
+                css_class,
+                title,
+                reason="zero original dimensions",
+                **kwargs,
+            )
+
+        scales = entry.get("scales", {})
+        if not isinstance(scales, dict):
+            return self._fallback_srcset(
+                fieldname,
+                scale_in_src,
+                sizes,
+                alt,
+                css_class,
+                title,
+                reason="malformed scales metadata",
+                **kwargs,
+            )
+
+        available_widths = {width for width, height in self.available_sizes.values()}
+        srcset_urls = []
+        if original_width not in available_widths:
+            url = _scale_url_from_download(origin, entry["download"])
+            srcset_urls.append(f"{url} {original_width}w")
+
+        for name, (configured_width, configured_height) in self.available_sizes.items():
+            if configured_width > original_width:
+                continue
+            data = scales.get(name)
+            if data is None:
+                logger.debug("@@images srcset skips missing scale %r", name)
+                continue
+            if not self._is_valid_entry(data):
+                return self._fallback_srcset(
+                    fieldname,
+                    scale_in_src,
+                    sizes,
+                    alt,
+                    css_class,
+                    title,
+                    reason=f"malformed scale metadata for {name!r}",
+                    **kwargs,
+                )
+            url = _scale_url_from_download(origin, data["download"])
+            srcset_urls.append(f"{url} {data['width']}w")
+
+        selected_name = scale_in_src
+        if selected_name not in self.available_sizes:
+            selected_name = None
+            for name, (
+                configured_width,
+                configured_height,
+            ) in self.available_sizes.items():
+                if configured_width <= original_width:
+                    selected_name = name
+                    break
+            if selected_name is None:
+                return None
+
+        selected_data = scales.get(selected_name)
+        if not selected_data or not self._is_valid_entry(selected_data):
+            return self._fallback_srcset(
+                fieldname,
+                scale_in_src,
+                sizes,
+                alt,
+                css_class,
+                title,
+                reason="selected scale missing from metadata",
+                **kwargs,
+            )
+
+        attributes = {}
+        default_title = _title(self.context)
+        if title is _marker:
+            attributes["title"] = default_title
+        elif title:
+            attributes["title"] = title
+        if alt is _marker:
+            attributes["alt"] = default_title
+        else:
+            attributes["alt"] = alt
+        if css_class is not None:
+            attributes["class"] = css_class
+        attributes.update(**kwargs)
+        attributes["sizes"] = sizes
+        attributes["srcset"] = ", ".join(srcset_urls)
+        attributes["src"] = _scale_url_from_download(
+            origin,
+            selected_data["download"],
+        )
+        if "width" not in attributes:
+            attributes["width"] = selected_data["width"]
+        if "height" not in attributes:
+            attributes["height"] = selected_data["height"]
+
+        return _image_tag_from_values(*attributes.items())
+
     def getImageSize(self, fieldname=None):
         origin = self._metadata_origin()
         if origin is None:

@@ -13,6 +13,7 @@ from plone.namedfile.tests.brain_images_helpers import assert_scale_equal
 from plone.namedfile.tests.brain_images_helpers import clear_scales
 from plone.namedfile.tests.brain_images_helpers import counting_get_object_calls
 from plone.namedfile.tests.brain_images_helpers import create_image
+from plone.namedfile.tests.brain_images_helpers import create_large_image
 from plone.namedfile.tests.brain_images_helpers import create_multi_image_item
 from plone.namedfile.tests.brain_images_helpers import create_multi_image_type
 from plone.namedfile.tests.brain_images_helpers import FakeBrain
@@ -34,6 +35,7 @@ from zope.component import getMultiAdapter
 from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import TraversalError
 
+import copy
 import unittest
 
 RELATIVE_DOWNLOAD = "@@images/image-200-deadbeef.png"
@@ -698,3 +700,250 @@ class BrainImageScalingBehaviorTests(unittest.TestCase):
         fake = MissingModifiedBrain(image_scales={"image": [image_entry()]})
         view = getMultiAdapter((fake, self.request), name="images")
         self.assertEqual(view.modified("image"), 0)
+
+
+class BrainImageScalingSrcsetTests(unittest.TestCase):
+    """Metadata-first srcset behavior and its documented divergence."""
+
+    layer = NAMEDFILE_PLONE_INTEGRATION
+
+    def setUp(self):
+        self.portal = self.layer["portal"]
+        self.request = self.layer["request"]
+        setRoles(self.portal, TEST_USER_ID, ["Manager"])
+        self.obj = create_large_image(self.portal)
+        self.brain = get_brain(self.portal, self.obj)
+        self.object_view = getMultiAdapter((self.obj, self.request), name="images")
+        self.brain_view = getMultiAdapter((self.brain, self.request), name="images")
+
+    def metadata_without_scale(self, name, fieldname="image"):
+        entry = copy.deepcopy(first_image_entry(self.brain, fieldname))
+        entry["scales"].pop(name)
+        return {fieldname: [entry]}
+
+    def assert_fell_back_to_object(self, calls):
+        self.assertEqual(len(calls), 1)
+
+    def make_no_image_view(self):
+        content_id = f"no_image_srcset_{self.brain.UID}"
+        self.portal.invokeFactory("News Item", content_id, title="No Image")
+        obj = self.portal[content_id]
+        obj.reindexObject()
+        brain = get_brain(self.portal, obj)
+        return getMultiAdapter((brain, self.request), name="images")
+
+    def testSrcsetParityWithoutWake(self):
+        with strict_get_object_calls():
+            brain_srcset = self.brain_view.srcset("image", scale_in_src="large")
+        object_srcset = self.object_view.srcset("image", scale_in_src="large")
+        assert_html_equal(self, brain_srcset, object_srcset)
+
+    def testSrcsetOriginalIncluded(self):
+        srcset = self.brain_view.srcset("image", scale_in_src="large")
+        self.assertIn("900w", srcset)
+        self.assertIn("/image-900-", srcset)
+
+    def testSrcsetSmallImageParityWithoutWake(self):
+        obj = create_image(self.portal)
+        brain = get_brain(self.portal, obj)
+        brain_view = getMultiAdapter((brain, self.request), name="images")
+        object_view = getMultiAdapter((obj, self.request), name="images")
+
+        with strict_get_object_calls():
+            brain_srcset = brain_view.srcset("image", scale_in_src="mini")
+        object_srcset = object_view.srcset("image", scale_in_src="mini")
+        assert_html_equal(self, brain_srcset, object_srcset)
+        self.assertEqual(brain_srcset.count("200w"), 1)
+
+    def testSrcsetAttributes(self):
+        with strict_get_object_calls():
+            brain_srcset = self.brain_view.srcset(
+                "image",
+                scale_in_src="large",
+                sizes="50vw",
+                alt="Alt",
+                title="Title",
+                css_class="foo",
+                loading="lazy",
+            )
+        object_srcset = self.object_view.srcset(
+            "image",
+            scale_in_src="large",
+            sizes="50vw",
+            alt="Alt",
+            title="Title",
+            css_class="foo",
+            loading="lazy",
+        )
+        assert_html_equal(self, brain_srcset, object_srcset)
+
+    def testSrcsetKeepsCallerDimensions(self):
+        with strict_get_object_calls():
+            brain_srcset = self.brain_view.srcset(
+                "image",
+                scale_in_src="large",
+                width=123,
+                height=45,
+            )
+        object_srcset = self.object_view.srcset(
+            "image",
+            scale_in_src="large",
+            width=123,
+            height=45,
+        )
+        assert_html_equal(self, brain_srcset, object_srcset)
+        self.assertIn('width="123"', brain_srcset)
+        self.assertIn('height="45"', brain_srcset)
+
+    def testSrcsetFalsyTitleOmitsTitle(self):
+        with strict_get_object_calls():
+            brain_srcset = self.brain_view.srcset(
+                "image",
+                scale_in_src="large",
+                title="",
+            )
+        object_srcset = self.object_view.srcset(
+            "image",
+            scale_in_src="large",
+            title="",
+        )
+        assert_html_equal(self, brain_srcset, object_srcset)
+        self.assertNotIn("title=", brain_srcset)
+
+    def testSrcsetSkipsMissingScale(self):
+        with shadow_image_scales(
+            self.brain,
+            self.metadata_without_scale("teaser"),
+        ):
+            with self.assertLogs(
+                "plone.namedfile.brain_scaling",
+                level="DEBUG",
+            ) as captured:
+                with strict_get_object_calls():
+                    brain_srcset = self.brain_view.srcset(
+                        "image",
+                        scale_in_src="large",
+                    )
+        object_srcset = self.object_view.srcset("image", scale_in_src="large")
+
+        self.assertNotIn("600w", brain_srcset)
+        self.assertIn("600w", object_srcset)
+        self.assertLess(len(brain_srcset), len(object_srcset))
+        self.assertIn("skips missing scale", "\n".join(captured.output))
+
+    def testSrcsetSelectedScaleMissingFallsBack(self):
+        with shadow_image_scales(
+            self.brain,
+            self.metadata_without_scale("large"),
+        ):
+            with counting_get_object_calls() as calls:
+                brain_srcset = self.brain_view.srcset(
+                    "image",
+                    scale_in_src="large",
+                )
+
+        self.assertIsNotNone(brain_srcset)
+        self.assert_fell_back_to_object(calls)
+        assert_html_equal(
+            self,
+            brain_srcset,
+            self.object_view.srcset("image", scale_in_src="large"),
+        )
+
+    def testSrcsetDefaultHugeFallsBack(self):
+        with counting_get_object_calls() as calls:
+            brain_srcset = self.brain_view.srcset("image")
+
+        self.assertIsNotNone(brain_srcset)
+        self.assert_fell_back_to_object(calls)
+        assert_html_equal(
+            self,
+            brain_srcset,
+            self.object_view.srcset("image"),
+        )
+
+    def testSrcsetUnknownScaleInSrcUsesFirstAvailable(self):
+        with strict_get_object_calls():
+            brain_srcset = self.brain_view.srcset("image", scale_in_src="nope")
+        object_srcset = self.object_view.srcset("image", scale_in_src="nope")
+        assert_html_equal(self, brain_srcset, object_srcset)
+
+    def testSrcsetNoImageReturnsNone(self):
+        view = self.make_no_image_view()
+        with strict_get_object_calls():
+            self.assertIsNone(view.srcset("image"))
+
+    def testSrcsetSchemaWithoutColumnFallsBack(self):
+        catalog = SimpleNamespace(_catalog=SimpleNamespace(schema=[]))
+        with patch(
+            "plone.namedfile.brain_scaling.getToolByName",
+            return_value=catalog,
+        ):
+            view = getMultiAdapter((self.brain, self.request), name="images")
+            with counting_get_object_calls() as calls:
+                srcset = view.srcset("image", scale_in_src="large")
+
+        self.assertIsNotNone(srcset)
+        self.assert_fell_back_to_object(calls)
+
+    def testSrcsetMalformedMetadataFallsBack(self):
+        malformed = {
+            "image": [
+                image_entry(
+                    download=None,
+                    width=900,
+                    height=900,
+                )
+            ]
+        }
+        with shadow_image_scales(self.brain, malformed):
+            with counting_get_object_calls() as calls:
+                srcset = self.brain_view.srcset("image", scale_in_src="large")
+
+        self.assertIsNotNone(srcset)
+        self.assert_fell_back_to_object(calls)
+
+    def testSrcsetMalformedNestedScaleFallsBack(self):
+        entry = copy.deepcopy(first_image_entry(self.brain))
+        entry["scales"]["teaser"] = {
+            "download": None,
+            "width": 600,
+            "height": 600,
+        }
+        with shadow_image_scales(self.brain, {"image": [entry]}):
+            with counting_get_object_calls() as calls:
+                srcset = self.brain_view.srcset("image", scale_in_src="large")
+
+        self.assertIsNotNone(srcset)
+        self.assert_fell_back_to_object(calls)
+        assert_html_equal(
+            self,
+            srcset,
+            self.object_view.srcset("image", scale_in_src="large"),
+        )
+
+    def testSrcsetZeroDimensionsFallsBack(self):
+        zero = {
+            "image": [
+                image_entry(
+                    download="@@images/image-0-deadbeef.png",
+                    width=0,
+                    height=0,
+                )
+            ]
+        }
+        with shadow_image_scales(self.brain, zero):
+            with counting_get_object_calls() as calls:
+                srcset = self.brain_view.srcset("image", scale_in_src="large")
+
+        self.assertIsNotNone(srcset)
+        self.assert_fell_back_to_object(calls)
+
+    def testSrcsetWrapperParity(self):
+        wrapper = wrapper_for(self.brain)
+        wrapper_view = getMultiAdapter((wrapper, self.request), name="images")
+
+        with strict_get_object_calls():
+            wrapper_srcset = wrapper_view.srcset("image", scale_in_src="large")
+        object_srcset = self.object_view.srcset("image", scale_in_src="large")
+        assert_html_equal(self, wrapper_srcset, object_srcset)
