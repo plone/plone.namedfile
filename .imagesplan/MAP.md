@@ -57,6 +57,7 @@ the version bump is left to the release manager.
 - [Add the picture resolver hook and implement picture()](tickets/022-implement-picture.md): optional `Img2PictureTag` scale resolver, metadata preflight with whole-call fallback, variant/empty handling, object-compatible attributes, and zero `uuidToObject`/wake-ups on the fast path; 95 brain tests and 232-test full suite green.
 - [Implement HiDPI include_srcset behavior](tickets/023-implement-hidpi-include-srcset.md): explicit `include_srcset=True` falls back to the object only when HiDPI is configured; defaults and other fallbacks stay HiDPI-free; registry-driven and zero-wake tests; 106 brain tests and 243-test full suite green.
 - [Complete cross-cutting test coverage and parity audit](tickets/024-complete-test-coverage-and-parity-audit.md): functional serving/stale/anonymous tests, multi-field and missing-field edges, getObject-None/Unauthorized across methods, schema-less accessors, large-image parity, stale rendering, permission divergence, and the resolver-less picture path; 121 brain tests and 258-test full suite green.
+- [Write docs, README section, news fragment, and packaging](tickets/025-write-docs-and-news.md): `docs/brain-images.rst` in the long description, a README link, the `news/brain-images.feature` fragment, valid RST/sdist/twine checks, and the approved Plone 6.2/fallback/security documentation.
 
 ## Not yet specified
 

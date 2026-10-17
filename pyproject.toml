@@ -75,7 +75,7 @@ Issues = "https://github.com/plone/Products.CMFPlone/issues"
 Changelog = "https://github.com/plone/plone.namedfile/blob/main/CHANGES.rst"
 
 [tool.setuptools.dynamic]
-readme = {file = ["README.rst", "CHANGES.rst", "src/plone/namedfile/usage.rst"]}
+readme = {file = ["README.rst", "CHANGES.rst", "docs/brain-images.rst", "src/plone/namedfile/usage.rst"]}
 # END-MARKER-MANUAL-CONFIG
 
 [tool.towncrier]
