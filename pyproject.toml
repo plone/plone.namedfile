@@ -1,8 +1,82 @@
 # Generated from:
-# https://github.com/plone/meta/tree/main/src/plone/meta/default
+# https://github.com/plone/meta/tree/2.x/src/plone/meta/default
 # See the inline comments on how to expand/tweak this configuration file
 [build-system]
 requires = ["setuptools>=68.2,<83", "wheel"]
+
+# START-MARKER-MANUAL-CONFIG
+# Anything from here until END-MARKER-MANUAL-CONFIG
+# will be kept by plone.meta
+
+[project]
+name = "plone.namedfile"
+version = "8.1.2.dev0"
+description = "File types and fields for images, files and blob files with filenames"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Plone",
+    "Framework :: Plone :: 6.2",
+    "Framework :: Plone :: Core",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+license = "BSD-3-Clause"
+dynamic = ["readme"]
+requires-python = ">=3.10"
+authors = [
+    {name = "Laurence Rowe, Martin Aspeli",email = "plone-developers@lists.sourceforge.net"},
+]
+maintainers = [
+    {name = "Plone Foundation and contributors",email = "plone-developers@lists.sourceforge.net"},
+]
+dependencies = [
+    "BeautifulSoup4",
+    "Pillow",
+    "Products.CMFCore",
+    "Zope",
+    "persistent",
+    "piexif",
+    "plone.app.uuid>=2.2.0",
+    "plone.base",
+    "plone.dexterity",
+    "plone.memoize",
+    "plone.protect",
+    "plone.rfc822>=2.0.0",
+    "plone.scale[storage]>=4.2.0",
+    "plone.schemaeditor",
+    "plone.supermodel",
+    "z3c.caching",
+    "zope.cachedescriptors",
+    "zope.copy",
+]
+keywords = [
+    "plone",
+    "named",
+    "file",
+    "image",
+    "blob",
+]
+
+[project.optional-dependencies]
+test = [
+    "lxml",
+    "plone.app.testing",
+    "plone.testing",
+]
+
+[project.urls]
+Source = "https://github.com/plone/plone.namedfile"
+Issues = "https://github.com/plone/Products.CMFPlone/issues"
+Changelog = "https://github.com/plone/plone.namedfile/blob/main/CHANGES.rst"
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.rst", "CHANGES.rst", "src/plone/namedfile/usage.rst"]}
+# END-MARKER-MANUAL-CONFIG
 
 [tool.towncrier]
 directory = "news/"
