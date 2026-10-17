@@ -58,10 +58,11 @@ the version bump is left to the release manager.
 - [Implement HiDPI include_srcset behavior](tickets/023-implement-hidpi-include-srcset.md): explicit `include_srcset=True` falls back to the object only when HiDPI is configured; defaults and other fallbacks stay HiDPI-free; registry-driven and zero-wake tests; 106 brain tests and 243-test full suite green.
 - [Complete cross-cutting test coverage and parity audit](tickets/024-complete-test-coverage-and-parity-audit.md): functional serving/stale/anonymous tests, multi-field and missing-field edges, getObject-None/Unauthorized across methods, schema-less accessors, large-image parity, stale rendering, permission divergence, and the resolver-less picture path; 121 brain tests and 258-test full suite green.
 - [Write docs, README section, news fragment, and packaging](tickets/025-write-docs-and-news.md): `docs/brain-images.rst` in the long description, a README link, the `news/brain-images.feature` fragment, valid RST/sdist/twine checks, and the approved Plone 6.2/fallback/security documentation.
+- [Final integration, local branch, and acceptance](tickets/026-final-integration-and-acceptance.md): full suite 258 tests green, lint green, sdist/twine validated, every SPEC acceptance criterion checked, and the complete effort committed locally on the `brain-images` branch; nothing pushed or released.
 
 ## Not yet specified
 
-None. The specification is approved and implementation is ticketed as I1-I10.
+None. The specification is implemented and accepted.
 
 ## Out of scope
 
