@@ -947,3 +947,289 @@ class BrainImageScalingSrcsetTests(unittest.TestCase):
             wrapper_srcset = wrapper_view.srcset("image", scale_in_src="large")
         object_srcset = self.object_view.srcset("image", scale_in_src="large")
         assert_html_equal(self, wrapper_srcset, object_srcset)
+
+
+PICTURE_VARIANTS = {
+    "test": {
+        "title": "Test",
+        "sourceset": [
+            {
+                "scale": "large",
+                "additionalScales": ["preview", "teaser"],
+                "sizes": "50vw",
+                "media": "(min-width: 800px)",
+            }
+        ],
+    },
+    "no_additional": {
+        "title": "No additional scales",
+        "sourceset": [{"scale": "large"}],
+    },
+    "empty_variant": {},
+    "empty": {
+        "title": "Empty",
+        "sourceset": [],
+    },
+    "missing_scale": {
+        "title": "Missing",
+        "sourceset": [
+            {
+                "scale": "great",
+                "additionalScales": ["large"],
+            }
+        ],
+    },
+    "unknown_scale": {
+        "title": "Unknown scale",
+        "sourceset": [
+            {
+                "scale": "large",
+                "additionalScales": ["notallowed"],
+            }
+        ],
+    },
+}
+
+ALLOWED_SCALES = {
+    "large": (800, 65536),
+    "teaser": (600, 65536),
+    "preview": (400, 65536),
+    "great": (1200, 65536),
+}
+
+SMALL_ALLOWED_SCALES = {
+    "large": (800, 65536),
+    "teaser": (600, 65536),
+    "preview": (400, 65536),
+}
+
+
+class BrainImageScalingPictureTests(unittest.TestCase):
+    """Metadata-first picture() behavior and the resolver hook."""
+
+    layer = NAMEDFILE_PLONE_INTEGRATION
+
+    def setUp(self):
+        self.portal = self.layer["portal"]
+        self.request = self.layer["request"]
+        setRoles(self.portal, TEST_USER_ID, ["Manager"])
+        self.obj = create_large_image(self.portal)
+        self.brain = get_brain(self.portal, self.obj)
+        self.object_view = getMultiAdapter((self.obj, self.request), name="images")
+        self.brain_view = getMultiAdapter((self.brain, self.request), name="images")
+        self.object_view.getHighPixelDensityScales = lambda: []
+        self.brain_view.getHighPixelDensityScales = lambda: []
+
+        for target in (
+            "plone.namedfile.picture.get_picture_variants",
+            "plone.namedfile.scaling.get_picture_variants",
+        ):
+            patcher = patch(target, return_value=PICTURE_VARIANTS)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        patcher = patch(
+            "plone.namedfile.picture.get_allowed_scales",
+            return_value=ALLOWED_SCALES,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def picture_without_uuid(self, view, **kwargs):
+        with patch(
+            "plone.namedfile.picture.uuidToObject",
+            side_effect=AssertionError("uuidToObject called"),
+        ):
+            with strict_get_object_calls():
+                return view.picture("image", **kwargs)
+
+    def object_picture(self, **kwargs):
+        with patch(
+            "plone.namedfile.picture.uuidToObject",
+            return_value=self.obj,
+        ):
+            return self.object_view.picture("image", **kwargs)
+
+    def make_no_image_view(self):
+        content_id = f"no_image_picture_{self.brain.UID}"
+        self.portal.invokeFactory("News Item", content_id, title="No Image")
+        obj = self.portal[content_id]
+        obj.reindexObject()
+        brain = get_brain(self.portal, obj)
+        return getMultiAdapter((brain, self.request), name="images")
+
+    def testPictureParityWithoutWake(self):
+        brain_picture = self.picture_without_uuid(
+            self.brain_view,
+            picture_variant="test",
+        )
+        object_picture = self.object_picture(picture_variant="test")
+        assert_html_equal(self, brain_picture, object_picture)
+
+    def testPictureAttributes(self):
+        brain_picture = self.picture_without_uuid(
+            self.brain_view,
+            picture_variant="test",
+            alt="Alt",
+            css_class="captioned",
+            title="Title",
+            lazy=False,
+        )
+        object_picture = self.object_picture(
+            picture_variant="test",
+            alt="Alt",
+            css_class="captioned",
+            title="Title",
+            lazy=False,
+        )
+        assert_html_equal(self, brain_picture, object_picture)
+        self.assertIn('class="captioned"', brain_picture)
+        self.assertNotIn('loading="lazy"', brain_picture)
+        self.assertIn('alt="Alt"', brain_picture)
+        self.assertIn('sizes="50vw"', brain_picture)
+        self.assertIn('media="(min-width: 800px)"', brain_picture)
+
+    def testPictureAdditionalScalesOmitted(self):
+        with patch(
+            "plone.namedfile.picture.get_allowed_scales",
+            return_value=SMALL_ALLOWED_SCALES,
+        ):
+            brain_picture = self.picture_without_uuid(
+                self.brain_view,
+                picture_variant="no_additional",
+            )
+            object_picture = self.object_picture(
+                picture_variant="no_additional",
+            )
+        assert_html_equal(self, brain_picture, object_picture)
+
+    def testPictureUnknownVariantFallsBackToTag(self):
+        brain_picture = self.picture_without_uuid(
+            self.brain_view,
+            picture_variant="unknown",
+        )
+        assert_html_equal(
+            self,
+            brain_picture,
+            self.brain_view.tag("image", alt=None),
+        )
+        self.assertTrue(brain_picture.startswith("<img"))
+
+    def testPictureEmptySourcesetReturnsNone(self):
+        self.assertIsNone(
+            self.picture_without_uuid(
+                self.brain_view,
+                picture_variant="empty",
+            )
+        )
+        self.assertIsNone(
+            self.picture_without_uuid(
+                self.brain_view,
+                picture_variant="empty_variant",
+            )
+        )
+
+    def testPictureUnknownAdditionalScaleDoesNotFallBack(self):
+        picture = self.picture_without_uuid(
+            self.brain_view,
+            picture_variant="unknown_scale",
+        )
+        self.assertIsNotNone(picture)
+        self.assertIn("<picture", picture)
+
+    def testPictureMissingScaleFallsBack(self):
+        with patch(
+            "plone.namedfile.picture.uuidToObject",
+            return_value=self.obj,
+        ):
+            with counting_get_object_calls() as calls:
+                brain_picture = self.brain_view.picture(
+                    "image",
+                    picture_variant="missing_scale",
+                )
+            object_picture = self.object_view.picture(
+                "image",
+                picture_variant="missing_scale",
+            )
+
+        self.assertIsNotNone(brain_picture)
+        self.assertEqual(len(calls), 1)
+        assert_html_equal(self, brain_picture, object_picture)
+
+    def testPictureNoImageReturnsNone(self):
+        view = self.make_no_image_view()
+        with strict_get_object_calls():
+            self.assertIsNone(view.picture("image", picture_variant="test"))
+            self.assertIsNone(view.picture("image", picture_variant="unknown"))
+
+    def testPictureUnauthorizedFallbackPropagates(self):
+        fake = FakeBrain(
+            image_scales={"image": [image_entry()]},
+            get_object=lambda: (_ for _ in ()).throw(Unauthorized("nope")),
+        )
+        view = getMultiAdapter((fake, self.request), name="images")
+        with self.assertRaises(Unauthorized):
+            view.picture("image", picture_variant="missing_scale")
+
+    def testPictureMalformedNestedScaleFallsBack(self):
+        entry = copy.deepcopy(first_image_entry(self.brain))
+        entry["scales"]["teaser"] = {
+            "download": None,
+            "width": 600,
+            "height": 600,
+        }
+        with patch(
+            "plone.namedfile.picture.uuidToObject",
+            return_value=self.obj,
+        ):
+            with shadow_image_scales(self.brain, {"image": [entry]}):
+                with counting_get_object_calls() as calls:
+                    picture = self.brain_view.picture(
+                        "image",
+                        picture_variant="test",
+                    )
+
+        self.assertIsNotNone(picture)
+        self.assertEqual(len(calls), 1)
+
+    def testPictureSchemaWithoutColumnFallsBack(self):
+        catalog = SimpleNamespace(_catalog=SimpleNamespace(schema=[]))
+        with patch(
+            "plone.namedfile.brain_scaling.getToolByName",
+            return_value=catalog,
+        ):
+            view = getMultiAdapter((self.brain, self.request), name="images")
+            with patch(
+                "plone.namedfile.picture.uuidToObject",
+                return_value=self.obj,
+            ):
+                with counting_get_object_calls() as calls:
+                    picture = view.picture("image", picture_variant="test")
+
+        self.assertIsNotNone(picture)
+        self.assertEqual(len(calls), 1)
+
+    def testPictureMalformedMetadataFallsBack(self):
+        with patch(
+            "plone.namedfile.picture.uuidToObject",
+            return_value=self.obj,
+        ):
+            with shadow_image_scales(self.brain, malformed_image_scales()):
+                with counting_get_object_calls() as calls:
+                    picture = self.brain_view.picture(
+                        "image",
+                        picture_variant="test",
+                    )
+
+        self.assertIsNotNone(picture)
+        self.assertEqual(len(calls), 1)
+
+    def testPictureWrapperParity(self):
+        wrapper = wrapper_for(self.brain)
+        wrapper_view = getMultiAdapter((wrapper, self.request), name="images")
+
+        wrapper_picture = self.picture_without_uuid(
+            wrapper_view,
+            picture_variant="test",
+        )
+        object_picture = self.object_picture(picture_variant="test")
+        assert_html_equal(self, wrapper_picture, object_picture)

@@ -53,6 +53,7 @@ class Img2PictureTag:
         fieldname=None,
         resolve_urls=False,
         lazy=True,
+        scale_resolver=None,
     ):
         """Converts the img tag to a picture tag with picture_variant definition"""
         width = None
@@ -64,7 +65,9 @@ class Img2PictureTag:
             raise TypeError("Either uid or attributes['src'] need to be given.")
         soup = BeautifulSoup("", "html.parser")
         allowed_scales = get_allowed_scales()
-        if uid:
+        if scale_resolver is not None:
+            obj = None
+        elif uid:
             obj = uuidToObject(uid, unrestricted=True)
         else:
             obj = self.resolve_uid_url(src)
@@ -91,7 +94,13 @@ class Img2PictureTag:
                 if not scale_width:
                     logger.warning("No width found for scale %s.", scale)
                     continue
-                if resolve_urls and obj:
+                if scale_resolver is not None:
+                    resolved = scale_resolver(scale)
+                    if resolved is None:
+                        logger.warning("No scale data found for scale %s.", scale)
+                        continue
+                    scale_url = resolved["url"]
+                elif resolve_urls and obj:
                     scale_view = obj.unrestrictedTraverse("@@images", None)
                     scale_obj = scale_view.scale(fieldname, scale, pre=True)
                     scale_url = scale_obj.url
@@ -107,7 +116,19 @@ class Img2PictureTag:
                 source_tag["media"] = media
             picture_tag.append(source_tag)
             if i == len(sourceset) - 1:
-                if resolve_urls and obj:
+                if scale_resolver is not None:
+                    resolved = scale_resolver(target_scale)
+                    if resolved is None:
+                        logger.warning(
+                            "No scale data found for scale %s.",
+                            target_scale,
+                        )
+                        scale_url = src
+                    else:
+                        scale_url = resolved["url"]
+                        width = resolved["width"]
+                        height = resolved["height"]
+                elif resolve_urls and obj:
                     scale_view = obj.unrestrictedTraverse("@@images", None)
                     scale_obj = scale_view.scale(fieldname, target_scale, pre=True)
                     scale_url = scale_obj.url

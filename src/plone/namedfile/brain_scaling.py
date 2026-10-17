@@ -1,5 +1,6 @@
 from DateTime import DateTime
 from Missing import Value as MissingValue
+from plone.namedfile import picture as picture_module
 from plone.namedfile.scaling import _image_tag_from_values
 from plone.namedfile.scaling import _marker
 from plone.namedfile.scaling import ImageScale
@@ -628,6 +629,200 @@ class BrainImageScaling(ImageScaling):
             attributes["height"] = selected_data["height"]
 
         return _image_tag_from_values(*attributes.items())
+
+    def _fallback_picture(
+        self,
+        fieldname,
+        picture_variant,
+        alt,
+        css_class,
+        title,
+        lazy,
+        reason,
+        **kwargs,
+    ):
+        logger.debug(
+            "@@images picture falling back for %r: %s",
+            fieldname,
+            reason,
+        )
+        view = self._object_view(self._resolved_origin())
+        if view is None:
+            return None
+        return view.picture(
+            fieldname=fieldname,
+            picture_variant=picture_variant,
+            alt=alt,
+            css_class=css_class,
+            title=title,
+            lazy=lazy,
+            **kwargs,
+        )
+
+    def picture(
+        self,
+        fieldname=None,
+        picture_variant=None,
+        alt=None,
+        css_class=None,
+        title=_marker,
+        lazy=True,
+        **kwargs,
+    ):
+        requested_fieldname = fieldname
+
+        origin = self._metadata_origin()
+        if origin is None:
+            return self._fallback_picture(
+                requested_fieldname,
+                picture_variant,
+                alt,
+                css_class,
+                title,
+                lazy,
+                reason="not a metadata origin",
+                **kwargs,
+            )
+        if not self._supports_image_scales_metadata:
+            return self._fallback_picture(
+                requested_fieldname,
+                picture_variant,
+                alt,
+                css_class,
+                title,
+                lazy,
+                reason="catalog has no image_scales column",
+                **kwargs,
+            )
+
+        fieldname, entry = self._resolve_metadata(fieldname)
+        if entry is None:
+            return None
+        if not isinstance(entry, dict) or not self._is_valid_entry(entry):
+            return self._fallback_picture(
+                requested_fieldname,
+                picture_variant,
+                alt,
+                css_class,
+                title,
+                lazy,
+                reason="malformed original metadata",
+                **kwargs,
+            )
+        scales = entry.get("scales", {})
+        if not isinstance(scales, dict):
+            return self._fallback_picture(
+                requested_fieldname,
+                picture_variant,
+                alt,
+                css_class,
+                title,
+                lazy,
+                reason="malformed scales metadata",
+                **kwargs,
+            )
+
+        variant = picture_module.get_picture_variants().get(picture_variant)
+        if variant is None:
+            logger.warning(
+                "Could not find the given picture_variant %s, "
+                "creating ordinary img tag instead!",
+                picture_variant,
+            )
+            scale = picture_variant if picture_variant in self.available_sizes else None
+            return self.tag(
+                fieldname=requested_fieldname,
+                scale=scale,
+                alt=alt,
+                css_class=css_class,
+                title=title,
+                **kwargs,
+            )
+
+        sourceset = variant.get("sourceset")
+        if not sourceset:
+            logger.warning(
+                "Picture variant %s has no sourceset.",
+                picture_variant,
+            )
+            return None
+
+        allowed_scales = picture_module.get_allowed_scales()
+        for source in sourceset:
+            target_scale = source.get("scale")
+            target_data = scales.get(target_scale)
+            if not target_data or not self._is_valid_entry(target_data):
+                return self._fallback_picture(
+                    requested_fieldname,
+                    picture_variant,
+                    alt,
+                    css_class,
+                    title,
+                    lazy,
+                    reason=f"missing target scale {target_scale!r}",
+                    **kwargs,
+                )
+            additional_scales = source.get("additionalScales")
+            if additional_scales is None:
+                additional_scales = [
+                    name for name in allowed_scales if name != target_scale
+                ]
+            for name in additional_scales:
+                if not allowed_scales.get(name):
+                    continue
+                data = scales.get(name)
+                if not data or not self._is_valid_entry(data):
+                    return self._fallback_picture(
+                        requested_fieldname,
+                        picture_variant,
+                        alt,
+                        css_class,
+                        title,
+                        lazy,
+                        reason=f"missing scale {name!r}",
+                        **kwargs,
+                    )
+
+        target_scale = sourceset[-1]["scale"]
+        target_data = scales[target_scale]
+        attributes = {}
+        if css_class:
+            attributes["class"] = [css_class]
+        attributes["src"] = _scale_url_from_download(
+            origin,
+            target_data["download"],
+        )
+        attributes["width"] = target_data["width"]
+        attributes["height"] = target_data["height"]
+        if title is _marker:
+            attributes["title"] = _title(self.context)
+        elif title:
+            attributes["title"] = title
+        if alt:
+            attributes["alt"] = alt
+
+        def resolve_scale(scale_name):
+            data = scales.get(scale_name)
+            if not data or not self._is_valid_entry(data):
+                return None
+            return {
+                "url": _scale_url_from_download(origin, data["download"]),
+                "width": data["width"],
+                "height": data["height"],
+            }
+
+        return (
+            picture_module.Img2PictureTag()
+            .create_picture_tag(
+                sourceset,
+                attributes,
+                fieldname=fieldname,
+                resolve_urls=False,
+                lazy=lazy,
+                scale_resolver=resolve_scale,
+            )
+            .prettify()
+        )
 
     def getImageSize(self, fieldname=None):
         origin = self._metadata_origin()
