@@ -50,6 +50,7 @@ the version bump is left to the release manager.
 - [Specify docs, changelog, and release packaging](tickets/015-specify-docs-changelog-release.md): new `docs/brain-images.rst` included in `long_description` plus a README link; `news/brain-images.feature` and no manual `CHANGES.rst` edit; leave the version at `8.1.2.dev0` for the release manager; no release or push.
 - [Approve the specification](tickets/016-approve-specification.md): `SPEC.md` and `TEST-PLAN.md` approved; implementation graduated into task tickets I1-I10; version unchanged, no GitHub writes.
 - [Add the Plone test layer and fixture helpers](tickets/017-add-test-layer-and-fixtures.md): package-local Plone integration/functional layers, real-content and fake-brain fixtures, stale/malformed helpers, strict/counting `getObject` instrumentation, ordered DOM/scale comparators, and 9 smoke tests; full suite 146 green, lint green.
+- [Add the brain view skeleton, registration, and resolvers](tickets/018-add-view-skeleton-registration-and-resolvers.md): `BrainImageScaling(ImageScaling)` in `brain_scaling.py`; `images` pages for `ICatalogBrain` and conditional `IContentListingObject`; metadata-origin, object-fallback, schema, field, and title resolvers; traversal refusal; 25 brain tests and 162-test full suite green.
 
 ## Not yet specified
 
