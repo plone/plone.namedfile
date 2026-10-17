@@ -567,6 +567,11 @@ These are not tickets yet; they graduate after this specification is approved.
 - **Stale metadata**: a catalog snapshot can point at a scale URL that 404s
   after storage cleanup. The view does not detect this; the URL may 404 until
   the scale is regenerated.
+- **Original-image URL**: an object-backed `scale()`/`tag()` with no dimensions
+  uses the storage `image-0` UID URL. The metadata view uses the indexed
+  original `image-<width>` URL. Both serve the original image; parity tests
+  compare the metadata original against the object call with explicit original
+  dimensions.
 - **Small images and `picture()`**: metadata omits scales wider than the
   original, so many small images fall back to the object; parity is preserved
   at the cost of a wake-up.

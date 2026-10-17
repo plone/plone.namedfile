@@ -1,3 +1,5 @@
+from DateTime import DateTime
+from Missing import Value as MissingValue
 from plone.namedfile.scaling import _image_tag_from_values
 from plone.namedfile.scaling import _marker
 from plone.namedfile.scaling import ImageScale
@@ -137,26 +139,36 @@ class BrainImageScale(ImageScale):
 class BrainImageScaling(ImageScaling):
     """The ``@@images`` view for catalog brains and contentlisting wrappers.
 
-    Metadata-first methods and the object fallback are implemented by the
-    later implementation tickets; this class owns registration, context
-    resolution, field resolution, and traversal refusal.
+    Scale and accessor methods answer from catalog metadata first and delegate
+    to the real object when metadata cannot answer. Traversal is refused.
     """
 
     @lazy_property
     def _supports_image_scales_metadata(self):
-        catalog = getToolByName(self.context, "portal_catalog")
+        origin = self._metadata_origin()
+        catalog = getToolByName(origin or self.context, "portal_catalog")
         return "image_scales" in catalog._catalog.schema
+
+    def _context_origin(self):
+        get_data_origin = getattr(self.context, "getDataOrigin", None)
+        return get_data_origin() if callable(get_data_origin) else self.context
 
     def _metadata_origin(self):
         """Return the brain behind the context, or None for a real object."""
-        context = self.context
-        get_data_origin = getattr(context, "getDataOrigin", None)
-        origin = get_data_origin() if callable(get_data_origin) else context
+        origin = self._context_origin()
         return origin if ICatalogBrain.providedBy(origin) else None
+
+    def _resolved_origin(self):
+        """Return the brain or the real object behind the current context."""
+        origin = self._metadata_origin()
+        return origin if origin is not None else self._context_origin()
 
     def _object_view(self, origin):
         """Return the object-backed ``@@images`` view for a metadata origin."""
         obj = origin.getObject() if ICatalogBrain.providedBy(origin) else origin
+        if obj is None:
+            logger.debug("@@images fallback object is missing for %r", origin)
+            return None
         return getMultiAdapter((obj, self.request), name="images")
 
     def _resolve_metadata(self, fieldname=None):
@@ -194,6 +206,293 @@ class BrainImageScaling(ImageScaling):
                 names[0],
             )
         return names[0], entries[0]
+
+    @staticmethod
+    def _is_valid_entry(entry):
+        """Return True for a dict with a string download and int dimensions."""
+        if not isinstance(entry, dict):
+            return False
+        download = entry.get("download")
+        width = entry.get("width")
+        height = entry.get("height")
+        return (
+            isinstance(download, str)
+            and bool(download)
+            and isinstance(width, int)
+            and not isinstance(width, bool)
+            and isinstance(height, int)
+            and not isinstance(height, bool)
+        )
+
+    @staticmethod
+    def _match_dimensions(entry, width, height):
+        scales = entry.get("scales", {})
+        if not isinstance(scales, dict):
+            return None, None
+
+        def matches(data):
+            if not isinstance(data, dict):
+                return False
+            if width is not None and data.get("width") != width:
+                return False
+            if height is not None and data.get("height") != height:
+                return False
+            return True
+
+        if matches(entry):
+            return None, entry
+        for name, data in scales.items():
+            if matches(data):
+                return name, data
+        return None, None
+
+    def _build_scale(self, origin, fieldname, scale_name, data, entry):
+        return BrainImageScale(
+            origin,
+            self.request,
+            fieldname=fieldname,
+            scale=scale_name,
+            download=data["download"],
+            width=data.get("width"),
+            height=data.get("height"),
+            content_type=entry.get("content-type"),
+            filename=entry.get("filename"),
+        )
+
+    def _fallback_scale(
+        self,
+        fieldname,
+        scale,
+        height,
+        width,
+        mode,
+        pre,
+        include_srcset,
+        reason,
+        **parameters,
+    ):
+        logger.debug(
+            "@@images falling back to object for %r/%r: %s",
+            fieldname,
+            scale,
+            reason,
+        )
+        view = self._object_view(self._resolved_origin())
+        if view is None:
+            return None
+        return view.scale(
+            fieldname=fieldname,
+            scale=scale,
+            height=height,
+            width=width,
+            mode=mode,
+            pre=pre,
+            include_srcset=include_srcset,
+            **parameters,
+        )
+
+    def scale(
+        self,
+        fieldname=None,
+        scale=None,
+        height=None,
+        width=None,
+        mode="scale",
+        pre=False,
+        include_srcset=None,
+        **parameters,
+    ):
+        origin = self._metadata_origin()
+        if origin is None:
+            return self._fallback_scale(
+                fieldname,
+                scale,
+                height,
+                width,
+                mode,
+                pre,
+                include_srcset,
+                reason="not a metadata origin",
+                **parameters,
+            )
+        if not self._supports_image_scales_metadata:
+            return self._fallback_scale(
+                fieldname,
+                scale,
+                height,
+                width,
+                mode,
+                pre,
+                include_srcset,
+                reason="catalog has no image_scales column",
+                **parameters,
+            )
+
+        fieldname, entry = self._resolve_metadata(fieldname)
+        if entry is None:
+            return None
+        if not isinstance(entry, dict):
+            return self._fallback_scale(
+                fieldname,
+                scale,
+                height,
+                width,
+                mode,
+                pre,
+                include_srcset,
+                reason="malformed image_scales entry",
+                **parameters,
+            )
+
+        if scale is not None and scale not in self.available_sizes:
+            return None
+        if parameters or mode != "scale":
+            return self._fallback_scale(
+                fieldname,
+                scale,
+                height,
+                width,
+                mode,
+                pre,
+                include_srcset,
+                reason="unsupported parameters or mode",
+                **parameters,
+            )
+
+        if scale is not None:
+            if width is not None or height is not None:
+                logger.warning(
+                    "A scale name and width/height are given. Those are "
+                    "mutually exclusive: solved by ignoring width/height and "
+                    "taking name",
+                )
+            scales = entry.get("scales", {})
+            if not isinstance(scales, dict):
+                return self._fallback_scale(
+                    fieldname,
+                    scale,
+                    height,
+                    width,
+                    mode,
+                    pre,
+                    include_srcset,
+                    reason="malformed scales metadata",
+                    **parameters,
+                )
+            data = scales.get(scale)
+            if not data or not self._is_valid_entry(data):
+                return self._fallback_scale(
+                    fieldname,
+                    scale,
+                    height,
+                    width,
+                    mode,
+                    pre,
+                    include_srcset,
+                    reason="missing or malformed metadata scale",
+                    **parameters,
+                )
+            return self._build_scale(origin, fieldname, scale, data, entry)
+
+        if width is None and height is None:
+            if not self._is_valid_entry(entry):
+                return self._fallback_scale(
+                    fieldname,
+                    scale,
+                    height,
+                    width,
+                    mode,
+                    pre,
+                    include_srcset,
+                    reason="malformed original metadata",
+                    **parameters,
+                )
+            return self._build_scale(origin, fieldname, None, entry, entry)
+
+        matched_name, matched_data = self._match_dimensions(entry, width, height)
+        if matched_data is None or not self._is_valid_entry(matched_data):
+            return self._fallback_scale(
+                fieldname,
+                scale,
+                height,
+                width,
+                mode,
+                pre,
+                include_srcset,
+                reason="no matching metadata scale",
+                **parameters,
+            )
+        return self._build_scale(origin, fieldname, matched_name, matched_data, entry)
+
+    def tag(
+        self,
+        fieldname=None,
+        scale=None,
+        height=None,
+        width=None,
+        mode="scale",
+        include_srcset=None,
+        **kwargs,
+    ):
+        scale_object = self.scale(
+            fieldname,
+            scale,
+            height,
+            width,
+            mode,
+            pre=True,
+            include_srcset=include_srcset,
+        )
+        return scale_object.tag(**kwargs) if scale_object else None
+
+    def getImageSize(self, fieldname=None):
+        origin = self._metadata_origin()
+        if origin is None:
+            logger.debug("@@images getImageSize falling back: not a metadata origin")
+            view = self._object_view(self._resolved_origin())
+            return view.getImageSize(fieldname) if view else (0, 0)
+        if not self._supports_image_scales_metadata:
+            logger.debug(
+                "@@images getImageSize falling back: catalog has no "
+                "image_scales column"
+            )
+            view = self._object_view(self._resolved_origin())
+            return view.getImageSize(fieldname) if view else (0, 0)
+        fieldname, entry = self._resolve_metadata(fieldname)
+        if entry is None:
+            return (0, 0)
+        width = entry.get("width") if isinstance(entry, dict) else None
+        height = entry.get("height") if isinstance(entry, dict) else None
+        if (
+            not isinstance(width, int)
+            or isinstance(width, bool)
+            or not isinstance(height, int)
+            or isinstance(height, bool)
+        ):
+            logger.debug("@@images getImageSize falling back: malformed dimensions")
+            view = self._object_view(self._resolved_origin())
+            return view.getImageSize(fieldname) if view else (0, 0)
+        return (width, height)
+
+    def modified(self, fieldname=None):
+        origin = self._metadata_origin()
+        if origin is None:
+            logger.debug("@@images modified falling back: not a metadata origin")
+            view = self._object_view(self._resolved_origin())
+            return view.modified(fieldname) if view else 0
+        if not self._supports_image_scales_metadata:
+            logger.debug(
+                "@@images modified falling back: catalog has no " "image_scales column"
+            )
+            view = self._object_view(self._resolved_origin())
+            return view.modified(fieldname) if view else 0
+        value = getattr(origin, "modified", None)
+        if value is None or value is MissingValue:
+            return 0
+        try:
+            return DateTime(value).millis()
+        except (TypeError, ValueError, SyntaxError):
+            return 0
 
     def publishTraverse(self, request, name):
         raise NotFound(self, name, request)

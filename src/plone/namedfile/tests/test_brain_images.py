@@ -1,3 +1,5 @@
+from DateTime import DateTime
+from Missing import Value as MissingValue
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
 from plone.namedfile.brain_scaling import _title
@@ -17,13 +19,17 @@ from plone.namedfile.tests.brain_images_helpers import FakeBrain
 from plone.namedfile.tests.brain_images_helpers import first_image_entry
 from plone.namedfile.tests.brain_images_helpers import get_brain
 from plone.namedfile.tests.brain_images_helpers import image_entry
+from plone.namedfile.tests.brain_images_helpers import malformed_image_scales
+from plone.namedfile.tests.brain_images_helpers import missing_dimensions_image_scales
 from plone.namedfile.tests.brain_images_helpers import multi_entry_image_scales
 from plone.namedfile.tests.brain_images_helpers import scale_entry
+from plone.namedfile.tests.brain_images_helpers import shadow_image_scales
 from plone.namedfile.tests.brain_images_helpers import strict_get_object_calls
 from plone.namedfile.tests.brain_images_helpers import wrapper_for
 from types import SimpleNamespace
 from unittest.mock import patch
 from zExceptions import BadRequest
+from zExceptions import Unauthorized
 from zope.component import getMultiAdapter
 from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import TraversalError
@@ -453,3 +459,242 @@ class BrainImageScaleTests(unittest.TestCase):
             scale.HEAD(self.request)
         with self.assertRaises(NotFound):
             scale.set_headers()
+
+
+class BrainImageScalingBehaviorTests(unittest.TestCase):
+    """Metadata-first behavior, accessors, and object fallback."""
+
+    layer = NAMEDFILE_PLONE_INTEGRATION
+
+    def setUp(self):
+        self.portal = self.layer["portal"]
+        self.request = self.layer["request"]
+        setRoles(self.portal, TEST_USER_ID, ["Manager"])
+        self.obj = create_image(self.portal)
+        self.brain = get_brain(self.portal, self.obj)
+        self.object_view = getMultiAdapter((self.obj, self.request), name="images")
+        self.brain_view = getMultiAdapter((self.brain, self.request), name="images")
+        self.disable_hidpi(self.object_view)
+        self.disable_hidpi(self.brain_view)
+
+    @staticmethod
+    def disable_hidpi(view):
+        view.getHighPixelDensityScales = lambda: []
+
+    def make_no_image_view(self):
+        content_id = f"no_image_{self.brain.UID}"
+        self.portal.invokeFactory("News Item", content_id, title="No Image")
+        obj = self.portal[content_id]
+        obj.reindexObject()
+        brain = get_brain(self.portal, obj)
+        return getMultiAdapter((brain, self.request), name="images")
+
+    def testTagNamedScaleParityAndNoWake(self):
+        with strict_get_object_calls():
+            brain_tag = self.brain_view.tag("image", scale="thumb")
+        object_tag = self.object_view.tag("image", scale="thumb")
+        assert_html_equal(self, brain_tag, object_tag)
+
+    def testTagOriginalParity(self):
+        brain_tag = self.brain_view.tag("image")
+        object_tag = self.object_view.tag("image", width=200, height=200)
+        assert_html_equal(self, brain_tag, object_tag)
+
+    def testOriginalMetadataUsesIndexedURL(self):
+        scale = self.brain_view.scale("image")
+        self.assertIn("image-200-", scale.url)
+
+    def testTagConsumesIncludeSrcset(self):
+        html = self.brain_view.tag(
+            "image",
+            scale="thumb",
+            include_srcset=False,
+            loading="lazy",
+        )
+        self.assertNotIn("include_srcset", html)
+        self.assertIn('loading="lazy"', html)
+
+    def testWrapperTagParity(self):
+        wrapper = wrapper_for(self.brain)
+        wrapper_view = getMultiAdapter((wrapper, self.request), name="images")
+        self.disable_hidpi(wrapper_view)
+        with strict_get_object_calls():
+            wrapper_tag = wrapper_view.tag("image", scale="thumb")
+        object_tag = self.object_view.tag("image", scale="thumb")
+        assert_html_equal(self, wrapper_tag, object_tag)
+
+    def testScaleNamedParity(self):
+        brain_scale = self.brain_view.scale("image", scale="thumb")
+        object_scale = self.object_view.scale("image", scale="thumb")
+
+        self.assertIsInstance(brain_scale, BrainImageScale)
+        assert_scale_equal(self, brain_scale, object_scale)
+
+    def testScaleOriginalParity(self):
+        brain_scale = self.brain_view.scale("image")
+        object_scale = self.object_view.scale("image", width=200, height=200)
+        self.assertIsInstance(brain_scale, BrainImageScale)
+        assert_scale_equal(self, brain_scale, object_scale)
+
+    def testScaleExplicitDimensionsMatchMetadata(self):
+        brain_scale = self.brain_view.scale("image", width=128, height=128)
+        object_scale = self.object_view.scale("image", width=128, height=128)
+
+        self.assertIsInstance(brain_scale, BrainImageScale)
+        assert_scale_equal(self, brain_scale, object_scale)
+
+    def testMissingConfiguredScaleFallsBack(self):
+        with self.assertLogs(
+            "plone.namedfile.brain_scaling",
+            level="DEBUG",
+        ) as captured:
+            with counting_get_object_calls() as calls:
+                scale = self.brain_view.scale("image", scale="huge")
+
+        self.assertIsNotNone(scale)
+        self.assertNotIsInstance(scale, BrainImageScale)
+        self.assertEqual(len(calls), 1)
+        self.assertIn("falling back", "\n".join(captured.output))
+
+    def testScaleWithDimensionsTakesNamedScale(self):
+        with self.assertLogs(
+            "plone.namedfile.brain_scaling",
+            level="WARNING",
+        ):
+            with strict_get_object_calls():
+                scale = self.brain_view.scale(
+                    "image",
+                    scale="thumb",
+                    width=999,
+                    height=999,
+                )
+
+        self.assertIsInstance(scale, BrainImageScale)
+        self.assertEqual(scale.__name__, "image-thumb.png")
+
+    def testPreScaleUsesMetadataWithoutWake(self):
+        with strict_get_object_calls():
+            scale = self.brain_view.scale("image", scale="thumb", pre=True)
+        self.assertIsInstance(scale, BrainImageScale)
+
+    def testUnknownScaleWithCropReturnsNoneWithoutWake(self):
+        with strict_get_object_calls():
+            self.assertIsNone(self.brain_view.scale("image", scale="nope", mode="crop"))
+
+    def testUnknownScaleNameReturnsNoneWithoutWake(self):
+        with strict_get_object_calls():
+            self.assertIsNone(self.brain_view.scale("image", scale="nope"))
+
+    def testCropModeFallsBack(self):
+        with counting_get_object_calls() as calls:
+            scale = self.brain_view.scale("image", scale="thumb", mode="crop")
+
+        self.assertNotIsInstance(scale, BrainImageScale)
+        self.assertEqual(len(calls), 1)
+
+    def testArbitraryDimensionsFallBack(self):
+        with counting_get_object_calls() as calls:
+            scale = self.brain_view.scale("image", width=77)
+
+        self.assertNotIsInstance(scale, BrainImageScale)
+        self.assertEqual(len(calls), 1)
+
+    def testMissingFieldReturnsNoneWithoutWake(self):
+        with strict_get_object_calls():
+            self.assertIsNone(self.brain_view.scale("missing"))
+
+    def testNoImageReturnsEmptyWithoutWake(self):
+        view = self.make_no_image_view()
+        with strict_get_object_calls():
+            self.assertIsNone(view.scale("image"))
+            self.assertIsNone(view.tag("image"))
+            self.assertEqual(view.getImageSize("image"), (0, 0))
+
+    def testSchemaWithoutColumnFallsBack(self):
+        catalog = SimpleNamespace(_catalog=SimpleNamespace(schema=[]))
+        with patch(
+            "plone.namedfile.brain_scaling.getToolByName",
+            return_value=catalog,
+        ):
+            view = getMultiAdapter((self.brain, self.request), name="images")
+            view.getHighPixelDensityScales = lambda: []
+            with counting_get_object_calls() as calls:
+                html = view.tag("image", scale="thumb")
+
+        self.assertIsNotNone(html)
+        self.assertEqual(len(calls), 1)
+
+    def testMalformedMetadataFallsBack(self):
+        with shadow_image_scales(self.brain, malformed_image_scales()):
+            with counting_get_object_calls() as calls:
+                html = self.brain_view.tag("image")
+
+        self.assertIsNotNone(html)
+        self.assertEqual(len(calls), 1)
+
+    def testGetImageSizeUsesMetadataWithoutWake(self):
+        with strict_get_object_calls():
+            self.assertEqual(self.brain_view.getImageSize("image"), (200, 200))
+
+    def testGetImageSizeMissingDimensionsFallsBack(self):
+        with shadow_image_scales(
+            self.brain,
+            missing_dimensions_image_scales(),
+        ):
+            with counting_get_object_calls() as calls:
+                size = self.brain_view.getImageSize("image")
+
+        self.assertEqual(size, (200, 200))
+        self.assertEqual(len(calls), 1)
+
+    def testModifiedUsesBrainValueWithoutWake(self):
+        with strict_get_object_calls():
+            modified = self.brain_view.modified("image")
+        self.assertEqual(modified, DateTime(self.brain.modified).millis())
+
+    def testUnauthorizedFallbackPropagates(self):
+        fake = FakeBrain(
+            image_scales={"image": [image_entry()]},
+            get_object=lambda: (_ for _ in ()).throw(Unauthorized("nope")),
+        )
+        view = getMultiAdapter((fake, self.request), name="images")
+        with self.assertRaises(Unauthorized):
+            view.scale("image", width=77)
+
+    def testGetObjectNoneYieldsEmptyResults(self):
+        fake = FakeBrain(
+            image_scales=missing_dimensions_image_scales(),
+            get_object=lambda: None,
+        )
+        view = getMultiAdapter((fake, self.request), name="images")
+
+        self.assertIsNone(view.scale("image", width=77))
+        self.assertEqual(view.getImageSize("image"), (0, 0))
+
+    def testWrongTypedMetadataFallsBack(self):
+        bad_metadata = {"image": [image_entry(width="abc", height=200)]}
+        with shadow_image_scales(self.brain, bad_metadata):
+            with counting_get_object_calls() as calls:
+                html = self.brain_view.tag("image")
+
+        self.assertIsNotNone(html)
+        self.assertEqual(len(calls), 1)
+
+    def testUnauthorizedGetImageSizePropagates(self):
+        fake = FakeBrain(
+            image_scales=missing_dimensions_image_scales(),
+            get_object=lambda: (_ for _ in ()).throw(Unauthorized("nope")),
+        )
+        view = getMultiAdapter((fake, self.request), name="images")
+        with self.assertRaises(Unauthorized):
+            view.getImageSize("image")
+
+    def testModifiedMissingValueReturnsZero(self):
+        class MissingModifiedBrain(FakeBrain):
+            @property
+            def modified(self):
+                return MissingValue
+
+        fake = MissingModifiedBrain(image_scales={"image": [image_entry()]})
+        view = getMultiAdapter((fake, self.request), name="images")
+        self.assertEqual(view.modified("image"), 0)

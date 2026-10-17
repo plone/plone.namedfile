@@ -174,6 +174,18 @@ def malformed_image_scales():
     return {"image": [image_entry(download=None)]}
 
 
+def missing_dimensions_image_scales():
+    return {
+        "image": [
+            image_entry(
+                download="@@images/image-200-deadbeef.png",
+                width=None,
+                height=None,
+            )
+        ]
+    }
+
+
 def multi_entry_image_scales():
     entry = image_entry()
     return {"image": [entry, dict(entry)]}

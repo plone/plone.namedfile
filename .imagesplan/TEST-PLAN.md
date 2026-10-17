@@ -264,6 +264,9 @@ metadata path, not wall-clock timing. Do not add timing thresholds.
 - Field-level read permissions are not enforced on the metadata path.
 - Stale metadata URLs can 404 after storage cleanup; the view does not detect
   this.
+- The object view's no-dimension original uses the storage `image-0` UID; the
+  metadata view uses the indexed `image-<width>` URL. Both serve the original;
+  parity compares against explicit original dimensions.
 
 ## Non-goals
 
