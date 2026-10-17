@@ -2,6 +2,7 @@ from DateTime import DateTime
 from Missing import Value as MissingValue
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
+from plone.base.interfaces import IImagingSchema
 from plone.namedfile.brain_scaling import _title
 from plone.namedfile.brain_scaling import BrainImageScale
 from plone.namedfile.brain_scaling import BrainImageScaling
@@ -27,15 +28,19 @@ from plone.namedfile.tests.brain_images_helpers import scale_entry
 from plone.namedfile.tests.brain_images_helpers import shadow_image_scales
 from plone.namedfile.tests.brain_images_helpers import strict_get_object_calls
 from plone.namedfile.tests.brain_images_helpers import wrapper_for
+from plone.registry.interfaces import IRegistry
 from types import SimpleNamespace
 from unittest.mock import patch
 from zExceptions import BadRequest
 from zExceptions import Unauthorized
 from zope.component import getMultiAdapter
+from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import TraversalError
 
+import contextlib
 import copy
+import inspect
 import unittest
 
 RELATIVE_DOWNLOAD = "@@images/image-200-deadbeef.png"
@@ -1233,3 +1238,166 @@ class BrainImageScalingPictureTests(unittest.TestCase):
         )
         object_picture = self.object_picture(picture_variant="test")
         assert_html_equal(self, wrapper_picture, object_picture)
+
+
+class BrainImageScalingHiDPITests(unittest.TestCase):
+    """HiDPI is metadata-free and requires an explicit object fallback."""
+
+    layer = NAMEDFILE_PLONE_INTEGRATION
+    hidpi_scales = [{"scale": 2, "quality": 66}]
+
+    def setUp(self):
+        self.portal = self.layer["portal"]
+        self.request = self.layer["request"]
+        setRoles(self.portal, TEST_USER_ID, ["Manager"])
+        self.obj = create_image(self.portal)
+        self.brain = get_brain(self.portal, self.obj)
+        self.object_view = getMultiAdapter((self.obj, self.request), name="images")
+        self.brain_view = getMultiAdapter((self.brain, self.request), name="images")
+
+    def use_hidpi(self, view=None):
+        (view or self.brain_view).getHighPixelDensityScales = lambda: self.hidpi_scales
+
+    def use_no_hidpi(self, view=None):
+        (view or self.brain_view).getHighPixelDensityScales = lambda: []
+
+    @contextlib.contextmanager
+    def hidpi_configured(self):
+        with patch.object(
+            ImageScaling,
+            "getHighPixelDensityScales",
+            return_value=self.hidpi_scales,
+        ):
+            yield
+
+    def make_no_image_view(self):
+        content_id = f"no_image_hidpi_{self.brain.UID}"
+        self.portal.invokeFactory("News Item", content_id, title="No Image")
+        obj = self.portal[content_id]
+        obj.reindexObject()
+        brain = get_brain(self.portal, obj)
+        return getMultiAdapter((brain, self.request), name="images")
+
+    def testDefaultOmitsHiDPIWithoutWake(self):
+        self.use_hidpi()
+        with strict_get_object_calls():
+            html = self.brain_view.tag("image", scale="icon")
+        self.assertNotIn("srcset=", html)
+
+    def testIncludeSrcsetFalseOmitsHiDPIWithoutWake(self):
+        self.use_hidpi()
+        with strict_get_object_calls():
+            html = self.brain_view.tag(
+                "image",
+                scale="icon",
+                include_srcset=False,
+            )
+        self.assertNotIn("srcset=", html)
+
+    def testPreTrueDefaultOmitsHiDPIWithoutWake(self):
+        self.use_hidpi()
+        with strict_get_object_calls():
+            scale = self.brain_view.scale("image", scale="icon", pre=True)
+        self.assertIsInstance(scale, BrainImageScale)
+        self.assertEqual(scale.srcset, [])
+
+    def testIncludeSrcsetTrueWithoutHiDPIStaysMetadata(self):
+        self.use_no_hidpi()
+        with strict_get_object_calls():
+            scale = self.brain_view.scale(
+                "image",
+                scale="icon",
+                include_srcset=True,
+            )
+        self.assertIsInstance(scale, BrainImageScale)
+        self.assertEqual(scale.srcset, [])
+
+    def testIncludeSrcsetTrueWithHiDPIFallsBackForScale(self):
+        with self.hidpi_configured():
+            with counting_get_object_calls() as calls:
+                scale = self.brain_view.scale(
+                    "image",
+                    scale="icon",
+                    include_srcset=True,
+                )
+
+        self.assertNotIsInstance(scale, BrainImageScale)
+        self.assertTrue(scale.srcset)
+        self.assertEqual(len(calls), 1)
+
+    def testIncludeSrcsetTrueWithHiDPIFallsBackForTag(self):
+        with self.hidpi_configured():
+            with counting_get_object_calls() as calls:
+                brain_tag = self.brain_view.tag(
+                    "image",
+                    scale="icon",
+                    include_srcset=True,
+                )
+            object_tag = self.object_view.tag("image", scale="icon")
+
+        self.assertIn("srcset=", brain_tag)
+        self.assertIn(" 2x", brain_tag)
+        self.assertNotIn("include_srcset", brain_tag)
+        assert_html_equal(self, brain_tag, object_tag)
+        self.assertEqual(len(calls), 1)
+
+    def testUnknownScaleWithHiDPIStillReturnsNoneWithoutWake(self):
+        self.use_hidpi()
+        with strict_get_object_calls():
+            self.assertIsNone(
+                self.brain_view.scale(
+                    "image",
+                    scale="nope",
+                    include_srcset=True,
+                )
+            )
+
+    def testNoImageWithHiDPIReturnsNoneWithoutWake(self):
+        view = self.make_no_image_view()
+        self.use_hidpi(view)
+        with strict_get_object_calls():
+            self.assertIsNone(view.tag("image", include_srcset=True))
+
+    def testDefaultFallbackDoesNotReenableHiDPI(self):
+        with self.hidpi_configured():
+            with counting_get_object_calls() as calls:
+                html = self.brain_view.tag("image", scale="huge")
+
+        self.assertNotIn("srcset=", html)
+        self.assertEqual(len(calls), 1)
+
+    def testRegistryHiDPIEnablesFallback(self):
+        registry = getUtility(IRegistry)
+        settings = registry.forInterface(IImagingSchema, prefix="plone")
+        old_scales = settings.highpixeldensity_scales
+        old_quality = settings.quality_2x
+        settings.highpixeldensity_scales = "2x"
+        settings.quality_2x = 66
+        self.addCleanup(
+            setattr,
+            settings,
+            "highpixeldensity_scales",
+            old_scales,
+        )
+        self.addCleanup(setattr, settings, "quality_2x", old_quality)
+
+        with counting_get_object_calls() as calls:
+            scale = self.brain_view.scale(
+                "image",
+                scale="icon",
+                include_srcset=True,
+            )
+
+        self.assertNotIsInstance(scale, BrainImageScale)
+        self.assertTrue(scale.srcset)
+        self.assertEqual(len(calls), 1)
+
+    def testSrcsetAndPictureHaveNoIncludeSrcsetParameter(self):
+        self.assertNotIn(
+            "include_srcset",
+            inspect.signature(self.brain_view.srcset).parameters,
+        )
+        self.assertNotIn(
+            "include_srcset",
+            inspect.signature(self.brain_view.picture).parameters,
+        )

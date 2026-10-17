@@ -55,6 +55,7 @@ the version bump is left to the release manager.
 - [Implement scale, tag, accessors, and fallback delegation](tickets/020-implement-scale-tag-and-fallback.md): metadata-first `scale`/`tag`/`getImageSize`/`modified`, the full fallback matrix with debug logs, malformed-metadata guards, `Unauthorized`/missing-object behavior, and documented original-URL divergence; 66 brain tests and 203-test full suite green.
 - [Implement srcset() from metadata](tickets/021-implement-srcset.md): object-order `srcset` from metadata, original inclusion, `scale_in_src` selection, skip-missing divergence, malformed-nested fallback, full attribute parity, and zero wake-ups; 82 brain tests and 219-test full suite green.
 - [Add the picture resolver hook and implement picture()](tickets/022-implement-picture.md): optional `Img2PictureTag` scale resolver, metadata preflight with whole-call fallback, variant/empty handling, object-compatible attributes, and zero `uuidToObject`/wake-ups on the fast path; 95 brain tests and 232-test full suite green.
+- [Implement HiDPI include_srcset behavior](tickets/023-implement-hidpi-include-srcset.md): explicit `include_srcset=True` falls back to the object only when HiDPI is configured; defaults and other fallbacks stay HiDPI-free; registry-driven and zero-wake tests; 106 brain tests and 243-test full suite green.
 
 ## Not yet specified
 

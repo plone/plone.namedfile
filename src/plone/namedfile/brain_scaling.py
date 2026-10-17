@@ -288,7 +288,7 @@ class BrainImageScaling(ImageScaling):
             width=width,
             mode=mode,
             pre=pre,
-            include_srcset=include_srcset,
+            include_srcset=True if include_srcset is True else False,
             **parameters,
         )
 
@@ -347,6 +347,18 @@ class BrainImageScaling(ImageScaling):
 
         if scale is not None and scale not in self.available_sizes:
             return None
+        if include_srcset is True and self.getHighPixelDensityScales():
+            return self._fallback_scale(
+                fieldname,
+                scale,
+                height,
+                width,
+                mode,
+                pre,
+                include_srcset,
+                reason="HiDPI requested",
+                **parameters,
+            )
         if parameters or mode != "scale":
             return self._fallback_scale(
                 fieldname,
