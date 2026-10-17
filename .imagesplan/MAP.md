@@ -51,6 +51,7 @@ the version bump is left to the release manager.
 - [Approve the specification](tickets/016-approve-specification.md): `SPEC.md` and `TEST-PLAN.md` approved; implementation graduated into task tickets I1-I10; version unchanged, no GitHub writes.
 - [Add the Plone test layer and fixture helpers](tickets/017-add-test-layer-and-fixtures.md): package-local Plone integration/functional layers, real-content and fake-brain fixtures, stale/malformed helpers, strict/counting `getObject` instrumentation, ordered DOM/scale comparators, and 9 smoke tests; full suite 146 green, lint green.
 - [Add the brain view skeleton, registration, and resolvers](tickets/018-add-view-skeleton-registration-and-resolvers.md): `BrainImageScaling(ImageScaling)` in `brain_scaling.py`; `images` pages for `ICatalogBrain` and conditional `IContentListingObject`; metadata-origin, object-fallback, schema, field, and title resolvers; traversal refusal; 25 brain tests and 162-test full suite green.
+- [Implement BrainImageScale and the metadata URL helper](tickets/019-implement-brain-image-scale.md): `BrainImageScale(ImageScale)` with `data=None`, metadata constructor, URL join/pass-through rules, `tag`/`title`/`srcset_attribute`, access no-op, and data-serving refusal; 39 brain tests and 176-test full suite green.
 
 ## Not yet specified
 

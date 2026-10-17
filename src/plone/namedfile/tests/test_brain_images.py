@@ -1,7 +1,9 @@
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
 from plone.namedfile.brain_scaling import _title
+from plone.namedfile.brain_scaling import BrainImageScale
 from plone.namedfile.brain_scaling import BrainImageScaling
+from plone.namedfile.scaling import ImageScale
 from plone.namedfile.scaling import ImageScaling
 from plone.namedfile.testing import NAMEDFILE_PLONE_INTEGRATION
 from plone.namedfile.tests.brain_images_helpers import assert_html_equal
@@ -27,6 +29,9 @@ from zope.publisher.interfaces import NotFound
 from zope.traversing.interfaces import TraversalError
 
 import unittest
+
+RELATIVE_DOWNLOAD = "@@images/image-200-deadbeef.png"
+SCALE_URL = f"http://nohost/plone/fake/{RELATIVE_DOWNLOAD}"
 
 
 class DummyScale:
@@ -274,3 +279,177 @@ class BrainImageScalingRegistrationTests(unittest.TestCase):
             self.view.traverse("image", [])
         with self.assertRaises(BadRequest):
             self.view.browserDefault(self.request)
+
+
+class BrainImageScaleTests(unittest.TestCase):
+    """Metadata-backed scale object behavior."""
+
+    layer = NAMEDFILE_PLONE_INTEGRATION
+
+    def setUp(self):
+        self.request = self.layer["request"]
+        self.brain = FakeBrain(url="http://nohost/plone/fake")
+
+    def make_scale(self, **kwargs):
+        values = {
+            "fieldname": "image",
+            "download": RELATIVE_DOWNLOAD,
+            "width": 200,
+            "height": 200,
+            "content_type": "image/png",
+            "filename": "image.png",
+        }
+        values.update(kwargs)
+        return BrainImageScale(self.brain, self.request, **values)
+
+    def testConstructorAttributes(self):
+        scale = self.make_scale(scale="thumb")
+
+        self.assertEqual(scale.fieldname, "image")
+        self.assertEqual(scale.scale, "thumb")
+        self.assertEqual(scale.width, 200)
+        self.assertEqual(scale.height, 200)
+        self.assertEqual(scale.contentType, "image/png")
+        self.assertEqual(scale.mimetype, "image/png")
+        self.assertEqual(scale.filename, "image.png")
+        self.assertIsNone(scale.data)
+        self.assertFalse(hasattr(scale, "uid"))
+        self.assertEqual(scale.srcset, [])
+        self.assertEqual(scale.__name__, "image-thumb.png")
+        self.assertEqual(scale.url, SCALE_URL)
+        self.assertEqual(scale.absolute_url(), scale.url)
+
+    def testOriginalName(self):
+        self.assertEqual(self.make_scale().__name__, "image.png")
+
+    def testSVGExtension(self):
+        scale = self.make_scale(
+            content_type="image/svg+xml",
+            download="@@images/image-200.svg",
+        )
+        self.assertEqual(scale.__name__, "image.svg")
+
+    def testExtensionFromDownload(self):
+        scale = self.make_scale(
+            content_type=None,
+            download="@@images/image-200.jpg?version=1",
+        )
+        self.assertEqual(scale.__name__, "image.jpg")
+
+    def testRelativeURLJoinsOrigin(self):
+        brain = FakeBrain(url="http://nohost/plone/fake/")
+        scale = BrainImageScale(
+            brain,
+            self.request,
+            fieldname="image",
+            download=RELATIVE_DOWNLOAD,
+            width=200,
+            height=200,
+            content_type="image/png",
+        )
+        self.assertEqual(scale.url, SCALE_URL)
+
+    def testAbsoluteAndRootRelativeURLsPassThrough(self):
+        absolute = self.make_scale(download="https://cdn.example.com/image.png")
+        root_relative = self.make_scale(download="/static/image.png")
+
+        self.assertEqual(absolute.url, "https://cdn.example.com/image.png")
+        self.assertEqual(root_relative.url, "/static/image.png")
+
+    def testURLPreservesQueryAndFragment(self):
+        scale = self.make_scale(
+            download="@@images/image-200-deadbeef.png?v=1#frag",
+        )
+        self.assertEqual(scale.url, f"{SCALE_URL}?v=1#frag")
+
+    def testTagDefaultsMatchImageScale(self):
+        scale = self.make_scale()
+        self.assertEqual(scale.srcset_attribute(), "")
+        assert_html_equal(
+            self,
+            scale.tag(),
+            (
+                f'<img src="{SCALE_URL}" alt="Fake" title="Fake" '
+                'height="200" width="200"/>'
+            ),
+        )
+
+    def testTagMatchesObjectImageScale(self):
+        class DummyImage:
+            contentType = "image/png"
+            _width = 200
+            _height = 200
+
+        class DummyContext:
+            def absolute_url(self):
+                return "http://nohost/plone/fake"
+
+            def Title(self):
+                return "Fake"
+
+        object_scale = ImageScale(
+            DummyContext(),
+            self.request,
+            data=DummyImage(),
+            fieldname="image",
+            uid="image-200-deadbeef",
+        )
+
+        assert_html_equal(self, self.make_scale().tag(), object_scale.tag())
+
+    def testTagOverridesAndExtraAttributes(self):
+        scale = self.make_scale()
+        html = scale.tag(
+            alt="Alt",
+            title="Title",
+            css_class="thumb",
+            width=100,
+            height=50,
+            loading="lazy",
+        )
+        assert_html_equal(
+            self,
+            html,
+            (
+                f'<img src="{SCALE_URL}" alt="Alt" title="Title" '
+                'height="50" width="100" class="thumb" loading="lazy"/>'
+            ),
+        )
+
+    def testTagWithoutDimensionsOmitsThem(self):
+        scale = self.make_scale(width=None, height=None)
+        html = scale.tag()
+        self.assertNotIn("width=", html)
+        self.assertNotIn("height=", html)
+
+    def make_scale_with_title(self, title):
+        brain = FakeBrain(url="http://nohost/plone/fake", title=title)
+        return BrainImageScale(
+            brain,
+            self.request,
+            fieldname="image",
+            download="/static/image.png",
+            width=200,
+            height=200,
+            content_type="image/png",
+        )
+
+    def testTitleNormalization(self):
+        self.assertEqual(self.make_scale().title, "Fake")
+        self.assertEqual(
+            self.make_scale_with_title(lambda: "Callable").title,
+            "Callable",
+        )
+        self.assertEqual(self.make_scale_with_title("").title, "")
+
+    def testValidateAccessIsNoop(self):
+        self.assertIsNone(self.make_scale().validate_access())
+
+    def testDataServingIsRefused(self):
+        scale = self.make_scale()
+        with self.assertRaises(NotFound):
+            scale.index_html()
+        with self.assertRaises(NotFound):
+            scale.HEAD(self.request)
+        with self.assertRaises(NotFound):
+            scale.set_headers()
