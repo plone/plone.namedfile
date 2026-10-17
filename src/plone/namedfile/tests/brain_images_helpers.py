@@ -88,6 +88,16 @@ def wrapper_for(brain):
     return IContentListingObject(brain)
 
 
+def create_no_image_view(portal, request):
+    """Create an image-less News Item and return its brain-aware view."""
+    content_id = f"no_image_{uuid.uuid4().hex[:8]}"
+    portal.invokeFactory("News Item", content_id, title="No Image")
+    obj = portal[content_id]
+    obj.reindexObject()
+    brain = get_brain(portal, obj)
+    return getMultiAdapter((brain, request), name="images")
+
+
 def first_image_entry(brain, fieldname="image"):
     """Return the first metadata entry for a field."""
     return brain.image_scales[fieldname][0]

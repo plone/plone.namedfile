@@ -45,6 +45,32 @@ class Img2PictureTag:
             return
         return scale_info[0]
 
+    def resolve_scale(
+        self,
+        scale,
+        *,
+        src,
+        scale_resolver,
+        resolve_urls,
+        obj,
+        fieldname,
+    ):
+        if scale_resolver is not None:
+            return scale_resolver(scale)
+        if resolve_urls and obj:
+            scale_view = obj.unrestrictedTraverse("@@images", None)
+            scale_obj = scale_view.scale(fieldname, scale, pre=True)
+            return {
+                "url": scale_obj.url,
+                "width": scale_obj.width,
+                "height": scale_obj.height,
+            }
+        return {
+            "url": self.update_src_scale(src=src, scale=scale),
+            "width": None,
+            "height": None,
+        }
+
     def create_picture_tag(
         self,
         sourceset,
@@ -94,19 +120,18 @@ class Img2PictureTag:
                 if not scale_width:
                     logger.warning("No width found for scale %s.", scale)
                     continue
-                if scale_resolver is not None:
-                    resolved = scale_resolver(scale)
-                    if resolved is None:
-                        logger.warning("No scale data found for scale %s.", scale)
-                        continue
-                    scale_url = resolved["url"]
-                elif resolve_urls and obj:
-                    scale_view = obj.unrestrictedTraverse("@@images", None)
-                    scale_obj = scale_view.scale(fieldname, scale, pre=True)
-                    scale_url = scale_obj.url
-                else:
-                    scale_url = self.update_src_scale(src=src, scale=scale)
-                source_srcset.append(f"{scale_url} {scale_width}w")
+                resolved = self.resolve_scale(
+                    scale,
+                    src=src,
+                    scale_resolver=scale_resolver,
+                    resolve_urls=resolve_urls,
+                    obj=obj,
+                    fieldname=fieldname,
+                )
+                if resolved is None:
+                    logger.warning("No scale data found for scale %s.", scale)
+                    continue
+                source_srcset.append(f"{resolved['url']} {scale_width}w")
             if not sizes:
                 sizes = f"(min-width: 576px) {target_width}px, (min-width: 768px) 600px, 98vw"
             source_tag = soup.new_tag(
@@ -116,26 +141,24 @@ class Img2PictureTag:
                 source_tag["media"] = media
             picture_tag.append(source_tag)
             if i == len(sourceset) - 1:
-                if scale_resolver is not None:
-                    resolved = scale_resolver(target_scale)
-                    if resolved is None:
-                        logger.warning(
-                            "No scale data found for scale %s.",
-                            target_scale,
-                        )
-                        scale_url = src
-                    else:
-                        scale_url = resolved["url"]
-                        width = resolved["width"]
-                        height = resolved["height"]
-                elif resolve_urls and obj:
-                    scale_view = obj.unrestrictedTraverse("@@images", None)
-                    scale_obj = scale_view.scale(fieldname, target_scale, pre=True)
-                    scale_url = scale_obj.url
-                    width = scale_obj.width
-                    height = scale_obj.height
+                resolved = self.resolve_scale(
+                    target_scale,
+                    src=src,
+                    scale_resolver=scale_resolver,
+                    resolve_urls=resolve_urls,
+                    obj=obj,
+                    fieldname=fieldname,
+                )
+                if resolved is None:
+                    logger.warning(
+                        "No scale data found for scale %s.",
+                        target_scale,
+                    )
+                    scale_url = src
                 else:
-                    scale_url = self.update_src_scale(src=src, scale=target_scale)
+                    scale_url = resolved["url"]
+                    width = resolved["width"]
+                    height = resolved["height"]
                 img_tag = soup.new_tag("img", src=scale_url)
                 for k, attr in attributes.items():
                     if k in ["src", "srcset"]:

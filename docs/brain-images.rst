@@ -245,6 +245,11 @@ Documented divergences
   Both serve the original image.
 * Metadata is a catalog snapshot. A scale URL can return 404 after storage
   cleanup until the scale is regenerated.
+* A request-dependent custom ``_scale_url`` override can differ from the URL
+  captured at index time.
+* If a contentlisting wrapper has already woken its object,
+  ``getDataOrigin()`` returns the real object and the view uses the object
+  path.
 * Field-level permissions are not enforced on the metadata path.
 
 Non-goals

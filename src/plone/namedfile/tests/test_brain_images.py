@@ -20,6 +20,7 @@ from plone.namedfile.tests.brain_images_helpers import create_image
 from plone.namedfile.tests.brain_images_helpers import create_large_image
 from plone.namedfile.tests.brain_images_helpers import create_multi_image_item
 from plone.namedfile.tests.brain_images_helpers import create_multi_image_type
+from plone.namedfile.tests.brain_images_helpers import create_no_image_view
 from plone.namedfile.tests.brain_images_helpers import FakeBrain
 from plone.namedfile.tests.brain_images_helpers import first_image_entry
 from plone.namedfile.tests.brain_images_helpers import get_brain
@@ -495,14 +496,6 @@ class BrainImageScalingBehaviorTests(unittest.TestCase):
     def disable_hidpi(view):
         view.getHighPixelDensityScales = lambda: []
 
-    def make_no_image_view(self):
-        content_id = f"no_image_{self.brain.UID}"
-        self.portal.invokeFactory("News Item", content_id, title="No Image")
-        obj = self.portal[content_id]
-        obj.reindexObject()
-        brain = get_brain(self.portal, obj)
-        return getMultiAdapter((brain, self.request), name="images")
-
     def testTagNamedScaleParityAndNoWake(self):
         with strict_get_object_calls():
             brain_tag = self.brain_view.tag("image", scale="thumb")
@@ -568,7 +561,9 @@ class BrainImageScalingBehaviorTests(unittest.TestCase):
         self.assertIsNotNone(scale)
         self.assertNotIsInstance(scale, BrainImageScale)
         self.assertEqual(len(calls), 1)
-        self.assertIn("falling back", "\n".join(captured.output))
+        output = "\n".join(captured.output)
+        self.assertIn("falling back", output)
+        self.assertIn("scale='huge'", output)
 
     def testScaleWithDimensionsTakesNamedScale(self):
         with self.assertLogs(
@@ -618,7 +613,7 @@ class BrainImageScalingBehaviorTests(unittest.TestCase):
             self.assertIsNone(self.brain_view.scale("missing"))
 
     def testNoImageReturnsEmptyWithoutWake(self):
-        view = self.make_no_image_view()
+        view = create_no_image_view(self.portal, self.request)
         with strict_get_object_calls():
             self.assertIsNone(view.scale("image"))
             self.assertIsNone(view.tag("image"))
@@ -736,14 +731,6 @@ class BrainImageScalingSrcsetTests(unittest.TestCase):
     def assert_fell_back_to_object(self, calls):
         self.assertEqual(len(calls), 1)
 
-    def make_no_image_view(self):
-        content_id = f"no_image_srcset_{self.brain.UID}"
-        self.portal.invokeFactory("News Item", content_id, title="No Image")
-        obj = self.portal[content_id]
-        obj.reindexObject()
-        brain = get_brain(self.portal, obj)
-        return getMultiAdapter((brain, self.request), name="images")
-
     def testSrcsetParityWithoutWake(self):
         with strict_get_object_calls():
             brain_srcset = self.brain_view.srcset("image", scale_in_src="large")
@@ -848,14 +835,19 @@ class BrainImageScalingSrcsetTests(unittest.TestCase):
             self.brain,
             self.metadata_without_scale("large"),
         ):
-            with counting_get_object_calls() as calls:
-                brain_srcset = self.brain_view.srcset(
-                    "image",
-                    scale_in_src="large",
-                )
+            with self.assertLogs(
+                "plone.namedfile.brain_scaling",
+                level="DEBUG",
+            ) as captured:
+                with counting_get_object_calls() as calls:
+                    brain_srcset = self.brain_view.srcset(
+                        "image",
+                        scale_in_src="large",
+                    )
 
         self.assertIsNotNone(brain_srcset)
         self.assert_fell_back_to_object(calls)
+        self.assertIn("scale_in_src='large'", "\n".join(captured.output))
         assert_html_equal(
             self,
             brain_srcset,
@@ -881,7 +873,7 @@ class BrainImageScalingSrcsetTests(unittest.TestCase):
         assert_html_equal(self, brain_srcset, object_srcset)
 
     def testSrcsetNoImageReturnsNone(self):
-        view = self.make_no_image_view()
+        view = create_no_image_view(self.portal, self.request)
         with strict_get_object_calls():
             self.assertIsNone(view.srcset("image"))
 
@@ -978,6 +970,10 @@ PICTURE_VARIANTS = {
         "sourceset": [{"scale": "large"}],
     },
     "empty_variant": {},
+    "unregistered_target": {
+        "title": "Unregistered target",
+        "sourceset": [{"scale": "notallowed"}],
+    },
     "empty": {
         "title": "Empty",
         "sourceset": [],
@@ -1060,14 +1056,6 @@ class BrainImageScalingPictureTests(unittest.TestCase):
             return_value=self.obj,
         ):
             return self.object_view.picture("image", **kwargs)
-
-    def make_no_image_view(self):
-        content_id = f"no_image_picture_{self.brain.UID}"
-        self.portal.invokeFactory("News Item", content_id, title="No Image")
-        obj = self.portal[content_id]
-        obj.reindexObject()
-        brain = get_brain(self.portal, obj)
-        return getMultiAdapter((brain, self.request), name="images")
 
     def testPictureParityWithoutWake(self):
         brain_picture = self.picture_without_uuid(
@@ -1153,11 +1141,15 @@ class BrainImageScalingPictureTests(unittest.TestCase):
             "plone.namedfile.picture.uuidToObject",
             return_value=self.obj,
         ):
-            with counting_get_object_calls() as calls:
-                brain_picture = self.brain_view.picture(
-                    "image",
-                    picture_variant="missing_scale",
-                )
+            with self.assertLogs(
+                "plone.namedfile.brain_scaling",
+                level="DEBUG",
+            ) as captured:
+                with counting_get_object_calls() as calls:
+                    brain_picture = self.brain_view.picture(
+                        "image",
+                        picture_variant="missing_scale",
+                    )
             object_picture = self.object_view.picture(
                 "image",
                 picture_variant="missing_scale",
@@ -1165,10 +1157,47 @@ class BrainImageScalingPictureTests(unittest.TestCase):
 
         self.assertIsNotNone(brain_picture)
         self.assertEqual(len(calls), 1)
+        self.assertIn("variant='missing_scale'", "\n".join(captured.output))
         assert_html_equal(self, brain_picture, object_picture)
 
+    def testPictureDoesNotForwardIncludeSrcset(self):
+        with patch.object(
+            ImageScaling,
+            "getHighPixelDensityScales",
+            return_value=[{"scale": 2, "quality": 66}],
+        ):
+            with strict_get_object_calls():
+                picture = self.brain_view.picture(
+                    "image",
+                    picture_variant="unknown",
+                    include_srcset=True,
+                )
+
+        self.assertNotIn("srcset=", picture)
+
+    def testPictureUnregisteredTargetFallsBack(self):
+        entry = copy.deepcopy(first_image_entry(self.brain))
+        entry["scales"]["notallowed"] = {
+            "download": "@@images/image-100-deadbeef.png",
+            "width": 100,
+            "height": 100,
+        }
+        with shadow_image_scales(self.brain, {"image": [entry]}):
+            with patch(
+                "plone.namedfile.picture.uuidToObject",
+                return_value=self.obj,
+            ):
+                with counting_get_object_calls() as calls:
+                    picture = self.brain_view.picture(
+                        "image",
+                        picture_variant="unregistered_target",
+                    )
+
+        self.assertIsNone(picture)
+        self.assertEqual(len(calls), 1)
+
     def testPictureNoImageReturnsNone(self):
-        view = self.make_no_image_view()
+        view = create_no_image_view(self.portal, self.request)
         with strict_get_object_calls():
             self.assertIsNone(view.picture("image", picture_variant="test"))
             self.assertIsNone(view.picture("image", picture_variant="unknown"))
@@ -1277,14 +1306,6 @@ class BrainImageScalingHiDPITests(unittest.TestCase):
         ):
             yield
 
-    def make_no_image_view(self):
-        content_id = f"no_image_hidpi_{self.brain.UID}"
-        self.portal.invokeFactory("News Item", content_id, title="No Image")
-        obj = self.portal[content_id]
-        obj.reindexObject()
-        brain = get_brain(self.portal, obj)
-        return getMultiAdapter((brain, self.request), name="images")
-
     def testDefaultOmitsHiDPIWithoutWake(self):
         self.use_hidpi()
         with strict_get_object_calls():
@@ -1360,7 +1381,7 @@ class BrainImageScalingHiDPITests(unittest.TestCase):
             )
 
     def testNoImageWithHiDPIReturnsNoneWithoutWake(self):
-        view = self.make_no_image_view()
+        view = create_no_image_view(self.portal, self.request)
         self.use_hidpi(view)
         with strict_get_object_calls():
             self.assertIsNone(view.tag("image", include_srcset=True))

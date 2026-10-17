@@ -93,6 +93,7 @@ class BrainImageScale(ImageScale):
     def validate_access(self):
         return None
 
+    # ImageScale.tag eagerly reads self.data dimensions; metadata scales have data=None.
     def tag(
         self,
         height=_marker,
@@ -159,10 +160,19 @@ class BrainImageScaling(ImageScaling):
         origin = self._context_origin()
         return origin if ICatalogBrain.providedBy(origin) else None
 
-    def _resolved_origin(self):
+    def _brain_or_content(self):
         """Return the brain or the real object behind the current context."""
         origin = self._metadata_origin()
         return origin if origin is not None else self._context_origin()
+
+    def _metadata_reason(self):
+        """Return the metadata origin and the reason it is unusable, if any."""
+        origin = self._metadata_origin()
+        if origin is None:
+            return None, "not a metadata origin"
+        if not self._supports_image_scales_metadata:
+            return None, "catalog has no image_scales column"
+        return origin, None
 
     def _object_view(self, origin):
         """Return the object-backed ``@@images`` view for a metadata origin."""
@@ -273,12 +283,16 @@ class BrainImageScaling(ImageScaling):
         **parameters,
     ):
         logger.debug(
-            "@@images falling back to object for %r/%r: %s",
+            "@@images falling back to object for %r "
+            "(scale=%r, width=%r, height=%r, mode=%r): %s",
             fieldname,
             scale,
+            width,
+            height,
+            mode,
             reason,
         )
-        view = self._object_view(self._resolved_origin())
+        view = self._object_view(self._brain_or_content())
         if view is None:
             return None
         return view.scale(
@@ -303,8 +317,8 @@ class BrainImageScaling(ImageScaling):
         include_srcset=None,
         **parameters,
     ):
-        origin = self._metadata_origin()
-        if origin is None:
+        origin, reason = self._metadata_reason()
+        if reason:
             return self._fallback_scale(
                 fieldname,
                 scale,
@@ -313,19 +327,7 @@ class BrainImageScaling(ImageScaling):
                 mode,
                 pre,
                 include_srcset,
-                reason="not a metadata origin",
-                **parameters,
-            )
-        if not self._supports_image_scales_metadata:
-            return self._fallback_scale(
-                fieldname,
-                scale,
-                height,
-                width,
-                mode,
-                pre,
-                include_srcset,
-                reason="catalog has no image_scales column",
+                reason=reason,
                 **parameters,
             )
 
@@ -470,11 +472,13 @@ class BrainImageScaling(ImageScaling):
         **kwargs,
     ):
         logger.debug(
-            "@@images srcset falling back for %r: %s",
+            "@@images srcset falling back for %r " "(scale_in_src=%r, sizes=%r): %s",
             fieldname,
+            scale_in_src,
+            sizes,
             reason,
         )
-        view = self._object_view(self._resolved_origin())
+        view = self._object_view(self._brain_or_content())
         if view is None:
             return None
         return view.srcset(
@@ -497,8 +501,8 @@ class BrainImageScaling(ImageScaling):
         title=_marker,
         **kwargs,
     ):
-        origin = self._metadata_origin()
-        if origin is None:
+        origin, reason = self._metadata_reason()
+        if reason:
             return self._fallback_srcset(
                 fieldname,
                 scale_in_src,
@@ -506,18 +510,7 @@ class BrainImageScaling(ImageScaling):
                 alt,
                 css_class,
                 title,
-                reason="not a metadata origin",
-                **kwargs,
-            )
-        if not self._supports_image_scales_metadata:
-            return self._fallback_srcset(
-                fieldname,
-                scale_in_src,
-                sizes,
-                alt,
-                css_class,
-                title,
-                reason="catalog has no image_scales column",
+                reason=reason,
                 **kwargs,
             )
 
@@ -654,11 +647,12 @@ class BrainImageScaling(ImageScaling):
         **kwargs,
     ):
         logger.debug(
-            "@@images picture falling back for %r: %s",
+            "@@images picture falling back for %r (variant=%r): %s",
             fieldname,
+            picture_variant,
             reason,
         )
-        view = self._object_view(self._resolved_origin())
+        view = self._object_view(self._brain_or_content())
         if view is None:
             return None
         return view.picture(
@@ -682,9 +676,10 @@ class BrainImageScaling(ImageScaling):
         **kwargs,
     ):
         requested_fieldname = fieldname
+        kwargs.pop("include_srcset", None)
 
-        origin = self._metadata_origin()
-        if origin is None:
+        origin, reason = self._metadata_reason()
+        if reason:
             return self._fallback_picture(
                 requested_fieldname,
                 picture_variant,
@@ -692,18 +687,7 @@ class BrainImageScaling(ImageScaling):
                 css_class,
                 title,
                 lazy,
-                reason="not a metadata origin",
-                **kwargs,
-            )
-        if not self._supports_image_scales_metadata:
-            return self._fallback_picture(
-                requested_fieldname,
-                picture_variant,
-                alt,
-                css_class,
-                title,
-                lazy,
-                reason="catalog has no image_scales column",
+                reason=reason,
                 **kwargs,
             )
 
@@ -762,6 +746,17 @@ class BrainImageScaling(ImageScaling):
         allowed_scales = picture_module.get_allowed_scales()
         for source in sourceset:
             target_scale = source.get("scale")
+            if not allowed_scales.get(target_scale):
+                return self._fallback_picture(
+                    requested_fieldname,
+                    picture_variant,
+                    alt,
+                    css_class,
+                    title,
+                    lazy,
+                    reason=f"unregistered target scale {target_scale!r}",
+                    **kwargs,
+                )
             target_data = scales.get(target_scale)
             if not target_data or not self._is_valid_entry(target_data):
                 return self._fallback_picture(
@@ -837,17 +832,10 @@ class BrainImageScaling(ImageScaling):
         )
 
     def getImageSize(self, fieldname=None):
-        origin = self._metadata_origin()
-        if origin is None:
-            logger.debug("@@images getImageSize falling back: not a metadata origin")
-            view = self._object_view(self._resolved_origin())
-            return view.getImageSize(fieldname) if view else (0, 0)
-        if not self._supports_image_scales_metadata:
-            logger.debug(
-                "@@images getImageSize falling back: catalog has no "
-                "image_scales column"
-            )
-            view = self._object_view(self._resolved_origin())
+        origin, reason = self._metadata_reason()
+        if reason:
+            logger.debug("@@images getImageSize falling back: %s", reason)
+            view = self._object_view(self._brain_or_content())
             return view.getImageSize(fieldname) if view else (0, 0)
         fieldname, entry = self._resolve_metadata(fieldname)
         if entry is None:
@@ -861,21 +849,15 @@ class BrainImageScaling(ImageScaling):
             or isinstance(height, bool)
         ):
             logger.debug("@@images getImageSize falling back: malformed dimensions")
-            view = self._object_view(self._resolved_origin())
+            view = self._object_view(self._brain_or_content())
             return view.getImageSize(fieldname) if view else (0, 0)
         return (width, height)
 
     def modified(self, fieldname=None):
-        origin = self._metadata_origin()
-        if origin is None:
-            logger.debug("@@images modified falling back: not a metadata origin")
-            view = self._object_view(self._resolved_origin())
-            return view.modified(fieldname) if view else 0
-        if not self._supports_image_scales_metadata:
-            logger.debug(
-                "@@images modified falling back: catalog has no " "image_scales column"
-            )
-            view = self._object_view(self._resolved_origin())
+        origin, reason = self._metadata_reason()
+        if reason:
+            logger.debug("@@images modified falling back: %s", reason)
+            view = self._object_view(self._brain_or_content())
             return view.modified(fieldname) if view else 0
         value = getattr(origin, "modified", None)
         if value is None or value is MissingValue:
