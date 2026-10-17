@@ -1,7 +1,10 @@
 from DateTime import DateTime
 from Missing import Value as MissingValue
+from plone.app.testing import login
+from plone.app.testing import logout
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
+from plone.app.testing import TEST_USER_NAME
 from plone.base.interfaces import IImagingSchema
 from plone.namedfile.brain_scaling import _title
 from plone.namedfile.brain_scaling import BrainImageScale
@@ -45,6 +48,10 @@ import unittest
 
 RELATIVE_DOWNLOAD = "@@images/image-200-deadbeef.png"
 SCALE_URL = f"http://nohost/plone/fake/{RELATIVE_DOWNLOAD}"
+
+
+def raise_unauthorized():
+    raise Unauthorized("unauthorized")
 
 
 class DummyScale:
@@ -662,7 +669,7 @@ class BrainImageScalingBehaviorTests(unittest.TestCase):
     def testUnauthorizedFallbackPropagates(self):
         fake = FakeBrain(
             image_scales={"image": [image_entry()]},
-            get_object=lambda: (_ for _ in ()).throw(Unauthorized("nope")),
+            get_object=raise_unauthorized,
         )
         view = getMultiAdapter((fake, self.request), name="images")
         with self.assertRaises(Unauthorized):
@@ -690,7 +697,7 @@ class BrainImageScalingBehaviorTests(unittest.TestCase):
     def testUnauthorizedGetImageSizePropagates(self):
         fake = FakeBrain(
             image_scales=missing_dimensions_image_scales(),
-            get_object=lambda: (_ for _ in ()).throw(Unauthorized("nope")),
+            get_object=raise_unauthorized,
         )
         view = getMultiAdapter((fake, self.request), name="images")
         with self.assertRaises(Unauthorized):
@@ -1169,7 +1176,7 @@ class BrainImageScalingPictureTests(unittest.TestCase):
     def testPictureUnauthorizedFallbackPropagates(self):
         fake = FakeBrain(
             image_scales={"image": [image_entry()]},
-            get_object=lambda: (_ for _ in ()).throw(Unauthorized("nope")),
+            get_object=raise_unauthorized,
         )
         view = getMultiAdapter((fake, self.request), name="images")
         with self.assertRaises(Unauthorized):
@@ -1401,3 +1408,180 @@ class BrainImageScalingHiDPITests(unittest.TestCase):
             "include_srcset",
             inspect.signature(self.brain_view.picture).parameters,
         )
+
+
+class BrainImageScalingCrossCuttingTests(unittest.TestCase):
+    """Cross-cutting cases from TEST-PLAN sections E, F, H, and I."""
+
+    layer = NAMEDFILE_PLONE_INTEGRATION
+
+    def setUp(self):
+        self.portal = self.layer["portal"]
+        self.request = self.layer["request"]
+        setRoles(self.portal, TEST_USER_ID, ["Manager"])
+        self.obj = create_image(self.portal)
+        self.brain = get_brain(self.portal, self.obj)
+        self.object_view = getMultiAdapter((self.obj, self.request), name="images")
+        self.brain_view = getMultiAdapter((self.brain, self.request), name="images")
+        self.object_view.getHighPixelDensityScales = lambda: []
+
+    def testMultipleFieldsPublicBehavior(self):
+        type_name = create_multi_image_type(self.portal)
+        obj = create_multi_image_item(self.portal, type_name)
+        brain = get_brain(self.portal, obj)
+        view = getMultiAdapter((brain, self.request), name="images")
+
+        with self.assertLogs(
+            "plone.namedfile.brain_scaling",
+            level="DEBUG",
+        ) as captured:
+            with strict_get_object_calls():
+                self.assertIsNone(view.scale())
+                self.assertIsNone(view.tag())
+                self.assertIsNone(view.srcset("image"))
+                self.assertIsNone(view.picture("image", picture_variant="large"))
+                self.assertEqual(view.getImageSize(), (0, 0))
+
+        self.assertIn("cannot choose a field", "\n".join(captured.output))
+        self.assertIsInstance(view.scale("image1"), BrainImageScale)
+        self.assertEqual(view.getImageSize("image1"), (200, 200))
+
+    def testMissingFieldGetImageSize(self):
+        with strict_get_object_calls():
+            self.assertEqual(self.brain_view.getImageSize("missing"), (0, 0))
+
+    def testGetObjectNoneYieldsEmptyForAllMethods(self):
+        fake = FakeBrain(
+            image_scales=missing_dimensions_image_scales(),
+            get_object=lambda: None,
+        )
+        view = getMultiAdapter((fake, self.request), name="images")
+
+        self.assertIsNone(view.tag("image", width=77))
+        self.assertIsNone(view.srcset("image", scale_in_src="large"))
+        self.assertIsNone(view.picture("image", picture_variant="medium"))
+
+    def testUnauthorizedPropagatesFromTagAndSrcset(self):
+        fake = FakeBrain(
+            image_scales=missing_dimensions_image_scales(),
+            get_object=raise_unauthorized,
+        )
+        view = getMultiAdapter((fake, self.request), name="images")
+
+        with self.assertRaises(Unauthorized):
+            view.tag("image", width=77)
+        with self.assertRaises(Unauthorized):
+            view.srcset("image", scale_in_src="large")
+
+    def testUnauthorizedFallbackDoesNotLogIdentity(self):
+        fake = FakeBrain(
+            image_scales=missing_dimensions_image_scales(),
+            get_object=raise_unauthorized,
+        )
+        view = getMultiAdapter((fake, self.request), name="images")
+
+        with self.assertLogs(
+            "plone.namedfile.brain_scaling",
+            level="DEBUG",
+        ) as captured:
+            with self.assertRaises(Unauthorized):
+                view.scale("image", width=77)
+
+        output = "\n".join(captured.output)
+        self.assertNotIn("Unauthorized", output)
+        self.assertNotIn("nonviewer", output)
+
+    def testGetObjectNoneModifiedReturnsZero(self):
+        fake = FakeBrain(
+            image_scales={"image": [image_entry()]},
+            get_object=lambda: None,
+        )
+        catalog = SimpleNamespace(_catalog=SimpleNamespace(schema=[]))
+        with patch(
+            "plone.namedfile.brain_scaling.getToolByName",
+            return_value=catalog,
+        ):
+            view = getMultiAdapter((fake, self.request), name="images")
+            self.assertEqual(view.modified("image"), 0)
+
+    def testPictureResolverNoneKeepsObjectPath(self):
+        from plone.namedfile.picture import Img2PictureTag
+
+        scale = self.object_view.scale("image", scale="thumb")
+        picture = (
+            Img2PictureTag()
+            .create_picture_tag(
+                [{"scale": "thumb", "additionalScales": []}],
+                {"src": scale.url},
+                uid=self.obj.UID(),
+                fieldname="image",
+                resolve_urls=True,
+                lazy=True,
+            )
+            .prettify()
+        )
+
+        self.assertIn("<picture", picture)
+
+    def testSchemaWithoutColumnForAccessors(self):
+        catalog = SimpleNamespace(_catalog=SimpleNamespace(schema=[]))
+        with patch(
+            "plone.namedfile.brain_scaling.getToolByName",
+            return_value=catalog,
+        ):
+            view = getMultiAdapter((self.brain, self.request), name="images")
+            with counting_get_object_calls() as calls:
+                self.assertEqual(view.getImageSize("image"), (200, 200))
+                modified = view.modified("image")
+
+        self.assertIsInstance(modified, int)
+        self.assertGreaterEqual(len(calls), 2)
+
+    def testLargeImageNamedScaleParity(self):
+        obj = create_large_image(self.portal)
+        brain = get_brain(self.portal, obj)
+        brain_view = getMultiAdapter((brain, self.request), name="images")
+        object_view = getMultiAdapter((obj, self.request), name="images")
+        object_view.getHighPixelDensityScales = lambda: []
+
+        with strict_get_object_calls():
+            brain_tag = brain_view.tag("image", scale="large")
+        object_tag = object_view.tag("image", scale="large")
+        assert_html_equal(self, brain_tag, object_tag)
+
+    def testArbitraryDimensionsFallbackParity(self):
+        with counting_get_object_calls() as calls:
+            brain_scale = self.brain_view.scale("image", width=77)
+        object_scale = self.object_view.scale("image", width=77)
+
+        assert_scale_equal(self, brain_scale, object_scale)
+        self.assertEqual(len(calls), 1)
+
+    def testStaleMetadataStillRenders(self):
+        old_tag = self.brain_view.tag("image", scale="thumb")
+        clear_scales(self.obj)
+
+        with strict_get_object_calls():
+            new_tag = self.brain_view.tag("image", scale="thumb")
+        self.assertEqual(new_tag, old_tag)
+
+    def testFieldPermissionDivergence(self):
+        self.portal.acl_users.userFolderAddUser(
+            "nonviewer",
+            "secret",
+            [],
+            [],
+        )
+        self.obj.manage_permission("View", ("Manager",), acquire=0)
+        logout()
+        login(self.portal, "nonviewer")
+        self.addCleanup(
+            login,
+            self.portal,
+            TEST_USER_NAME,
+        )
+
+        self.assertEqual(self.brain_view.getImageSize("image"), (200, 200))
+        with self.assertRaises(Unauthorized):
+            self.object_view.guarded_orig_image("image")
+        self.assertEqual(self.object_view.getImageSize("image"), (0, 0))
