@@ -212,6 +212,8 @@ ignore-packages = ['zope.app.file']
 ignore = [
     ".editorconfig",
     ".flake8",
+    ".imagesplan/*",
+    ".imagesplan/*/*",
     ".meta.toml",
     ".pre-commit-config.yaml",
     "dependabot.yml",
