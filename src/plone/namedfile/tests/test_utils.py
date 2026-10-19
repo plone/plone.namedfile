@@ -3,6 +3,7 @@ from plone.namedfile.tests import getFile
 from plone.namedfile.utils import filestream_range_iterator
 from plone.namedfile.utils import get_contenttype
 from plone.namedfile.utils import getImageInfo
+from plone.namedfile.utils import partial_range_iterator
 from plone.namedfile.utils import safe_basename
 
 import contextlib
@@ -165,3 +166,13 @@ class TestFilestreamRangeIterator(unittest.TestCase):
             with contextlib.closing(iterator):
                 with self.assertRaises(OSError):
                     iterator.fileno()
+
+    def test_partial_range_iterator(self):
+        iterator = partial_range_iterator(self.path, start=10, end=1000, streamsize=256)
+        with contextlib.closing(iterator):
+            # Zope hands objects with read to wsgi.file_wrapper
+            self.assertFalse(hasattr(iterator, "read"))
+            self.assertFalse(hasattr(iterator, "fileno"))
+            chunks = list(iterator)
+        self.assertEqual([len(chunk) for chunk in chunks], [256, 256, 256, 222])
+        self.assertEqual(b"".join(chunks), self.data[10:1000])

@@ -1,13 +1,12 @@
-"""Range requests on @@download, published the way waitress does it.
+"""Range requests on @@download, published through ``wsgi.file_wrapper``.
 
-Zope hands the range iterator to ``wsgi.file_wrapper`` because it has a ``read``
-method. waitress then reads the wrapper in blocks instead of iterating it. The
-server cuts the response at Content-Length, so the client gets the right bytes
-either way, but the iterator must stop at the end of the range by itself.
+Zope hands the iterator to ``wsgi.file_wrapper`` when it has a ``read`` method.
+Servers then read the wrapper instead of iterating it: waitress in blocks,
+bjoern and pyruvate in one call, or with sendfile when the wrapped object has
+a ``fileno``. With sendfile they ignore the range.
 
-Other servers, e.g. bjoern and pyruvate, send the file with sendfile when the
-wrapped object has a ``fileno``. They ignore the range then, so the iterator
-only gives its file descriptor when the response is the whole file.
+So only the whole file goes through ``wsgi.file_wrapper``. A partial range is
+an iterator without ``read``, which every server iterates in blocks.
 """
 
 from OFS.SimpleItem import SimpleItem
@@ -127,18 +126,20 @@ class TestDownloadRange(unittest.TestCase):
         self.assertTrue(self.result.used_fileno)
         self.assertEqual(body, self.data)
 
-    def test_partial_range_does_not_use_fileno(self):
+    def test_partial_range_is_not_passed_to_file_wrapper(self):
         size = len(self.data)
         for range_, start, end in (
             ("bytes=0-1023", 0, 1024),
             ("bytes=65536-131071", 65536, 131072),
             ("bytes=65536-", 65536, size),
             ("bytes=-1024", size - 1024, size),
+            ("bytes=1-", 1, size),
+            (f"bytes=0-{size - 2}", 0, size - 1),
         ):
             with self.subTest(range_):
                 status, headers, body = self.publish(
                     file_wrapper=SendfileWrapper, HTTP_RANGE=range_
                 )
                 self.assertEqual(status, "206 Partial Content")
-                self.assertFalse(self.result.used_fileno)
+                self.assertNotIsInstance(self.result, SendfileWrapper)
                 self.assertEqual(body, self.data[start:end])
