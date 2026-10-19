@@ -144,3 +144,24 @@ class TestFilestreamRangeIterator(unittest.TestCase):
         iterator = filestream_range_iterator(self.path, start=1000)
         with contextlib.closing(iterator):
             self.assertEqual(iterator.read(), self.data[1000:])
+
+    def test_fileno_for_the_whole_file(self):
+        # no Range header
+        iterator = filestream_range_iterator(self.path)
+        with contextlib.closing(iterator):
+            self.assertEqual(iterator.fileno(), iterator._io.fileno())
+
+    def test_fileno_for_a_range_that_covers_the_whole_file(self):
+        # bytes=0-, Zope sets end to the file size
+        iterator = filestream_range_iterator(self.path, start=0, end=len(self.data))
+        with contextlib.closing(iterator):
+            self.assertEqual(iterator.fileno(), iterator._io.fileno())
+
+    def test_no_fileno_for_a_partial_range(self):
+        # servers ignore the range when they send the file descriptor
+        size = len(self.data)
+        for start, end in ((0, 20), (10, 20), (10, size), (10, None)):
+            iterator = filestream_range_iterator(self.path, start=start, end=end)
+            with contextlib.closing(iterator):
+                with self.assertRaises(OSError):
+                    iterator.fileno()

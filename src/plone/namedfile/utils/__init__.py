@@ -15,6 +15,7 @@ from zope.interface import implementer
 from ZPublisher.Iterators import IStreamIterator
 
 import mimetypes
+import os
 import piexif
 import PIL.Image
 import re
@@ -89,6 +90,14 @@ class filestream_range_iterator(Iterable):
 
     # BBB: is it necessary to implement __len__ ?
     # def __len__(self)
+
+    def fileno(self):
+        # sendfile ignores the range, so only a range that covers the whole
+        # file may use it. Zope sets end to the file size for bytes=0-.
+        fd = self._io.fileno()
+        if self.start != 0 or self.end not in (None, os.fstat(fd).st_size):
+            raise OSError("fileno is not available for a partial range")
+        return fd
 
     def read(self, size=-1):
         # WSGI servers read wsgi.file_wrapper objects instead of iterating them,

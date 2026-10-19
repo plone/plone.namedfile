@@ -4,6 +4,10 @@ Zope hands the range iterator to ``wsgi.file_wrapper`` because it has a ``read``
 method. waitress then reads the wrapper in blocks instead of iterating it. The
 server cuts the response at Content-Length, so the client gets the right bytes
 either way, but the iterator must stop at the end of the range by itself.
+
+Other servers, e.g. bjoern and pyruvate, send the file with sendfile when the
+wrapped object has a ``fileno``. They ignore the range then, so the iterator
+only gives its file descriptor when the response is the whole file.
 """
 
 from OFS.SimpleItem import SimpleItem
@@ -13,6 +17,7 @@ from waitress.buffers import ReadOnlyFileBasedBuffer
 from ZPublisher.WSGIPublisher import publish_module
 
 import io
+import os
 import sys
 import transaction
 import unittest
@@ -21,6 +26,31 @@ import unittest
 class DummyContent(SimpleItem):
     id = __name__ = "item"
     file = None
+
+
+class SendfileWrapper:
+    """A wsgi.file_wrapper that uses fileno like pyruvate does.
+
+    With a file descriptor it sends the file from offset 0 to the end, the
+    position of the descriptor and the range are ignored. Without one it reads
+    the file in one call.
+    """
+
+    def __init__(self, filelike, block_size=8192):
+        self.filelike = filelike
+        self.used_fileno = False
+
+    def __iter__(self):
+        try:
+            fd = self.filelike.fileno()
+        except (AttributeError, OSError):
+            yield self.filelike.read()
+        else:
+            self.used_fileno = True
+            yield os.pread(fd, os.fstat(fd).st_size, 0)
+
+    def close(self):
+        self.filelike.close()
 
 
 class TestDownloadRange(unittest.TestCase):
@@ -35,7 +65,7 @@ class TestDownloadRange(unittest.TestCase):
         # the iterator is only used for committed blobs
         transaction.commit()
 
-    def publish(self, **headers):
+    def publish(self, file_wrapper=ReadOnlyFileBasedBuffer, **headers):
         environ = {
             "REQUEST_METHOD": "GET",
             "PATH_INFO": "/item/@@download/file",
@@ -45,7 +75,7 @@ class TestDownloadRange(unittest.TestCase):
             "wsgi.url_scheme": "http",
             "wsgi.input": io.BytesIO(),
             "wsgi.errors": sys.stderr,
-            "wsgi.file_wrapper": ReadOnlyFileBasedBuffer,
+            "wsgi.file_wrapper": file_wrapper,
         }
         environ.update(headers)
         response = {}
@@ -56,7 +86,7 @@ class TestDownloadRange(unittest.TestCase):
                 key.lower(): value for key, value in response_headers
             }
 
-        result = publish_module(environ, start_response)
+        result = self.result = publish_module(environ, start_response)
         try:
             # everything the file wrapper reads, not cut at Content-Length
             body = b"".join(result)
@@ -79,3 +109,36 @@ class TestDownloadRange(unittest.TestCase):
         self.assertEqual(status, "200 OK")
         self.assertEqual(headers["content-length"], str(len(self.data)))
         self.assertEqual(body, self.data)
+
+    def test_request_without_range_uses_fileno(self):
+        status, headers, body = self.publish(file_wrapper=SendfileWrapper)
+        self.assertEqual(status, "200 OK")
+        self.assertTrue(self.result.used_fileno)
+        self.assertEqual(body, self.data)
+
+    def test_range_from_zero_to_the_end_uses_fileno(self):
+        status, headers, body = self.publish(
+            file_wrapper=SendfileWrapper, HTTP_RANGE="bytes=0-"
+        )
+        self.assertEqual(status, "206 Partial Content")
+        self.assertEqual(
+            headers["content-range"], f"bytes 0-{len(self.data) - 1}/{len(self.data)}"
+        )
+        self.assertTrue(self.result.used_fileno)
+        self.assertEqual(body, self.data)
+
+    def test_partial_range_does_not_use_fileno(self):
+        size = len(self.data)
+        for range_, start, end in (
+            ("bytes=0-1023", 0, 1024),
+            ("bytes=65536-131071", 65536, 131072),
+            ("bytes=65536-", 65536, size),
+            ("bytes=-1024", size - 1024, size),
+        ):
+            with self.subTest(range_):
+                status, headers, body = self.publish(
+                    file_wrapper=SendfileWrapper, HTTP_RANGE=range_
+                )
+                self.assertEqual(status, "206 Partial Content")
+                self.assertFalse(self.result.used_fileno)
+                self.assertEqual(body, self.data[start:end])
