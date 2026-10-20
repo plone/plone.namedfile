@@ -16,6 +16,19 @@ See the `image handling section of Plone documentation <https://6.docs.plone.org
 use the features provided by this package.
 
 
+Brain-aware image scales
+========================
+
+Catalog brains and contentlisting objects can use the same ``@@images`` view as
+content objects. The view answers from ``image_scales`` catalog metadata first
+and only falls back to the real object when metadata cannot answer.
+
+See the `brain-aware image scales documentation`_ for the API, fallback rules,
+and security caveats.
+
+.. _brain-aware image scales documentation: https://github.com/plone/plone.namedfile/blob/main/docs/brain-images.rst
+
+
 Source Code
 ===========
 

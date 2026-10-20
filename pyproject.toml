@@ -65,6 +65,7 @@ keywords = [
 [project.optional-dependencies]
 test = [
     "lxml",
+    "plone.app.contentlisting",
     "plone.app.testing",
     "plone.testing",
 ]
@@ -75,7 +76,7 @@ Issues = "https://github.com/plone/Products.CMFPlone/issues"
 Changelog = "https://github.com/plone/plone.namedfile/blob/main/CHANGES.rst"
 
 [tool.setuptools.dynamic]
-readme = {file = ["README.rst", "CHANGES.rst", "src/plone/namedfile/usage.rst"]}
+readme = {file = ["README.rst", "CHANGES.rst", "docs/brain-images.rst", "src/plone/namedfile/usage.rst"]}
 # END-MARKER-MANUAL-CONFIG
 
 [tool.towncrier]
@@ -194,7 +195,7 @@ Zope = [
 ]
 python-dateutil = ['dateutil']
 pytest-plone = ['pytest', 'zope.pytestlayer', 'plone.testing', 'plone.app.testing']
-ignore-packages = ['zope.app.file']
+ignore-packages = ['plone.app.contentlisting', 'zope.app.file']
 'Pillow' = ['PIL', 'PIL.Image']
 'BeautifulSoup4' = ['bs4']
 
