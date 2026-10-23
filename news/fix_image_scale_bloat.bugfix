@@ -1,0 +1,1 @@
+Implement content-based equality for NamedFile and NamedBlobFile to prevent redundant updates and storage bloat when identical content is patched @erral

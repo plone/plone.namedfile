@@ -14,11 +14,35 @@ from zope.deprecation import deprecate
 from zope.interface import implementer
 from ZPublisher.Iterators import IStreamIterator
 
+import hashlib
 import mimetypes
 import piexif
 import PIL.Image
 import re
 import struct
+
+
+def get_hash(data):
+    if data is None:
+        return ""
+    if hasattr(data, "read"):
+        h = hashlib.sha256()
+        while True:
+            chunk = data.read(8192)
+            if not chunk:
+                break
+            h.update(chunk)
+        if hasattr(data, "seek"):
+            data.seek(0)
+        return h.hexdigest()
+    if isinstance(data, str):
+        data = data.encode("utf-8")
+    try:
+        return hashlib.sha256(data).hexdigest()
+    except TypeError:
+        # Handle Pdata, FileChunk, etc.
+        return hashlib.sha256(bytes(data)).hexdigest()
+
 
 # image-scaling
 QUALITY_DEFAULT = 88
