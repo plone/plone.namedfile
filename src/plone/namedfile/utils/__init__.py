@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from io import BytesIO
 from io import FileIO
+from io import UnsupportedOperation
 from logging import getLogger
 from plone.base.interfaces import IImagingSchema
 from plone.namedfile.interfaces import IBlobby
@@ -96,7 +97,7 @@ class filestream_range_iterator(Iterable):
         # file may use it. Zope sets end to the file size for bytes=0-.
         fd = self._io.fileno()
         if self.start != 0 or self.end not in (None, os.fstat(fd).st_size):
-            raise OSError("fileno is not available for a partial range")
+            raise UnsupportedOperation("fileno is not available for a partial range")
         return fd
 
     def read(self, size=-1):

@@ -1,3 +1,4 @@
+from io import UnsupportedOperation
 from plone.namedfile.file import NamedImage
 from plone.namedfile.tests import getFile
 from plone.namedfile.utils import filestream_range_iterator
@@ -164,7 +165,7 @@ class TestFilestreamRangeIterator(unittest.TestCase):
         for start, end in ((0, 20), (10, 20), (10, size), (10, None)):
             iterator = filestream_range_iterator(self.path, start=start, end=end)
             with contextlib.closing(iterator):
-                with self.assertRaises(OSError):
+                with self.assertRaises(UnsupportedOperation):
                     iterator.fileno()
 
     def test_partial_range_iterator(self):
