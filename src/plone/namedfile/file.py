@@ -339,8 +339,12 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
         self._modified = DateTime().millis()
 
     def open(self, mode="r"):
-        if mode != "r" and "size" in self.__dict__:
-            del self.__dict__["size"]
+        if mode in ("w", "a", "r+"):
+            self._v_size = None
+            if "size" in self.__dict__:
+                # The size is persisted, so dropping it has to be as well.
+                del self.__dict__["size"]
+                self._p_changed = True
         return self._blob.open(mode)
 
     def openDetached(self):
@@ -354,6 +358,9 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
         log.debug("Storage selected for data: %s", dottedName)
         storable = getUtility(IStorage, name=dottedName)
         storable.store(data, self._blob)
+        # Persist the size while the data is local.  Reading it later may
+        # mean loading the whole blob from a remote blob storage.
+        self.__dict__["size"] = self._read_size()
         self._modified = DateTime().millis()
 
     def _getData(self):
@@ -365,18 +372,37 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
     _data = property(_getData, _setData)
     data = property(_getData, _setData)
 
+    def _read_size(self):
+        with self._blob.open() as reader:
+            reader.seek(0, 2)
+            return int(reader.tell())
+
     @property
     def size(self):
         if "size" in self.__dict__:
             return self.__dict__["size"]
-        with self._blob.open() as reader:
-            reader.seek(0, 2)
-            size = int(reader.tell())
-        self.__dict__["size"] = size
+        # Written before the size was persisted.  Cache it in memory only,
+        # persisting it here would write on read.  See backfill_metadata.
+        size = getattr(self, "_v_size", None)
+        if size is None:
+            size = self._v_size = self._read_size()
         return size
 
     def getSize(self):
         return self.size
+
+    def backfill_metadata(self):
+        """Persist metadata that older versions did not store at write time.
+
+        This may read the whole blob, so it is up to the caller to decide
+        when to run it, for example in an upgrade step.  Returns True if the
+        object was changed.
+        """
+        if "size" in self.__dict__:
+            return False
+        self.__dict__["size"] = self._read_size()
+        self._p_changed = True
+        return True
 
 
 @implementer(INamedBlobImage)
@@ -417,6 +443,13 @@ class NamedBlobImage(NamedBlobFile):
 
     def _setData(self, data):
         super()._setData(data)
+        contentType, self._width, self._height = self._read_image_info()
+        if contentType:
+            self.contentType = contentType
+
+    data = property(NamedBlobFile._getData, _setData)
+
+    def _read_image_info(self):
         firstbytes = self.getFirstBytes()
         res = getImageInfo(firstbytes)
         if (
@@ -429,11 +462,22 @@ class NamedBlobImage(NamedBlobFile):
             length = max(0, MAX_INFO_BYTES - start)
             firstbytes += self.getFirstBytes(start, length)
             res = getImageInfo(firstbytes)
-        contentType, self._width, self._height = res
-        if contentType:
-            self.contentType = contentType
+        if res[1:] == (-1, -1) and len(firstbytes) < self.getSize():
+            # Only the full data can tell, for example when the header is
+            # longer than MAX_INFO_BYTES, or for a TIFF with the image file
+            # directory at the end.  Do it here once and not on every read.
+            res = getImageInfo(self.data)
+        return res
 
-    data = property(NamedBlobFile._getData, _setData)
+    def backfill_metadata(self):
+        """See NamedBlobFile.backfill_metadata"""
+        changed = super().backfill_metadata()
+        if (self._width, self._height) == (-1, -1):
+            _, width, height = self._read_image_info()
+            if (width, height) != (-1, -1):
+                self._width, self._height = width, height
+                changed = True
+        return changed
 
     def getFirstBytes(self, start=0, length=IMAGE_INFO_BYTES):
         """Returns the first bytes of the file.
@@ -447,8 +491,4 @@ class NamedBlobImage(NamedBlobFile):
 
     def getImageSize(self):
         """See interface `IImage`"""
-        if (self._width, self._height) != (-1, -1):
-            return (self._width, self._height)
-
-        contentType, self._width, self._height = getImageInfo(self.data)
         return (self._width, self._height)
