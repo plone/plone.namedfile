@@ -255,18 +255,51 @@ class TestPersistedMetadata(unittest.TestCase):
             self.assertFalse(file._p_changed)
         self.assertEqual(file.getSize(), 1000)
 
-    def test_size_of_old_object_is_not_written_on_read(self):
+    def test_size_of_old_object_is_backfilled_on_read(self):
         file = self._make_old(self._store(NamedBlobFile(b"x" * 1000)))
+        self.assertEqual(file.getSize(), 1000)
+        self.assertTrue(file._p_changed)
+        self._reload(file)
         with count_blob_opens() as opens:
             self.assertEqual(file.getSize(), 1000)
-            self.assertEqual(file.getSize(), 1000)
+        self.assertEqual(opens, [])
+
+    def test_size_of_old_object_is_not_written_if_disabled(self):
+        file = self._make_old(self._store(NamedBlobFile(b"x" * 1000)))
+        with patch("plone.namedfile.file.BACKFILL_ON_READ", False):
+            with count_blob_opens() as opens:
+                self.assertEqual(file.getSize(), 1000)
+                self.assertEqual(file.getSize(), 1000)
         self.assertEqual(len(opens), 1)
         self.assertFalse(file._p_changed)
+
+    def test_backfill_on_read_is_a_safe_write(self):
+        # Otherwise plone.protect aborts the transaction on a GET request.
+        file = self._make_old(self._store(NamedBlobFile(b"x" * 1000)))
+        with patch("plone.namedfile.file.safeWrite") as safe_write:
+            file.getSize()
+            file.getSize()
+        safe_write.assert_called_once_with(file)
+
+    def test_backfill_metadata_keeps_modified(self):
+        # Objects written before plone.namedfile 6.2.0 have no _modified,
+        # their modification time falls back to _p_mtime.
+        file = self._store(NamedBlobFile(b"x" * 1000))
+        del file._modified
+        self._make_old(file)
+        modified = DateTime(file.modified).millis()
+        mtime = file._p_mtime
+        time.sleep(0.01)  # make sure the next commit is a few ms later
+        self.assertTrue(file.backfill_metadata())
+        self._reload(file)
+        self.assertEqual(DateTime(file.modified).millis(), modified)
+        self.assertNotEqual(file._p_mtime, mtime)
 
     def test_backfill_metadata_stores_size(self):
         file = self._make_old(self._store(NamedBlobFile(b"x" * 1000)))
         # The size read before must not hide that it is not persisted.
-        file.getSize()
+        with patch("plone.namedfile.file.BACKFILL_ON_READ", False):
+            file.getSize()
         self.assertTrue(file.backfill_metadata())
         self._reload(file)
         with count_blob_opens() as opens:
@@ -300,6 +333,41 @@ class TestPersistedMetadata(unittest.TestCase):
     def test_backfill_metadata_does_not_write_unknown_image(self):
         image = self._store(NamedBlobImage(b"not an image"))
         self.assertFalse(image.backfill_metadata())
+        self.assertFalse(image._p_changed)
+
+    def test_image_size_of_old_object_is_backfilled_on_read(self):
+        data = getFile("image.tif")
+        image = self._store(NamedBlobImage(data))
+        image._width = image._height = -1
+        self._make_old(image)
+        self.assertEqual(image.getImageSize(), (500, 200))
+        self.assertTrue(image._p_changed)
+        self._reload(image)
+        with count_blob_opens() as opens:
+            self.assertEqual(image.getImageSize(), (500, 200))
+            self.assertEqual(image.getSize(), len(data))
+        self.assertEqual(opens, [])
+
+    def test_image_size_of_old_object_is_not_read_if_disabled(self):
+        image = self._store(NamedBlobImage(getFile("image.tif")))
+        image._width = image._height = -1
+        self._make_old(image)
+        with patch("plone.namedfile.file.BACKFILL_ON_READ", False):
+            with count_blob_opens() as opens:
+                self.assertEqual(image.getImageSize(), (-1, -1))
+        self.assertEqual(opens, [])
+        self.assertFalse(image._p_changed)
+
+    def test_unknown_old_image_is_read_only_once(self):
+        from plone.namedfile.file import MAX_INFO_BYTES
+
+        image = self._store(NamedBlobImage(b"\x00" * MAX_INFO_BYTES * 2))
+        self._make_old(image)
+        self.assertEqual(image.getImageSize(), (-1, -1))
+        self._reload(image)
+        with count_blob_opens() as opens:
+            self.assertEqual(image.getImageSize(), (-1, -1))
+        self.assertEqual(opens, [])
         self.assertFalse(image._p_changed)
 
 

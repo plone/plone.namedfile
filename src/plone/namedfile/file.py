@@ -13,12 +13,14 @@ from plone.namedfile.utils import get_contenttype
 from plone.namedfile.utils import get_exif
 from plone.namedfile.utils import getImageInfo
 from plone.namedfile.utils import rotate_image
+from plone.protect.utils import safeWrite
 from ZODB.blob import Blob
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.fieldproperty import FieldProperty
 from ZPublisher import HTTPRangeSupport
 
+import os
 import piexif
 import transaction
 
@@ -28,6 +30,13 @@ log = getLogger(__name__)
 MAXCHUNKSIZE = 1 << 16
 IMAGE_INFO_BYTES = 1024
 MAX_INFO_BYTES = 1 << 18
+
+# Persist the metadata of blob files written by older versions when it is
+# read, see NamedBlobFile.backfill_metadata.  Set to 0 to disable this, for
+# example with a read-only database, and call backfill_metadata explicitly.
+BACKFILL_ON_READ = os.environ.get(
+    "NAMEDFILE_BACKFILL_ON_READ", "1"
+).strip().lower() not in ("0", "false", "no", "off")
 
 
 class FileChunk(Persistent):
@@ -381,8 +390,11 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
     def size(self):
         if "size" in self.__dict__:
             return self.__dict__["size"]
-        # Written before the size was persisted.  Cache it in memory only,
-        # persisting it here would write on read.  See backfill_metadata.
+        # Written by a version that did not persist the size.
+        if BACKFILL_ON_READ:
+            self._backfill_on_read()
+            return self.__dict__["size"]
+        # Cache it in memory only.
         size = getattr(self, "_v_size", None)
         if size is None:
             size = self._v_size = self._read_size()
@@ -394,15 +406,24 @@ class NamedBlobFile(Persistent, ModifiedPropertyMixin):
     def backfill_metadata(self):
         """Persist metadata that older versions did not store at write time.
 
-        This may read the whole blob, so it is up to the caller to decide
-        when to run it, for example in an upgrade step.  Returns True if the
-        object was changed.
+        A persisted size marks the metadata as complete.  Without it, the
+        size is read from the blob, which may mean loading it from a remote
+        blob storage.  Returns True if the object was changed.
         """
         if "size" in self.__dict__:
             return False
+        if not hasattr(self, "_modified") and self._p_mtime is not None:
+            # The modification time falls back to _p_mtime, which changes
+            # with this write.  Keep it, or the image scales get outdated.
+            self._modified = DateTime(self._p_mtime).millis()
         self.__dict__["size"] = self._read_size()
         self._p_changed = True
         return True
+
+    def _backfill_on_read(self):
+        if self.backfill_metadata():
+            # Allow this write on a GET request without a CSRF token.
+            safeWrite(self)
 
 
 @implementer(INamedBlobImage)
@@ -471,13 +492,13 @@ class NamedBlobImage(NamedBlobFile):
 
     def backfill_metadata(self):
         """See NamedBlobFile.backfill_metadata"""
-        changed = super().backfill_metadata()
+        if not super().backfill_metadata():
+            return False
         if (self._width, self._height) == (-1, -1):
             _, width, height = self._read_image_info()
             if (width, height) != (-1, -1):
                 self._width, self._height = width, height
-                changed = True
-        return changed
+        return True
 
     def getFirstBytes(self, start=0, length=IMAGE_INFO_BYTES):
         """Returns the first bytes of the file.
@@ -491,4 +512,12 @@ class NamedBlobImage(NamedBlobFile):
 
     def getImageSize(self):
         """See interface `IImage`"""
+        if (
+            BACKFILL_ON_READ
+            and (self._width, self._height) == (-1, -1)
+            and "size" not in self.__dict__
+        ):
+            # Written by a version that did not read the dimensions from the
+            # full data at write time.
+            self._backfill_on_read()
         return (self._width, self._height)

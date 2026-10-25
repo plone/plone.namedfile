@@ -1,5 +1,5 @@
 Store the size of a ``NamedBlobFile`` and the dimensions of a ``NamedBlobImage`` when the data is written.
-``getSize()`` and ``getImageSize()`` no longer read the whole blob, which on remote blob storages means downloading it, and ``getImageSize()`` no longer writes to the database.
+Before, ``getSize()`` read the size from the blob after every cache miss, which on remote blob storages means downloading the whole file.
+``getImageSize()`` read the whole blob and wrote to the database on every call for images with unknown dimensions.
 Opening a ``NamedBlobFile`` for writing now also drops a persisted size.
-Existing images with unknown dimensions ``(-1, -1)`` are no longer fixed when they are read, use ``backfill_metadata()`` for that.
 [jensens]
