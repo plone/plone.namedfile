@@ -8,6 +8,24 @@ Changelog
 
 .. towncrier release notes start
 
+8.1.2 (2026-11-03)
+------------------
+
+Bug fixes:
+
+
+- Stop ``filestream_range_iterator.read`` at the end of the requested range.
+  WSGI servers like waitress read the ``wsgi.file_wrapper`` instead of iterating it, so a range request read the file from the start of the range to its end.
+  [mliebischer] (#226)
+
+
+Internal:
+
+
+- Move package metadata from ``setup.py`` to ``pyproject.toml``.
+  [plone devs]
+
+
 8.1.1 (2026-08-21)
 ------------------
 

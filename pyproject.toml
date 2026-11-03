@@ -10,7 +10,7 @@ requires = ["setuptools>=68.2,<83", "wheel"]
 
 [project]
 name = "plone.namedfile"
-version = "8.1.2.dev0"
+version = "8.1.2"
 description = "File types and fields for images, files and blob files with filenames"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
