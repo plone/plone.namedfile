@@ -88,7 +88,7 @@ def patch_Img2PictureTag_picture_variants():
                 {
                     "scale": "preview",
                     "additionalScales": ["large", "larger"],
-                    "sizes": "(min-width: 576px) 350px, (min-width: 768px) 600px, 98vw",
+                    "sizes": "(min-width: 768px) 600px, (min-width: 576px) 350px, 98vw",
                 }
             ],
         },
@@ -554,7 +554,7 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         self.assertIn('title="foo"', tag)
         self.assertIn('width="200"', tag)
         self.assertIn(
-            'sizes="(min-width: 576px) 600px, (min-width: 768px) 600px, 98vw"', tag
+            'sizes="(min-width: 768px) 600px, (min-width: 576px) 600px, 98vw"', tag
         )
 
     @patch.object(
@@ -591,7 +591,7 @@ http://nohost/item/@@images/image-1200-....png 1200w".../>
         self.assertIn('title="foo"', tag)
         self.assertIn('width="200"', tag)
         self.assertIn(
-            'sizes="(min-width: 576px) 600px, (min-width: 768px) 600px, 98vw"', tag
+            'sizes="(min-width: 768px) 600px, (min-width: 576px) 600px, 98vw"', tag
         )
 
     @patch.object(
@@ -626,7 +626,7 @@ http://nohost/item/@@images/image-1000-....png 1000w".../>
         self.assertIn('title="foo"', tag)
         self.assertIn('width="200"', tag)
         self.assertIn(
-            'sizes="(min-width: 576px) 350px, (min-width: 768px) 600px, 98vw"', tag
+            'sizes="(min-width: 768px) 600px, (min-width: 576px) 350px, 98vw"', tag
         )
 
     @patch.object(
