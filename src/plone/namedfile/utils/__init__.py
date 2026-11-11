@@ -421,6 +421,21 @@ def getAllowedSizes():
     return sizes
 
 
+def getScaleFormat():
+    """The format to convert scales to, from the imaging control panel.
+
+    Empty for "original" (the default): keep the format of the original image.
+    """
+    registry = queryUtility(IRegistry)
+    if registry is None:
+        return ""
+    # Not with forInterface: sites that were not upgraded lack this record.
+    scale_format = registry.get("plone.scale_format") or ""
+    if scale_format == "original":
+        return ""
+    return scale_format
+
+
 def getQuality():
     registry = queryUtility(IRegistry)
     if registry:
