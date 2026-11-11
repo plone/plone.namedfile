@@ -132,12 +132,25 @@ class ImageScalesAdaptersRegisteredTest(unittest.TestCase):
         # Note: self.content.absolute_url() is actually empty in this test.
         self.assertTrue(download.startswith("@@images/image1-900-"))
         self.assertTrue(download.endswith(".jpeg"))
-        # larger and huge should not be in here: these scales would return the same
-        # content as the original.
+        # huge should not be in here: it would have the same size as larger,
+        # which is the size of the original, but encoded as the other scales.
         self.assertEqual(
             sorted(scales.keys()),
-            ["icon", "large", "listing", "mini", "preview", "teaser", "thumb", "tile"],
+            [
+                "icon",
+                "large",
+                "larger",
+                "listing",
+                "mini",
+                "preview",
+                "teaser",
+                "thumb",
+                "tile",
+            ],
         )
+        self.assertEqual(scales["larger"]["width"], 900)
+        self.assertEqual(scales["larger"]["height"], 900)
+        self.assertNotEqual(scales["larger"]["download"], download)
         preview = scales["preview"]
         self.assertEqual(preview["width"], 400)
         self.assertEqual(preview["height"], 400)
