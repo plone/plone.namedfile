@@ -1,0 +1,6 @@
+Let WSGI servers send whole-file downloads with ``sendfile``, and iterate partial ranges in blocks.
+``filestream_range_iterator`` has ``fileno`` when the response is the whole file. For a partial range ``fileno`` raises ``io.UnsupportedOperation``.
+``stream_data`` now returns a ``partial_range_iterator`` for a partial range. It has no ``read`` and no ``fileno``, so Zope does not hand it to ``wsgi.file_wrapper``.
+Code that calls ``.read()`` on the result of ``stream_data``, or checks for ``filestream_range_iterator``, must handle partial ranges.
+Before, bjoern and pyruvate read the whole file or range in one ``read()`` call.
+[mamico]

@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from io import BytesIO
 from io import FileIO
+from io import UnsupportedOperation
 from logging import getLogger
 from plone.base.interfaces import IImagingSchema
 from plone.namedfile.interfaces import IBlobby
@@ -15,6 +16,7 @@ from zope.interface import implementer
 from ZPublisher.Iterators import IStreamIterator
 
 import mimetypes
+import os
 import piexif
 import PIL.Image
 import re
@@ -90,6 +92,14 @@ class filestream_range_iterator(Iterable):
     # BBB: is it necessary to implement __len__ ?
     # def __len__(self)
 
+    def fileno(self):
+        # sendfile ignores the range, so only a range that covers the whole
+        # file may use it. Zope sets end to the file size for bytes=0-.
+        fd = self._io.fileno()
+        if self.start != 0 or self.end not in (None, os.fstat(fd).st_size):
+            raise UnsupportedOperation("fileno is not available for a partial range")
+        return fd
+
     def read(self, size=-1):
         # WSGI servers read wsgi.file_wrapper objects instead of iterating them,
         # so stop at the end of the range here as well.
@@ -100,6 +110,31 @@ class filestream_range_iterator(Iterable):
             else:
                 size = min(size, remaining)
         return self._io.read(size)
+
+
+@implementer(IStreamIterator)
+class partial_range_iterator(Iterable):
+    """Iterate a partial range of a file, in blocks of ``streamsize``.
+
+    It has no ``read`` and no ``fileno``, so Zope returns it to the WSGI server
+    as a plain iterable instead of handing it to ``wsgi.file_wrapper``. Every
+    server then iterates it in blocks, none can read it in one call or send
+    the rest of the file with sendfile.
+    """
+
+    def __init__(self, name, start, end, streamsize=1 << 16):
+        self._iterator = filestream_range_iterator(
+            name, start=start, end=end, streamsize=streamsize
+        )
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self._iterator)
+
+    def close(self):
+        self._iterator.close()
 
 
 def safe_basename(filename):
@@ -167,9 +202,10 @@ def stream_data(file, start=0, end=None):
     if IBlobby.providedBy(file):
         if file._blob._p_blob_uncommitted:
             return file.data[start:end]
-        return filestream_range_iterator(
-            file._blob.committed(), "rb", start=start, end=end
-        )
+        path = file._blob.committed()
+        if start == 0 and end in (None, os.path.getsize(path)):
+            return filestream_range_iterator(path, "rb", start=start, end=end)
+        return partial_range_iterator(path, start=start, end=end)
     return file.data[start:end]
 
 
