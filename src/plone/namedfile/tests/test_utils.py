@@ -144,3 +144,39 @@ class TestFilestreamRangeIterator(unittest.TestCase):
         iterator = filestream_range_iterator(self.path, start=1000)
         with contextlib.closing(iterator):
             self.assertEqual(iterator.read(), self.data[1000:])
+
+
+class GetScaleFormatTests(unittest.TestCase):
+    def _registry(self, records):
+        from plone.registry.interfaces import IRegistry
+        from zope.component import getGlobalSiteManager
+
+        class Registry(dict):
+            pass
+
+        registry = Registry(records)
+        gsm = getGlobalSiteManager()
+        gsm.registerUtility(registry, IRegistry)
+        self.addCleanup(gsm.unregisterUtility, registry, IRegistry)
+
+    def test_no_registry(self):
+        from plone.namedfile.utils import getScaleFormat
+
+        self.assertEqual(getScaleFormat(), "")
+
+    def test_no_record(self):
+        # A site that was not upgraded yet.
+        from plone.namedfile.utils import getScaleFormat
+
+        self._registry({})
+        self.assertEqual(getScaleFormat(), "")
+
+    def test_record(self):
+        from plone.namedfile.utils import getScaleFormat
+
+        self._registry({"plone.scale_format": "avif"})
+        self.assertEqual(getScaleFormat(), "avif")
+        self._registry({"plone.scale_format": None})
+        self.assertEqual(getScaleFormat(), "")
+        self._registry({"plone.scale_format": "original"})
+        self.assertEqual(getScaleFormat(), "")

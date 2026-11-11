@@ -13,6 +13,7 @@ from plone.namedfile.picture import get_picture_variants
 from plone.namedfile.picture import Img2PictureTag
 from plone.namedfile.utils import extract_media_type
 from plone.namedfile.utils import getHighPixelDensityScales
+from plone.namedfile.utils import getScaleFormat
 from plone.namedfile.utils import set_headers
 from plone.namedfile.utils import stream_data
 from plone.protect import PostOnly
@@ -98,8 +99,12 @@ class ImageScale(BrowserView):
         if self.data is None:
             self.data = getattr(self.context, self.fieldname)
 
-        extension = self.data.contentType.split("/")[-1].lower()
-        if self.data.contentType == "image/svg+xml":
+        # A scale that is not generated yet has no data of its own: its info
+        # has the mimetype it will most likely get, which may differ from
+        # the original, for example with a scale format.
+        mimetype = info.get("mimetype") or self.data.contentType
+        extension = mimetype.split("/")[-1].lower()
+        if mimetype == "image/svg+xml":
             extension = "svg"
         if "uid" in info:
             name = info["uid"]
@@ -134,8 +139,9 @@ class ImageScale(BrowserView):
 
     def srcset_attribute(self):
         _srcset_attr = []
-        extension = self.data.contentType.split("/")[-1].lower()
         for scale in self.srcset:
+            mimetype = scale.get("mimetype") or self.data.contentType
+            extension = mimetype.split("/")[-1].lower()
             url = self._scale_url(scale["uid"], extension, scale_info=scale)
             _srcset_attr.append(f"{url} {scale['scale']}x")
         srcset_attr = ", ".join(_srcset_attr)
@@ -616,6 +622,10 @@ class ImageScaling(BrowserView):
             mtime = 0
         return DateTime(mtime).millis()
 
+    def get_scale_format(self):
+        """The format to convert scales to, empty to keep the original's."""
+        return getScaleFormat()
+
     def scale(
         self,
         fieldname=None,
@@ -646,6 +656,12 @@ class ImageScaling(BrowserView):
             if scale not in available:
                 return None  # 404
             width, height = available[scale]
+        if "format" not in parameters:
+            # Only add it when set: it is part of the key of a scale, and
+            # changing it gives new scales, with new urls.
+            scale_format = self.get_scale_format()
+            if scale_format:
+                parameters["format"] = scale_format
         storage = getMultiAdapter(
             (self.context, functools.partial(self.modified, fieldname)),
             IImageScaleStorage,

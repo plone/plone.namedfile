@@ -26,6 +26,7 @@ from zope.interface import Interface
 from zope.publisher.interfaces import NotFound
 
 import PIL
+import PIL.Image
 import plone.namedfile.picture
 import plone.namedfile.scaling
 import re
@@ -356,6 +357,44 @@ class ImageScalingTests(unittest.TestCase):
             quality=80,
         )
         self.assertIsNot(foo.data, self.item.image)
+
+    def testScaleFormat(self):
+        self.item.image = MockNamedImage(
+            getFile("image.jpg"), "image/jpeg", "image.jpg"
+        )
+        self.scaling.get_scale_format = lambda: "webp"
+        # A scale that is not generated yet already gets the right extension.
+        pre = self.scaling.scale("image", width=100, height=80, pre=True)
+        self.assertEqual(pre.mimetype, "image/webp")
+        self.assertTrue(pre.url.endswith(".webp"), pre.url)
+        foo = self.scaling.scale("image", width=100, height=80)
+        self.assertEqual(foo.uid, pre.uid)
+        self.assertEqual(foo.data.contentType, "image/webp")
+        self.assertTrue(foo.url.endswith(".webp"), foo.url)
+        self.assertEqual(PIL.Image.open(BytesIO(foo.data.data)).format, "WEBP")
+
+    def testScaleFormatChangesUrl(self):
+        default = self.scaling.scale("image", width=100, height=80, pre=True)
+        self.scaling.get_scale_format = lambda: "webp"
+        webp = self.scaling.scale("image", width=100, height=80, pre=True)
+        self.assertNotEqual(default.uid, webp.uid)
+        # Without a format, the parameters (and so the urls) are as before.
+        self.scaling.get_scale_format = lambda: ""
+        again = self.scaling.scale("image", width=100, height=80, pre=True)
+        self.assertEqual(default.uid, again.uid)
+
+    def testScaleFormatExactSizeIsConverted(self):
+        # With a format, a scale of the size of the original is not the
+        # original itself, which keeps its format.
+        self.item.image = MockNamedImage(
+            getFile("image.jpg"), "image/jpeg", "image.jpg"
+        )
+        self.scaling.get_scale_format = lambda: "webp"
+        foo = self.scaling.scale(
+            "image", width=self.item.image._width, height=self.item.image._height
+        )
+        self.assertIsNot(foo.data, self.item.image)
+        self.assertEqual(foo.data.contentType, "image/webp")
 
     def testCreateHighPixelDensityScale(self):
         self.scaling.getHighPixelDensityScales = lambda: [{"scale": 2, "quality": 66}]
