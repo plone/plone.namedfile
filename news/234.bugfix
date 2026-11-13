@@ -1,0 +1,5 @@
+Store the size of a ``NamedBlobFile`` and the dimensions of a ``NamedBlobImage`` when the data is written.
+Before, ``getSize()`` read the size from the blob after every cache miss, which on remote blob storages means downloading the whole file.
+``getImageSize()`` read the whole blob and wrote to the database on every call for images with unknown dimensions.
+Opening a ``NamedBlobFile`` for writing now also drops a persisted size.
+[jensens]
