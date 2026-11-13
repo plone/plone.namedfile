@@ -1,0 +1,25 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    >
+
+  <browser:page
+      name="images"
+      for="Products.ZCatalog.interfaces.ICatalogBrain"
+      class=".brain_scaling.BrainImageScaling"
+      allowed_attributes="scale tag srcset picture getImageSize available_sizes modified"
+      permission="zope2.View"
+      />
+
+  <configure zcml:condition="installed plone.app.contentlisting">
+    <browser:page
+        name="images"
+        for="plone.app.contentlisting.interfaces.IContentListingObject"
+        class=".brain_scaling.BrainImageScaling"
+        allowed_attributes="scale tag srcset picture getImageSize available_sizes modified"
+        permission="zope2.View"
+        />
+  </configure>
+
+</configure>

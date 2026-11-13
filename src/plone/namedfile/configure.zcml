@@ -22,6 +22,7 @@
   <include file="handler.zcml" />
   <include file="marshaler.zcml" />
   <include file="scaling.zcml" />
+  <include file="brain_scaling.zcml" />
   <include file="editor.zcml" />
   <include file="field.zcml" />
 

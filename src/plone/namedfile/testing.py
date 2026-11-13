@@ -1,3 +1,7 @@
+from plone.app.testing import FunctionalTesting
+from plone.app.testing import IntegrationTesting
+from plone.app.testing import PLONE_FIXTURE
+from plone.app.testing import PloneSandboxLayer
 from plone.testing import Layer
 from plone.testing import publisher
 from plone.testing import zca
@@ -31,4 +35,23 @@ PLONE_NAMEDFILE_INTEGRATION_TESTING = zope.IntegrationTesting(
 PLONE_NAMEDFILE_FUNCTIONAL_TESTING = zope.FunctionalTesting(
     bases=(PLONE_NAMEDFILE_FIXTURE,),
     name="plone.namedfile:NamedFileTestLayerFunctional",
+)
+
+
+class NamedFilePloneLayer(PloneSandboxLayer):
+    """Plone fixture base for tests that need a site and catalog."""
+
+    defaultBases = (PLONE_FIXTURE,)
+
+
+PLONE_NAMEDFILE_PLONE_FIXTURE = NamedFilePloneLayer()
+
+NAMEDFILE_PLONE_INTEGRATION = IntegrationTesting(
+    bases=(PLONE_NAMEDFILE_PLONE_FIXTURE,),
+    name="plone.namedfile:PloneIntegration",
+)
+
+NAMEDFILE_PLONE_FUNCTIONAL = FunctionalTesting(
+    bases=(PLONE_NAMEDFILE_PLONE_FIXTURE,),
+    name="plone.namedfile:PloneFunctional",
 )
