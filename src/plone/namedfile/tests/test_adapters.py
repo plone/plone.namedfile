@@ -155,3 +155,25 @@ class ImageScalesAdaptersRegisteredTest(unittest.TestCase):
         self.assertEqual(preview["width"], 400)
         self.assertEqual(preview["height"], 400)
         self.assertTrue(preview["download"].startswith("@@images/image1-400-"))
+
+    @unittest.skipIf(IImageScalesFieldAdapter is None, "Skipping on Plone 5")
+    def test_field_adapter_no_wider_scale_when_a_scale_has_original_width(self):
+        # Add an image of 900 by 900 pixels, with a scale of exactly that width.
+        # That scale already has the size of the original, so the smallest
+        # wider scale would be a duplicate of it.
+        image = NamedImage(dummy.JpegImage(), filename="900.jpeg")
+        field = self.create_field(image)
+        scale_infos = [("larger", 1000, 65536), ("exact", 900, 65536)]
+        scale_infos += patch_get_scale_infos()[3:]
+        with patch.object(
+            plone.namedfile.adapters,
+            "_get_scale_infos",
+            return_value=scale_infos,
+        ):
+            serializer = queryMultiAdapter(
+                (field, self.content, self.request), IImageScalesFieldAdapter
+            )
+            scales = serializer()[0]["scales"]
+        self.assertIn("exact", scales)
+        self.assertEqual(scales["exact"]["width"], 900)
+        self.assertNotIn("larger", scales)
