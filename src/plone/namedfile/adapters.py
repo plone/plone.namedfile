@@ -80,18 +80,22 @@ class ImageFieldScales:
     def get_scales(self, field, width, height):
         """Get a dictionary of available scales for a particular image field,
         with the actual dimensions (aspect ratio of the original image).
+
+        Scales that are wider than the original are left out, except the
+        smallest of them: scaling does not enlarge, so that one gets the size
+        of the original. It is still worth having: unlike the original, it is
+        encoded with the quality (and format) of the scales, which is usually
+        much smaller, so a srcset can use it instead of the original.
         """
         scales = {}
+        scale_infos = _get_scale_infos()
+        wider = [info for info in scale_infos if info[1] > width]
+        smaller = [info for info in scale_infos if info[1] <= width]
+        if wider:
+            smaller.append(min(wider, key=lambda info: info[1]))
+        sizes = set()
 
-        for name, actual_width, actual_height in _get_scale_infos():
-            if actual_width > width:
-                # The width of the scale is larger than the original width.
-                # Scaling would simply return the original (or perhaps a copy
-                # with the same size).  We do not need this scale.
-                # If we *do* want this, we should call the scale method with
-                # mode="cover", so it scales up.
-                continue
-
+        for name, actual_width, actual_height in smaller:
             # Get the scale info without actually generating the scale,
             # nor any old-style HiDPI scales.
             scale = self.images_view.scale(
@@ -104,10 +108,14 @@ class ImageFieldScales:
             if scale is None:
                 # If we cannot get a scale, it is probably a corrupt image.
                 continue
+            if actual_width > width and (scale.width, scale.height) in sizes:
+                # Another scale already has the size of the original.
+                continue
 
             url = scale.url
             actual_width = scale.width
             actual_height = scale.height
+            sizes.add((actual_width, actual_height))
 
             scales[name] = {
                 "download": self._scale_view_from_url(url),
